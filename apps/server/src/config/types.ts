@@ -1,5 +1,5 @@
 export enum ApiEnvironment {
-  Development = "development",
-  Staging = "staging",
-  Production = "production",
+  Development = 'development',
+  Staging = 'staging',
+  Production = 'production',
 }

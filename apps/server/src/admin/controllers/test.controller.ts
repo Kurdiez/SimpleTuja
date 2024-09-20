@@ -1,11 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
-import { ConfigService } from 'src/config';
 import NFTfi from '@nftfi/js';
-import { NFT_Address } from 'src/commons/constants/nft';
-import { WalletAddress } from 'src/commons/constants/wallet';
-import { LoanContract } from 'src/commons/constants/nftfi';
-import { Token } from 'src/commons/constants/token';
-import { BigNumber, ethers } from 'ethers';
+import { NFT_Address } from '~/commons/constants/nft';
+import { LoanContract } from '~/commons/constants/nftfi';
+import { Token } from '~/commons/constants/token';
+import { WalletAddress } from '~/commons/constants/wallet';
+import { ConfigService } from '~/config';
+// import { BigNumber, ethers } from 'ethers';
 
 @Controller('admin/test')
 export class TestController {
@@ -28,7 +28,6 @@ export class TestController {
       this.nftfi = result;
     });
   }
-
   @Get()
   async handleTest() {
     /**

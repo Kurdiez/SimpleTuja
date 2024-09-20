@@ -2,15 +2,27 @@
   "name": "@simpletuja/app",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
     "build": "turbo run build",
+    "dev": "turbo run dev",
+    "prepare": "husky install",
     "start": "turbo run start"
   },
-  "packageManager": "yarn@1.22.19",
+  "lint-staged": {
+    "package.json": "sort-package-json"
+  },
   "devDependencies": {
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "sort-package-json": "^2.10.1",
     "turbo": "^2.0.14"
+  },
+  "packageManager": "yarn@1.22.19",
+  "volta": {
+    "node": "20.11.1",
+    "yarn": "1.22.19"
   }
 }

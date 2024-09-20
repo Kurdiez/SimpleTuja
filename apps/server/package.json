@@ -1,29 +1,47 @@
 {
   "name": "@simpletuja/server",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
   "private": true,
+  "description": "",
   "license": "UNLICENSED",
+  "author": "",
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "dev": "nest start --watch",
     "debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "dev": "nest start --watch",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "start": "nest start",
+    "start:prod": "node dist/main",
     "test": "jest",
-    "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:watch": "jest --watch",
     "tsn": "ts-node --project ./tsconfig.json --files -r tsconfig-paths/register",
+    "type-check": "tsc --noEmit",
     "typeorm": "yarn tsn ./node_modules/typeorm/cli",
     "typeorm:create": "wrap () { yarn typeorm migration:create ./src/migrations/db/\"$@\" | cat; }; wrap",
     "typeorm:generate": "wrap () { yarn typeorm -d src/orm.config.ts migration:generate ./src/migrations/db/\"$@\" | cat; }; wrap",
-    "typeorm:run": "yarn typeorm migration:run -d src/orm.config.ts",
-    "typeorm:revert": "yarn typeorm -d src/orm.config.ts migration:revert"
+    "typeorm:revert": "yarn typeorm -d src/orm.config.ts migration:revert",
+    "typeorm:run": "yarn typeorm migration:run -d src/orm.config.ts"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testEnvironment": "node",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    }
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -65,22 +83,5 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.3"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }

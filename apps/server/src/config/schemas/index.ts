@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { databaseConfigSchema } from './database';
 import { ApiEnvironment } from '../types';
 
-const isDevEnv = process.env.ENVIRONMENT === ApiEnvironment.Development;
-const isProdEnv = process.env.ENVIRONMENT === ApiEnvironment.Production;
+// const isDevEnv = process.env.ENVIRONMENT === ApiEnvironment.Development;
+// const isProdEnv = process.env.ENVIRONMENT === ApiEnvironment.Production;
 
 export const configSchema = z
   .object({
