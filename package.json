@@ -1,0 +1,16 @@
+{
+  "name": "@simpletuja/app",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start"
+  },
+  "packageManager": "yarn@1.22.19",
+  "devDependencies": {
+    "turbo": "^2.0.14"
+  }
+}

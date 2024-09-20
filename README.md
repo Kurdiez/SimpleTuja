@@ -1,1 +1,1 @@
-# CryptoLoanBot
+# SimpleTuja
