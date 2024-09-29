@@ -2,16 +2,19 @@ import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 import { bigTransformer } from '../utils/big-transformer';
 import Big from 'big.js';
 
-@Entity('nft')
-export class NftEntity {
+@Entity('nft_collection')
+export class NftCollectionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar', unique: true })
   name!: string;
 
-  @Column({ type: 'varchar' })
-  contractAddress!: string;
+  @Column({ type: 'varchar', nullable: true })
+  contractAddress!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  openSeaSlug!: string | null;
 
   @Column({ default: true, type: 'boolean' })
   enabled!: boolean;

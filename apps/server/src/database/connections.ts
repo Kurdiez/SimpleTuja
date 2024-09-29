@@ -20,7 +20,7 @@ export const createDBConnectionImport = (name: string) =>
       migrations: [__dirname + '/migrations/db/**/*{.ts,.js}'],
       subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
       applicationName: name,
-      synchronize: true,
+      synchronize: false,
     }),
     inject: [ConfigService],
   });

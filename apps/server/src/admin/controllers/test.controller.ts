@@ -11,7 +11,7 @@ import { ConfigService } from '~/config';
 export class TestController {
   private nftfi: any;
 
-  constructor(private configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     const nftfiApiKey = configService.get('NFTFI_API_KEY');
     const walletPrivateKey = configService.get('CRYPTO_ACCOUNT_PRIVATE_KEY');
     const providerUrl = configService.get('PROVIDER_URL');
@@ -28,6 +28,7 @@ export class TestController {
       this.nftfi = result;
     });
   }
+
   @Get()
   async handleTest() {
     /**
