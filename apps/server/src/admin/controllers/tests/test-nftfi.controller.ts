@@ -7,8 +7,8 @@ import { WalletAddress } from '~/commons/constants/wallet';
 import { ConfigService } from '~/config';
 // import { BigNumber, ethers } from 'ethers';
 
-@Controller('admin/test')
-export class TestController {
+@Controller('admin/test-nftfi')
+export class TestNftFiController {
   private nftfi: any;
 
   constructor(private readonly configService: ConfigService) {

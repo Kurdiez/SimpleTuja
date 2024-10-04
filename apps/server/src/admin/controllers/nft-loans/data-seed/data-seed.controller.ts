@@ -7,13 +7,13 @@ import {
   Body,
   HttpCode,
 } from '@nestjs/common';
-import { DataSeedService } from '../../services/data-seed.service';
+import { DataSeedService } from '../../../services/data-seed.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { parseNftfiLoanInfoFile } from '../../utils/nftfi-loan-info-file-parser';
+import { parseNftfiLoanInfoFile } from '../../../utils/nftfi-loan-info-file-parser';
 import { ZodValidationPipe } from '~/commons/req-valitaions';
 import { GetContractAddressDto, getContractAddressDtoSchema } from './schemas';
 
-@Controller('admin/data-seed')
+@Controller('admin/nft-loans/data-seed')
 export class DataSeedController {
   constructor(private readonly dataSeedService: DataSeedService) {}
 

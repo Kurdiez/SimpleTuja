@@ -1,17 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NftCollectionInfo } from '../utils/nftfi-loan-info-file-parser';
 import { InjectRepository } from '@nestjs/typeorm';
-import { NftCollectionEntity } from '~/database/entities/nft.entity';
 import { Repository } from 'typeorm';
 import Big from 'big.js';
-import { OpenSeaService } from '~/nft-loans/services/opensea.service';
+import { OpenSeaAPIService } from '~/nft-loans/services/opensea-api.service';
+import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
 
 @Injectable()
 export class DataSeedService {
   private readonly logger = new Logger(DataSeedService.name);
 
   constructor(
-    private readonly openSeaService: OpenSeaService,
+    private readonly openSeaApi: OpenSeaAPIService,
     @InjectRepository(NftCollectionEntity)
     private readonly nftCollectionRepo: Repository<NftCollectionEntity>,
   ) {}
@@ -66,7 +66,7 @@ export class DataSeedService {
 
   async getNftCollectionContractAddress(name: string): Promise<string | null> {
     try {
-      const result = await this.openSeaService.run(async (sdk) => {
+      const result = await this.openSeaApi.run(async (sdk) => {
         const response = await sdk.api.getCollections();
         const assets = response.collections;
 

@@ -16,7 +16,7 @@ export class NftCollectionEntity {
   @Column({ type: 'varchar', nullable: true })
   openSeaSlug!: string | null;
 
-  @Column({ default: true, type: 'boolean' })
+  @Column({ default: false, type: 'boolean' })
   enabled!: boolean;
 
   @Column({ default: false, type: 'boolean' })
@@ -34,4 +34,14 @@ export class NftCollectionEntity {
     default: 0,
   })
   bestBid!: Big;
+
+  @Column({
+    type: 'decimal',
+    precision: 30,
+    scale: 10,
+    nullable: true,
+    transformer: bigTransformer,
+    default: 0,
+  })
+  avgTopFiveBids!: Big;
 }

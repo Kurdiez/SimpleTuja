@@ -1,13 +1,20 @@
 import { Module } from '@nestjs/common';
-import { TestController } from './controllers/test.controller';
-import { DataSeedController } from './controllers/data-seed/data-seed.controller';
+import { TestNftFiController } from './controllers/tests/test-nftfi.controller';
+import { DataSeedController } from './controllers/nft-loans/data-seed/data-seed.controller';
 import { DataSeedService } from './services/data-seed.service';
 import { DatabaseModule } from '~/database/database.module';
 import { NftLoansModule } from '~/nft-loans/nft-loans.module';
+import { TestOpenSeaController } from './controllers/tests/test-opensea.controller';
+import { UpdateBidOffersForAllNFTCollectionsController } from './controllers/nft-loans/update-bid-offers-for-all-NFT-collections.controller';
 
 @Module({
   imports: [DatabaseModule, NftLoansModule],
   providers: [DataSeedService],
-  controllers: [TestController, DataSeedController],
+  controllers: [
+    TestNftFiController,
+    TestOpenSeaController,
+    DataSeedController,
+    UpdateBidOffersForAllNFTCollectionsController,
+  ],
 })
 export class AdminModule {}

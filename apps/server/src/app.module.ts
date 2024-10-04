@@ -4,10 +4,11 @@ import { ConfigModule, configSchema } from './config';
 import { AdminModule } from './admin/admin.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AdminGuard } from './admin/auth/admin.guard';
-import { LoanBotModule } from './loan-bot/loan-bot.module';
 import { databaseConnections } from './database/connections';
 import { DatabaseModule } from './database/database.module';
 import { SentryInterceptor } from './commons/error-handlers/sentry-interceptor';
+import { ScheduleModule } from '@nestjs/schedule';
+import { NftLoansModule } from './nft-loans/nft-loans.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { SentryInterceptor } from './commons/error-handlers/sentry-interceptor';
     ...databaseConnections,
     DatabaseModule,
     AdminModule,
-    LoanBotModule,
+    ScheduleModule.forRoot(),
+    NftLoansModule,
   ],
   controllers: [],
   providers: [

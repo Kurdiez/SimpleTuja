@@ -7,7 +7,7 @@ import { nodeProfilingIntegration } from '@sentry/profiling-node';
 async function bootstrap() {
   const configModuleContext = await NestFactory.createApplicationContext(
     ConfigModule,
-    { logger: ['error', 'warn'] },
+    { logger: ['log', 'error', 'warn'] },
   );
   const configService = configModuleContext.get(ConfigService);
 

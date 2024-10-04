@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { NftCollectionEntity } from './entities/nft.entity';
+import { NftCollectionEntity } from './entities/nft-collection.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([NftCollectionEntity])],

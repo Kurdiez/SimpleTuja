@@ -1,6 +1,7 @@
 import { Cron } from '@nestjs/schedule';
 import { captureException } from './capture-exception';
 import { Logger } from '@nestjs/common';
+import { performance } from 'perf_hooks';
 
 function handleErrors(taskName: string) {
   return (
@@ -13,14 +14,20 @@ function handleErrors(taskName: string) {
 
     descriptor.value = async function (...args: unknown[]) {
       logger.log('Running scheduled task: ' + taskName);
+      const startTime = performance.now();
       try {
         if (originalMethod) {
           await originalMethod.apply(this, args);
         }
       } catch (error) {
         captureException({ error });
+      } finally {
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+        logger.log(
+          `Completed scheduled task: ${taskName}. Duration: ${duration.toFixed(2)}ms`,
+        );
       }
-      logger.log('Completed scheduled task: ' + taskName);
     };
 
     return descriptor;
