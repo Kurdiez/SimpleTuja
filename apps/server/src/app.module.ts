@@ -9,6 +9,8 @@ import { DatabaseModule } from './database/database.module';
 import { SentryInterceptor } from './commons/error-handlers/sentry-interceptor';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NftLoansModule } from './nft-loans/nft-loans.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard'; // Import JwtAuthGuard
 
 @Module({
   imports: [
@@ -22,6 +24,7 @@ import { NftLoansModule } from './nft-loans/nft-loans.module';
     AdminModule,
     ScheduleModule.forRoot(),
     NftLoansModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [
@@ -30,6 +33,7 @@ import { NftLoansModule } from './nft-loans/nft-loans.module';
       useClass: SentryInterceptor,
     },
     { provide: APP_GUARD, useClass: AdminGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
 export class AppModule {}

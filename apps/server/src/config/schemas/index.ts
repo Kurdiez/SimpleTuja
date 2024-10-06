@@ -19,6 +19,7 @@ export const configSchema = z
     PROVIDER_URL: z.string(),
     SENTRY_DSN: z.string(),
     OPENSEA_API_KEY: z.string(),
+    JWT_SECRET: z.string(),
   })
   .merge(databaseConfigSchema)
   .strip();

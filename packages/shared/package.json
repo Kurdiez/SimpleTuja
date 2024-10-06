@@ -1,0 +1,18 @@
+{
+  "name": "@simpletuja/shared",
+  "version": "1.0.0",
+  "license": "UNLICENSED",
+  "author": "Jimin Park",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "run-p lint:*",
+    "lint-fix": "eslint . --fix",
+    "lint:es": "eslint .",
+    "lint:types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  }
+}
