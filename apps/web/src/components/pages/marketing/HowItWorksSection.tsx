@@ -38,19 +38,21 @@ export default function HowItWorksSection() {
               <p className="mt-2 text-3xl font-bold tracking-tight text-gray-100 sm:text-4xl">
                 How It Works
               </p>
-              <p className="mt-6 text-lg leading-8 text-gray-300">
+              <p className="mt-6 text-lg leading-8 text-gray-400">
                 We aim to make your investment journey as seamless as possible.
-                That's why we've distilled our process into three simple steps
-                for all our features.
+                That&apos;s why we&apos;ve distilled our process into three
+                simple steps for all our features.
               </p>
               <dl className="mt-10 max-w-xl space-y-8 text-base leading-7 text-gray-300 lg:max-w-none">
-                {steps.map((step) => (
+                {steps.map((step, index) => (
                   <div key={step.name} className="relative pl-9">
                     <dt className="inline font-semibold text-primary-light">
-                      <step.icon
+                      <span
                         aria-hidden="true"
                         className="absolute left-1 top-1 h-5 w-5 text-primary"
-                      />
+                      >
+                        {index + 1}.
+                      </span>
                       {step.name}
                     </dt>{" "}
                     <dd className="inline">{step.description}</dd>

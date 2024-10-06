@@ -9,11 +9,12 @@ export default function CtaSection(): JSX.Element {
           <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Start Your Investment Automation Journey Today
           </h2>
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-300">
-            We're here to handle the complexities of investment management, so
-            you can focus on what matters most. Set up your preferences, and let
-            us do the rest. Join our Discord community to connect with fellow
-            investors and provide feedback to help us enhance your experience.
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-400">
+            We&apos;re here to handle the complexities of investment management,
+            so you can focus on what matters most. Set up your preferences, and
+            let us do the rest. Join our Discord community to connect with
+            fellow investors and provide feedback to help us enhance your
+            experience.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <a

@@ -80,7 +80,7 @@ export default function FeaturesSection() {
                   {tabs.map((tab) => (
                     <Tab
                       key={tab.name}
-                      className="whitespace-nowrap border-b-2 border-transparent py-6 text-sm font-medium text-gray-500 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:text-primary data-[selected]:border-primary data-[selected]:text-primary dark:data-[selected]:text-primary"
+                      className="whitespace-nowrap border-b-2 border-transparent py-6 text-sm font-medium text-gray-500 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:text-primary data-[selected]:border-primary data-[selected]:text-primary dark:data-[selected]:text-primary focus:outline-none" // Added focus:outline-none
                     >
                       {tab.name}
                     </Tab>

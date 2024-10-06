@@ -20,7 +20,14 @@ export default function TopNav() {
         <div className="flex lg:flex-1">
           <a href="#" className="-m-1.5 p-1.5">
             <span className="sr-only">Your Company</span>
-            <span className="text-2xl font-bold text-orange-600">STJ</span>
+            <span className="text-2xl font-bold">
+              <span className="text-orange-600">S</span>
+              <span className="text-gray-400">imple</span>
+              <span className="text-orange-600">T</span>
+              <span className="text-gray-400">u</span>
+              <span className="text-orange-600">J</span>
+              <span className="text-gray-400">a</span>
+            </span>
           </a>
         </div>
         <div className="flex items-center gap-x-4 lg:hidden">
@@ -87,6 +94,7 @@ export default function TopNav() {
                   <a
                     key={item.name}
                     href={item.href}
+                    onClick={() => setMobileMenuOpen(false)} // Close menu on click
                     className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
                   >
                     {item.name}
@@ -96,6 +104,7 @@ export default function TopNav() {
               <div className="py-6">
                 <a
                   href="#"
+                  onClick={() => setMobileMenuOpen(false)} // Close menu on click
                   className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Log in

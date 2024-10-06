@@ -14,7 +14,7 @@ export default function PricingSection() {
           <h2 className="text-3xl font-bold tracking-tight text-gray-100 sm:text-4xl">
             Simple, No-Tricks Pricing
           </h2>
-          <p className="mt-6 text-lg leading-8 text-gray-300">
+          <p className="mt-6 text-lg leading-8 text-gray-400">
             Start with a{" "}
             <span className="text-primary-light">free account</span> to explore
             our features with limited functionalities. When you&apos;re ready,
@@ -26,7 +26,7 @@ export default function PricingSection() {
             <h3 className="text-2xl font-bold tracking-tight text-gray-100">
               Monthly Subscription
             </h3>
-            <p className="mt-6 text-base leading-7 text-gray-300">
+            <p className="mt-6 text-base leading-7 text-gray-400">
               Unlock the full potential of automated investment management with
               our comprehensive tools for crypto, stocks, and more to come in
               the future.

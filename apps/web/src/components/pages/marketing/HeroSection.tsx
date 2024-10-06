@@ -53,7 +53,7 @@ export default function HeroSection() {
           <h1 className="text-balance text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-6xl">
             Automate Your Investments
           </h1>
-          <p className="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-300">
+          <p className="mt-6 text-lg leading-8 text-gray-400">
             Take the driver&apos;s seat in your investment journey while we
             automate and assist with crypto lending and stock rebalancing.
           </p>

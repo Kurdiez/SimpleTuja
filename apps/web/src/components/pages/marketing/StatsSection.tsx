@@ -16,7 +16,7 @@ export default function StatsSection() {
           <p className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Trusted by thousands of investors worldwide
           </p>
-          <p className="mt-6 text-lg leading-8 text-gray-300">
+          <p className="mt-6 text-lg leading-8 text-gray-400">
             We are an automation tool that seamlessly buys, sells, and lends
             your assets on your behalf. Our platform operates on the
             world&apos;s most secure systems, integrating open-source blockchain
