@@ -1,9 +1,11 @@
-import TopNav from "@/components/TopNav";
-import HeroSection from "@/components/HeroSection";
-import FeaturesSection from "@/components/FeaturesSection";
-import HowItWorksSection from "@/components/HowItWorksSection";
-import StatsSection from "@/components/StatsSection";
-import PricingSection from "@/components/PricingSection";
+import TopNav from "@/components/pages/marketing/TopNav";
+import HeroSection from "@/components/pages/marketing/HeroSection";
+import FeaturesSection from "@/components/pages/marketing/FeaturesSection";
+import HowItWorksSection from "@/components/pages/marketing/HowItWorksSection";
+import StatsSection from "@/components/pages/marketing/StatsSection";
+import PricingSection from "@/components/pages/marketing/PricingSection";
+import CtaSection from "@/components/pages/marketing/CtaSection";
+import Footer from "@/components/pages/marketing/Footer";
 
 export default function Example(): JSX.Element {
   return (
@@ -14,6 +16,8 @@ export default function Example(): JSX.Element {
       <FeaturesSection />
       <HowItWorksSection />
       <PricingSection />
+      <CtaSection />
+      <Footer />
     </div>
   );
 }
