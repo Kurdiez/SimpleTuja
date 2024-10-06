@@ -9,7 +9,7 @@ import Footer from "@/components/pages/marketing/Footer";
 
 export default function Example(): JSX.Element {
   return (
-    <div className="bg-gray-900 dark:bg-gray-900">
+    <>
       <TopNav />
       <HeroSection />
       <StatsSection />
@@ -18,6 +18,6 @@ export default function Example(): JSX.Element {
       <PricingSection />
       <CtaSection />
       <Footer />
-    </div>
+    </>
   );
 }

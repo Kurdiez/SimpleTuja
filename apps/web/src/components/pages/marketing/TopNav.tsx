@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useRouter } from "next/router"; // Import useRouter
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import TextLogo from "@/components/common/TextLogo";
 
 const navigation = [
   { name: "Features", href: "#features" },
@@ -10,6 +12,15 @@ const navigation = [
 
 export default function TopNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const router = useRouter(); // Initialize router
+
+  const handleSignInClick = () => {
+    router.push("/sign-in");
+  };
+
+  const handleLogoClick = () => {
+    router.push("/");
+  };
 
   return (
     <header className="absolute inset-x-0 top-0 z-50">
@@ -18,25 +29,21 @@ export default function TopNav() {
         className="flex items-center justify-between p-6 lg:px-8"
       >
         <div className="flex lg:flex-1">
-          <a href="#" className="-m-1.5 p-1.5">
+          <div
+            onClick={handleLogoClick}
+            className="-m-1.5 p-1.5 cursor-pointer select-none"
+          >
             <span className="sr-only">Your Company</span>
-            <span className="text-2xl font-bold">
-              <span className="text-orange-600">S</span>
-              <span className="text-gray-400">imple</span>
-              <span className="text-orange-600">T</span>
-              <span className="text-gray-400">u</span>
-              <span className="text-orange-600">J</span>
-              <span className="text-gray-400">a</span>
-            </span>
-          </a>
+            <TextLogo fontSize="text-2xl" />
+          </div>
         </div>
         <div className="flex items-center gap-x-4 lg:hidden">
-          <a
-            href="#"
+          <button
+            onClick={handleSignInClick} // Use the handler for navigation
             className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100"
           >
-            Log in <span aria-hidden="true">&rarr;</span>
-          </a>
+            Sign in <span aria-hidden="true">&rarr;</span>
+          </button>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
@@ -58,12 +65,12 @@ export default function TopNav() {
           ))}
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <a
-            href="#"
+          <button
+            onClick={handleSignInClick} // Use the handler for navigation
             className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100"
           >
-            Log in <span aria-hidden="true">&rarr;</span>
-          </a>
+            Sign in <span aria-hidden="true">&rarr;</span>
+          </button>
         </div>
       </nav>
       <Dialog
@@ -76,7 +83,7 @@ export default function TopNav() {
           <div className="flex items-center justify-between">
             <a href="#" className="-m-1.5 p-1.5">
               <span className="sr-only">Your Company</span>
-              <span className="text-2xl font-bold text-orange-600">STJ</span>
+              <TextLogo fontSize="text-2xl" />
             </a>
             <button
               type="button"
@@ -102,13 +109,15 @@ export default function TopNav() {
                 ))}
               </div>
               <div className="py-6">
-                <a
-                  href="#"
-                  onClick={() => setMobileMenuOpen(false)} // Close menu on click
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignInClick(); // Use the handler for navigation
+                  }}
                   className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Log in
-                </a>
+                </button>
               </div>
             </div>
           </div>
