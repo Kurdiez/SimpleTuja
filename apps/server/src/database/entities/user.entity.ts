@@ -5,6 +5,7 @@ export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Index()
   @Column({ type: 'varchar', unique: true })
   email!: string;
 
@@ -17,7 +18,4 @@ export class UserEntity {
   @Index()
   @Column({ type: 'varchar', nullable: true })
   emailConfirmationToken!: string | null;
-
-  @Column({ type: 'timestamp', nullable: true })
-  tokenExpiration!: Date | null;
 }

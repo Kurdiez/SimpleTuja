@@ -1,10 +1,10 @@
-import SignInLayout from "@/components/pages/sign-in/SignInLayout";
+import AuthLayout from "@/components/common/AuthLayout";
 import SignInForm from "@/components/pages/sign-in/SignInForm";
 
 export default function Example(): JSX.Element {
   return (
-    <SignInLayout>
+    <AuthLayout>
       <SignInForm />
-    </SignInLayout>
+    </AuthLayout>
   );
 }

@@ -23,6 +23,13 @@ async function bootstrap() {
   });
 
   const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: configService.get('APP_URL'),
+    credentials: true,
+  });
+
   await app.listen(configService.get('PORT'), '::');
 }
+
 bootstrap();

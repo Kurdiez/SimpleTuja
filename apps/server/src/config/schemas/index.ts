@@ -12,6 +12,7 @@ export const configSchema = z
         Environment.Production,
       ])
       .default(Environment.Development),
+    APP_URL: z.string(),
     PORT: z.coerce.number().int().positive().default(3000),
     ADMIN_SECRET: z.string(),
     NFTFI_API_KEY: z.string(),
@@ -20,6 +21,7 @@ export const configSchema = z
     SENTRY_DSN: z.string(),
     OPENSEA_API_KEY: z.string(),
     JWT_SECRET: z.string(),
+    BREVO_API_KEY: z.string(),
   })
   .merge(databaseConfigSchema)
   .strip();

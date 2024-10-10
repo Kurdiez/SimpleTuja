@@ -1,104 +1,148 @@
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/router";
 import TextLogo from "@/components/common/TextLogo";
+import { register } from "@/utils/simpletuja/auth";
+import { RegisterDto } from "@simpletuja/shared";
+import toast from "react-hot-toast";
+import { AxiosError } from "axios";
 
 const RegisterForm: React.FC = () => {
   const router = useRouter();
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [isRegistered, setIsRegistered] = useState<boolean>(false);
 
   const handleLogoClick = () => {
     router.push("/");
   };
 
+  const handleRegister = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    const registerDto: RegisterDto = { email, password };
+    try {
+      await register(registerDto);
+      toast.success("Registration successful!");
+      setIsRegistered(true);
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      const data = axiosError.response?.data as { message: string };
+      toast.error(data.message);
+    }
+  };
+
   return (
-    <div>
+    <div className="h-[520px]">
       <div>
         <div onClick={handleLogoClick} className="cursor-pointer select-none">
           <TextLogo fontSize="text-2xl" />
         </div>
         <h2 className="mt-8 text-2xl font-bold leading-9 tracking-tight text-gray-100">
-          Create your account
+          {isRegistered ? "Account has been created!" : "Create your account"}
         </h2>
-        <p className="mt-2 text-sm leading-6 text-gray-400">
-          Already have an account?{" "}
-          <a
-            href="#"
-            onClick={() => router.push("/sign-in")}
-            className="font-semibold text-primary-400 hover:text-primary-300"
-          >
-            Sign in
-          </a>
-        </p>
+        {isRegistered ? (
+          <p className="mt-2 text-sm leading-6 text-gray-400">
+            A confirmation email has been sent. Please check your inbox.
+          </p>
+        ) : (
+          <p className="mt-2 text-sm leading-6 text-gray-400">
+            Already have an account?{" "}
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                router.push("/sign-in");
+              }}
+              className="font-semibold text-primary hover:text-primary-light"
+            >
+              Sign in
+            </a>
+          </p>
+        )}
       </div>
 
-      <div className="mt-10">
-        <form action="#" method="POST" className="space-y-6">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium leading-6 text-gray-100"
-            >
-              Email address
-            </label>
-            <div className="mt-2">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                className="block w-full rounded-md border-0 py-1.5 px-3 text-black shadow-sm ring-1 ring-inset ring-gray-700 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary-400 sm:text-sm sm:leading-6"
-              />
+      {!isRegistered && (
+        <div className="mt-10">
+          <form onSubmit={handleRegister} className="space-y-6">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium leading-6 text-gray-100"
+              >
+                Email address
+              </label>
+              <div className="mt-2">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full rounded-md border-0 py-1.5 px-3 text-black shadow-sm ring-1 ring-inset ring-gray-700 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary-400 sm:text-sm sm:leading-6"
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium leading-6 text-gray-100"
-            >
-              Password
-            </label>
-            <div className="mt-2">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                autoComplete="new-password"
-                className="block w-full rounded-md border-0 py-1.5 px-3 text-black shadow-sm ring-1 ring-inset ring-gray-700 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary-400 sm:text-sm sm:leading-6"
-              />
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium leading-6 text-gray-100"
+              >
+                Password
+              </label>
+              <div className="mt-2">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full rounded-md border-0 py-1.5 px-3 text-black shadow-sm ring-1 ring-inset ring-gray-700 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary-400 sm:text-sm sm:leading-6"
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label
-              htmlFor="confirm-password"
-              className="block text-sm font-medium leading-6 text-gray-100"
-            >
-              Confirm Password
-            </label>
-            <div className="mt-2">
-              <input
-                id="confirm-password"
-                name="confirm-password"
-                type="password"
-                required
-                autoComplete="new-password"
-                className="block w-full rounded-md border-0 py-1.5 px-3 text-black shadow-sm ring-1 ring-inset ring-gray-700 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary-400 sm:text-sm sm:leading-6"
-              />
+            <div>
+              <label
+                htmlFor="confirm-password"
+                className="block text-sm font-medium leading-6 text-gray-100"
+              >
+                Confirm password
+              </label>
+              <div className="mt-2">
+                <input
+                  id="confirm-password"
+                  name="confirm-password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="block w-full rounded-md border-0 py-1.5 px-3 text-black shadow-sm ring-1 ring-inset ring-gray-700 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary-400 sm:text-sm sm:leading-6"
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              className="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Register
-            </button>
-          </div>
-        </form>
-      </div>
+            <div>
+              <button
+                type="submit"
+                className="mt-8 flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                Register
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

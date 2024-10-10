@@ -1,10 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { UserEntity } from '../../database/entities/user.entity';
+import { BrevoService } from '~/notifications/services/brevo.service';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +17,7 @@ export class AuthService {
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
     private jwtService: JwtService,
+    private emailService: BrevoService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -26,50 +32,106 @@ export class AuthService {
   async signIn(email: string, password: string) {
     const user = await this.validateUser(email, password);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid login credentials');
     }
-    const payload = { email: user.email, sub: user.id };
+
+    if (!user.isEmailConfirmed) {
+      await this.sendEmailConfirmation(user);
+      throw new UnauthorizedException(
+        'Email has not been confirmed. A new confirmation email has been sent.',
+      );
+    }
+
     return {
-      access_token: this.jwtService.sign(payload, { expiresIn: 'never' }),
+      accessToken: this.signJwtToken(user),
     };
   }
 
   async register(email: string, password: string) {
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    const emailConfirmationToken = uuidv4();
-    const tokenExpiration = new Date();
-    tokenExpiration.setHours(tokenExpiration.getHours() + 24);
+    const existingUser = await this.userRepo.findOne({ where: { email } });
+    if (existingUser) {
+      throw new BadRequestException('User with the same email already exists');
+    }
 
+    const hashedPassword = bcrypt.hashSync(password, 10);
     const newUser = this.userRepo.create({
       email,
       password: hashedPassword,
-      emailConfirmationToken,
-      tokenExpiration,
     });
     await this.userRepo.save(newUser);
 
-    console.log('Send email verification to:', email);
-    console.log('Email confirmation token:', emailConfirmationToken);
+    await this.sendEmailConfirmation(newUser);
   }
 
   async confirmEmail(
     token: string,
-  ): Promise<{ success: boolean; access_token?: string }> {
+  ): Promise<{ success: boolean; accessToken?: string }> {
     const user = await this.userRepo.findOne({
       where: { emailConfirmationToken: token },
     });
-    if (user && user.tokenExpiration && user.tokenExpiration > new Date()) {
+    if (user) {
       user.isEmailConfirmed = true;
       user.emailConfirmationToken = null;
-      user.tokenExpiration = null;
       await this.userRepo.save(user);
 
-      // Generate a JWT token for the user
-      const payload = { email: user.email, sub: user.id };
-      const accessToken = this.jwtService.sign(payload, { expiresIn: 'never' });
-
-      return { success: true, access_token: accessToken };
+      return { success: true, accessToken: this.signJwtToken(user) };
     }
-    throw new UnauthorizedException('Invalid or expired token');
+    throw new UnauthorizedException('Invalid token');
+  }
+
+  async refreshToken(user: UserEntity) {
+    return {
+      accessToken: this.signJwtToken(user),
+    };
+  }
+
+  async sendResetPasswordEmail(email: string): Promise<{ success: boolean }> {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (user) {
+      const resetPasswordToken = uuidv4();
+      user.emailConfirmationToken = resetPasswordToken;
+      await this.userRepo.save(user);
+
+      await this.emailService.sendResetPassword(email, resetPasswordToken);
+    }
+    return { success: true };
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; accessToken?: string }> {
+    const user = await this.userRepo.findOne({
+      where: { emailConfirmationToken: token },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Failed to reset password');
+    }
+
+    user.password = bcrypt.hashSync(newPassword, 10);
+    user.emailConfirmationToken = null;
+    await this.userRepo.save(user);
+
+    return {
+      success: true,
+      accessToken: this.signJwtToken(user),
+    };
+  }
+
+  private async sendEmailConfirmation(user: UserEntity): Promise<void> {
+    const emailConfirmationToken = uuidv4();
+    user.emailConfirmationToken = emailConfirmationToken;
+    await this.userRepo.save(user);
+
+    await this.emailService.sendConfirmation(
+      user.email,
+      emailConfirmationToken,
+    );
+  }
+
+  private signJwtToken(user: UserEntity): string {
+    const payload = { email: user.email, userId: user.id };
+    return this.jwtService.sign(payload, { expiresIn: '30d' });
   }
 }

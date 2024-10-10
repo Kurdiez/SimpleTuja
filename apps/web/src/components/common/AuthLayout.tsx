@@ -1,10 +1,10 @@
 import React from "react";
 
-interface RegisterLayoutProps {
+interface AuthLayoutProps {
   children: React.ReactNode;
 }
 
-const RegisterLayout: React.FC<RegisterLayoutProps> = ({ children }) => {
+const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="flex flex-col lg:flex-row w-full h-full">
@@ -15,7 +15,7 @@ const RegisterLayout: React.FC<RegisterLayoutProps> = ({ children }) => {
           <img
             alt=""
             src="https://images.unsplash.com/photo-1496917756835-20cb06e75b4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1908&q=80"
-            className="absolute inset-0 h-full w-full object-cover rounded-l-md"
+            className="absolute inset-0 h-full w-full object-cover rounded-l-md" // Use rounded-l-md for left corners
           />
         </div>
       </div>
@@ -23,4 +23,4 @@ const RegisterLayout: React.FC<RegisterLayoutProps> = ({ children }) => {
   );
 };
 
-export default RegisterLayout;
+export default AuthLayout;

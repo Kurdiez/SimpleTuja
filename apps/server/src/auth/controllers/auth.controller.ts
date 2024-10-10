@@ -5,12 +5,17 @@ import {
   ConfirmEmailDto,
   SignInDtoSchema,
   SignInDto,
+  SendResetPasswordEmailDtoSchema,
+  SendResetPasswordEmailDto,
+  ResetPasswordDtoSchema,
+  ResetPasswordDto,
 } from '@simpletuja/shared';
-import { Controller, Post, Body, UseFilters } from '@nestjs/common';
+import { Controller, Post, Body, UseFilters, Req } from '@nestjs/common';
 import { AuthService } from '../service/auth.service';
 import { ZodValidationPipe } from '~/commons/req-valitaions';
 import { Public } from '~/commons/decorators';
 import { HttpExceptionFilter } from '~/commons/filters/http-exception.filter';
+import { AuthenticatedRequest } from '~/commons/types/auth';
 
 @Controller('auth')
 @UseFilters(HttpExceptionFilter)
@@ -40,5 +45,34 @@ export class AuthController {
     confirmEmailDto: ConfirmEmailDto,
   ) {
     return await this.authService.confirmEmail(confirmEmailDto.token);
+  }
+
+  @Post('sign-in-with-token')
+  async signInWithToken(@Req() req: AuthenticatedRequest) {
+    const user = req.user;
+    return this.authService.refreshToken(user);
+  }
+
+  @Public()
+  @Post('send-reset-password-email')
+  async sendResetPasswordEmail(
+    @Body(new ZodValidationPipe(SendResetPasswordEmailDtoSchema))
+    sendResetPasswordEmailDto: SendResetPasswordEmailDto,
+  ) {
+    return this.authService.sendResetPasswordEmail(
+      sendResetPasswordEmailDto.email,
+    );
+  }
+
+  @Public()
+  @Post('reset-password')
+  async resetPassword(
+    @Body(new ZodValidationPipe(ResetPasswordDtoSchema))
+    resetPasswordDto: ResetPasswordDto,
+  ) {
+    return this.authService.resetPassword(
+      resetPasswordDto.token,
+      resetPasswordDto.newPassword,
+    );
   }
 }

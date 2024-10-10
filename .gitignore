@@ -2,3 +2,8 @@ node_modules
 .vscode
 .turbo
 dist
+# Environment Variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
