@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import {
   Dialog,
   DialogBackdrop,
@@ -21,28 +22,29 @@ interface SidebarProps {
   setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const navigation = [
-  {
-    name: "Dashboard",
-    href: AppRoute.Dashboard,
-    icon: PresentationChartBarIcon,
-    current: true,
-  },
-  {
-    name: "Crypto Lending",
-    href: AppRoute.CryptoLending,
-    icon: CircleStackIcon,
-    current: false,
-  },
-  {
-    name: "Stock Pies",
-    href: AppRoute.StockPies,
-    icon: ChartPieIcon,
-    current: false,
-  },
-];
-
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
+  const router = useRouter();
+
+  const navigation = [
+    {
+      name: "Dashboard",
+      href: AppRoute.Dashboard,
+      icon: PresentationChartBarIcon,
+    },
+    {
+      name: "Crypto Lending",
+      href: AppRoute.CryptoLending,
+      icon: CircleStackIcon,
+    },
+    {
+      name: "Stock Pies",
+      href: AppRoute.StockPies,
+      icon: ChartPieIcon,
+    },
+  ];
+
+  const isCurrentRoute = (href: string): boolean => router.pathname === href;
+
   return (
     <>
       <Dialog
@@ -84,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                           <Link
                             href={item.href}
                             className={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                              item.current
+                              isCurrentRoute(item.href)
                                 ? "bg-gray-800 text-white"
                                 : "text-gray-400 hover:bg-gray-800 hover:text-white"
                             } cursor-pointer`}
@@ -101,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                   </li>
                   <li className="mt-auto">
                     <Link
-                      href="#"
+                      href={AppRoute.Settings}
                       className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
                     >
                       <Cog6ToothIcon
@@ -134,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                       <Link
                         href={item.href}
                         className={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                          item.current
+                          isCurrentRoute(item.href)
                             ? "bg-gray-800 text-white"
                             : "text-gray-400 hover:bg-gray-800 hover:text-white"
                         } cursor-pointer`}
@@ -151,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
               </li>
               <li className="mt-auto">
                 <Link
-                  href="#"
+                  href={AppRoute.Settings}
                   className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
                 >
                   <Cog6ToothIcon
