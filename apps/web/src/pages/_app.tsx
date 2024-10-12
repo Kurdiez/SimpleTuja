@@ -1,13 +1,27 @@
+import { useAuth } from "@/components/common/hooks/useAuth";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { Toaster } from "react-hot-toast";
-import withAuth from "@/components/hoc/withAuth";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
 
-export default function App({ Component, pageProps, router }: AppProps) {
-  const isProtectedRoute: boolean = router.pathname.startsWith("/app");
-  const ProtectedComponent: React.FC = isProtectedRoute
-    ? withAuth(Component as React.FC)
-    : (Component as React.FC);
+export default function App({ Component, pageProps }: AppProps) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading) {
+      const isAuthRoute =
+        router.pathname === "/sign-in" || router.pathname === "/register";
+      if (isAuthRoute && isAuthenticated) {
+        router.push("/app");
+      }
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <>
@@ -20,7 +34,7 @@ export default function App({ Component, pageProps, router }: AppProps) {
           },
         }}
       />
-      <ProtectedComponent {...pageProps} />
+      <Component {...pageProps} />
     </>
   );
 }

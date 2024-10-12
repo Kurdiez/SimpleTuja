@@ -1,12 +1,8 @@
 import React from "react";
+import AppLayout from "../../components/common/app-layout/AppLayout";
 
-const AppIndex: React.FC = () => {
-  return (
-    <div>
-      <h1>Welcome to the App</h1>
-      <p>This is a protected route.</p>
-    </div>
-  );
+const Dashboard: React.FC = () => {
+  return <AppLayout></AppLayout>;
 };
 
-export default AppIndex;
+export default Dashboard;

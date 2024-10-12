@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
-import TextLogo from "@/components/common/TextLogo";
 import toast from "react-hot-toast";
 import { resetPassword } from "@/utils/simpletuja/auth"; // Import the resetPassword function
 import { AxiosError } from "axios";
 import { LocalStorageKey } from "@/utils/const";
+import Logo from "@/components/common/Logo";
+import { AppRoute } from "@/utils/app-route";
 
 interface ResetPasswordFormProps {
   token: string;
@@ -30,7 +31,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ token }) => {
       const response = await resetPassword({ token, newPassword });
       toast.success("Password reset successful!");
       localStorage.setItem(LocalStorageKey.AccessToken, response.accessToken);
-      router.push("/app");
+      router.push(AppRoute.Dashboard);
     } catch (error: unknown) {
       const axiosError = error as AxiosError;
       const data = axiosError.response?.data as { message: string };
@@ -42,7 +43,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ token }) => {
     <div className="h-[520px]">
       <div>
         <div onClick={handleLogoClick} className="cursor-pointer select-none">
-          <TextLogo fontSize="text-2xl" />
+          <Logo fontSize="text-2xl" />
         </div>
         <h2 className="mt-8 text-2xl font-bold leading-9 tracking-tight text-gray-100">
           Reset your password

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
-import TextLogo from "@/components/common/TextLogo";
 import toast from "react-hot-toast";
 import { sendResetPasswordEmail } from "@/utils/simpletuja/auth";
+import Logo from "@/components/common/Logo";
 
 const ForgotPasswordForm: React.FC = () => {
   const router = useRouter();
@@ -24,7 +24,7 @@ const ForgotPasswordForm: React.FC = () => {
     <div className="h-[520px]">
       <div>
         <div onClick={handleLogoClick} className="cursor-pointer select-none">
-          <TextLogo fontSize="text-2xl" />
+          <Logo fontSize="text-2xl" />
         </div>
         <h2 className="mt-8 text-2xl font-bold leading-9 tracking-tight text-gray-100">
           {isEmailSent ? "Reset email sent!" : "Forgot password"}

@@ -13,7 +13,6 @@ const withAuth = (WrappedComponent: React.FC) => {
         const token = localStorage.getItem(LocalStorageKey.AccessToken);
         if (token) {
           try {
-            console.log("refreshing the token");
             const newToken = await refreshToken();
             localStorage.setItem(LocalStorageKey.AccessToken, newToken);
             setLoading(false);

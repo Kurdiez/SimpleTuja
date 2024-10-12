@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
-import TextLogo from "@/components/common/TextLogo";
 import { signIn } from "@/utils/simpletuja/auth";
 import { SignInDto } from "@simpletuja/shared";
 import toast from "react-hot-toast";
 import { AxiosError } from "axios";
 import { LocalStorageKey } from "@/utils/const";
+import Logo from "@/components/common/Logo";
+import { AppRoute } from "@/utils/app-route";
 
 const SignInForm: React.FC = () => {
   const router = useRouter();
@@ -24,7 +25,7 @@ const SignInForm: React.FC = () => {
       const response = await signIn(signInDto);
       toast.success("Sign-in successful!");
       localStorage.setItem(LocalStorageKey.AccessToken, response.accessToken);
-      router.push("/app");
+      router.push(AppRoute.Dashboard);
     } catch (error: unknown) {
       const axiosError = error as AxiosError;
       const data = axiosError.response?.data as { message: string };
@@ -36,7 +37,7 @@ const SignInForm: React.FC = () => {
     <div className="h-[520px]">
       <div>
         <div onClick={handleLogoClick} className="cursor-pointer select-none">
-          <TextLogo fontSize="text-2xl" />
+          <Logo fontSize="text-2xl" />
         </div>
         <h2 className="mt-8 text-2xl font-bold leading-9 tracking-tight text-gray-100">
           Sign in to your account

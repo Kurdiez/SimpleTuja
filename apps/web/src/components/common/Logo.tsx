@@ -1,10 +1,10 @@
 import React from "react";
 
-interface TextLogoProps {
+interface LogoProps {
   fontSize?: string;
 }
 
-const TextLogo: React.FC<TextLogoProps> = ({ fontSize = "text-2xl" }) => {
+const Logo: React.FC<LogoProps> = ({ fontSize = "text-2xl" }) => {
   return (
     <span className={`font-bold ${fontSize} select-none`}>
       <span className="text-orange-600">S</span>
@@ -17,4 +17,4 @@ const TextLogo: React.FC<TextLogoProps> = ({ fontSize = "text-2xl" }) => {
   );
 };
 
-export default TextLogo;
+export default Logo;

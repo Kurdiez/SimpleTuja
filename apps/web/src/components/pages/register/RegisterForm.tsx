@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
-import TextLogo from "@/components/common/TextLogo";
 import { register } from "@/utils/simpletuja/auth";
 import { RegisterDto } from "@simpletuja/shared";
 import toast from "react-hot-toast";
 import { AxiosError } from "axios";
+import Logo from "@/components/common/Logo";
 
 const RegisterForm: React.FC = () => {
   const router = useRouter();
@@ -40,7 +40,7 @@ const RegisterForm: React.FC = () => {
     <div className="h-[520px]">
       <div>
         <div onClick={handleLogoClick} className="cursor-pointer select-none">
-          <TextLogo fontSize="text-2xl" />
+          <Logo fontSize="text-2xl" />
         </div>
         <h2 className="mt-8 text-2xl font-bold leading-9 tracking-tight text-gray-100">
           {isRegistered ? "Account has been created!" : "Create your account"}

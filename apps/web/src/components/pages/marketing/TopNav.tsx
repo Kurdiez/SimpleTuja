@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router"; // Import useRouter
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import TextLogo from "@/components/common/TextLogo";
+import Logo from "@/components/common/Logo";
 
 const navigation = [
   { name: "Features", href: "#features" },
@@ -34,7 +34,7 @@ export default function TopNav() {
             className="-m-1.5 p-1.5 cursor-pointer select-none"
           >
             <span className="sr-only">Your Company</span>
-            <TextLogo fontSize="text-2xl" />
+            <Logo fontSize="text-2xl" />
           </div>
         </div>
         <div className="flex items-center gap-x-4 lg:hidden">
@@ -83,7 +83,7 @@ export default function TopNav() {
           <div className="flex items-center justify-between">
             <a href="#" className="-m-1.5 p-1.5">
               <span className="sr-only">Your Company</span>
-              <TextLogo fontSize="text-2xl" />
+              <Logo fontSize="text-2xl" />
             </a>
             <button
               type="button"
