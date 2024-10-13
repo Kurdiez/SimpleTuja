@@ -60,7 +60,7 @@
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "big.js": "^6.2.2",
-    "ethers": "^6.13.2",
+    "ethers": "^6.13.4",
     "opensea-js": "^7.1.13",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",

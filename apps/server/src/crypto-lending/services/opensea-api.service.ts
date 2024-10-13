@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Chain, OpenSeaSDK } from 'opensea-js';
-import { ethers } from 'ethers';
+import { JsonRpcProvider } from '@opensea/seaport-js/node_modules/ethers';
 import { ConfigService } from '~/config';
 
 @Injectable()
@@ -11,8 +11,10 @@ export class OpenSeaAPIService {
   private isProcessing = false;
 
   constructor(private readonly configService: ConfigService) {
-    // Initialize provider using ethers
-    const provider = new ethers.JsonRpcProvider('https://mainnet.infura.io');
+    // Initialize provider using ethers from OpenSea's dependencies
+    const provider = new JsonRpcProvider(
+      `https://mainnet.infura.io/v3/${this.configService.get('INFURA_PROJECT_ID')}`,
+    );
 
     // Initialize OpenSeaSDK
     this.openSeaSDK = new OpenSeaSDK(provider, {

@@ -10,8 +10,8 @@ import {
 import { DataSeedService } from '../../../services/data-seed.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { parseNftfiLoanInfoFile } from '../../../utils/nftfi-loan-info-file-parser';
-import { ZodValidationPipe } from '~/commons/req-valitaions';
 import { GetContractAddressDto, getContractAddressDtoSchema } from './schemas';
+import { ZodValidationPipe } from '~/commons/validations';
 
 @Controller('admin/nft-loans/data-seed')
 export class DataSeedController {

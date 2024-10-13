@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ setSidebarOpen }) => {
       <button
         type="button"
         onClick={() => setSidebarOpen(true)}
-        className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
+        className="-m-2.5 p-2.5 text-white lg:hidden"
       >
         <span className="sr-only">Open sidebar</span>
         <Bars3Icon aria-hidden="true" className="h-6 w-6" />

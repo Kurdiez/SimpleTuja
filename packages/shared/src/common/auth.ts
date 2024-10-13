@@ -1,5 +1,4 @@
 import { z } from "zod";
-import axios from "axios";
 
 export const RegisterDtoSchema = z.object({
   email: z.string().email(),

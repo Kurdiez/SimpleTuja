@@ -1,41 +1,70 @@
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { refreshToken } from "@/utils/simpletuja/auth";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { LocalStorageKey } from "@/utils/const";
+import { useRouter } from "next/router";
+import React, { useEffect, useState } from "react";
+import { useGlobalStates } from "../pages/app/global-states.context";
+import { confirmEmail, refreshToken } from "@/utils/simpletuja/auth";
 
-const withAuth = (WrappedComponent: React.FC) => {
-  const AuthenticatedComponent: React.FC = (props) => {
+type ComponentType = React.ComponentType<any>;
+
+const getDisplayName = (Component: ComponentType) =>
+  Component.displayName || Component.name || "Component";
+
+export const withAuth = (Component: ComponentType) => {
+  const AuthenticatedComponent: React.FC<any> = (props) => {
     const router = useRouter();
-    const [loading, setLoading] = useState<boolean>(true);
+    const [isAuthenticating, setIsAuthenticating] = useState(true);
+    const { isLoggedIn, setLoggedIn } = useGlobalStates();
 
     useEffect(() => {
-      const checkAuth = async () => {
-        const token = localStorage.getItem(LocalStorageKey.AccessToken);
-        if (token) {
+      if (!router.isReady) return;
+
+      const authenticateAndRedirect = async () => {
+        const {
+          pathname,
+          query: { token },
+        } = router;
+
+        if (pathname === "/email-confirmation" && token) {
           try {
-            const newToken = await refreshToken();
-            localStorage.setItem(LocalStorageKey.AccessToken, newToken);
-            setLoading(false);
+            const accessToken = await confirmEmail(token as string);
+            setLoggedIn(accessToken);
+            router.push("/app");
           } catch {
-            localStorage.removeItem(LocalStorageKey.AccessToken);
-            router.push("/sign-in");
+            router.push("/");
           }
-        } else {
-          router.push("/sign-in");
+        } else if (!isLoggedIn && pathname.startsWith("/app")) {
+          try {
+            const accessToken = await refreshToken();
+            setLoggedIn(accessToken);
+          } catch {
+            if (pathname !== "/" && pathname !== "/sign-in") {
+              localStorage.removeItem(LocalStorageKey.AccessToken);
+              router.push("/sign-in");
+            }
+          }
         }
+        setIsAuthenticating(false);
       };
 
-      checkAuth();
-    }, [router]);
+      authenticateAndRedirect();
+    }, [isLoggedIn, router, setLoggedIn]);
 
-    if (loading) {
-      return <div></div>;
+    if (
+      isAuthenticating ||
+      (!isLoggedIn &&
+        router.pathname.startsWith("/app") &&
+        router.pathname !== "/")
+    ) {
+      return null;
     }
 
-    return <WrappedComponent {...props} />;
+    return <Component {...props} />;
   };
+
+  AuthenticatedComponent.displayName = `WithAuthentication(${getDisplayName(
+    Component
+  )})`;
 
   return AuthenticatedComponent;
 };
-
-export default withAuth;

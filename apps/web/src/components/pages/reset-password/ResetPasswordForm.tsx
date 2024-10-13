@@ -3,9 +3,9 @@ import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import { resetPassword } from "@/utils/simpletuja/auth"; // Import the resetPassword function
 import { AxiosError } from "axios";
-import { LocalStorageKey } from "@/utils/const";
 import Logo from "@/components/common/Logo";
 import { AppRoute } from "@/utils/app-route";
+import { useGlobalStates } from "../app/global-states.context";
 
 interface ResetPasswordFormProps {
   token: string;
@@ -15,6 +15,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ token }) => {
   const router = useRouter();
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const { setLoggedIn } = useGlobalStates();
 
   const handleLogoClick = () => {
     router.push("/");
@@ -28,9 +29,9 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ token }) => {
     }
 
     try {
-      const response = await resetPassword({ token, newPassword });
+      const accessToken = await resetPassword({ token, newPassword });
+      setLoggedIn(accessToken);
       toast.success("Password reset successful!");
-      localStorage.setItem(LocalStorageKey.AccessToken, response.accessToken);
       router.push(AppRoute.Dashboard);
     } catch (error: unknown) {
       const axiosError = error as AxiosError;

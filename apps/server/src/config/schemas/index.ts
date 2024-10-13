@@ -16,6 +16,7 @@ export const configSchema = z
     PORT: z.coerce.number().int().positive().default(3000),
     ADMIN_SECRET: z.string(),
     NFTFI_API_KEY: z.string(),
+    INFURA_PROJECT_ID: z.string(),
     PROVIDER_URL: z.string(),
     SENTRY_DSN: z.string(),
     OPENSEA_API_KEY: z.string(),

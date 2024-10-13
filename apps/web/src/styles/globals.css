@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Add these custom styles */
+@layer components {
+  .list-disc-custom {
+    @apply list-outside pl-5;
+  }
+  .list-disc-custom li::before {
+    content: "•";
+    @apply inline-block w-4 -ml-4 text-gray-400;
+  }
+  .list-circle-custom {
+    @apply list-outside pl-5;
+  }
+  .list-circle-custom li::before {
+    content: "○";
+    @apply inline-block w-4 -ml-4 text-gray-400;
+  }
+  /* Updated link style with hover effect */
+  .link {
+    @apply text-primary border-b border-dotted border-primary transition-colors duration-200;
+  }
+  .link:hover {
+    @apply text-primary-light border-primary-light;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

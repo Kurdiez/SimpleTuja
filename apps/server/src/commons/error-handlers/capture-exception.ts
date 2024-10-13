@@ -33,26 +33,32 @@ export function captureException({
       .join('\n\n'),
   );
 
-  Sentry.withScope((scope) => {
-    if (error instanceof CustomException) {
-      addGenieBreadcrumb(scope, error.cause);
-    }
+  // Check if the environment is development
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
-    const transaction = context?.switchToHttp().getRequest();
-    if (transaction) {
-      scope.addEventProcessor((event) =>
-        addRequestDataToEvent(event, transaction, {
-          include: {
-            ip: true,
-            request: ['method', 'url', 'headers'],
-          },
-        }),
+  // Only capture exception in Sentry if not in development
+  if (!isDevelopment) {
+    Sentry.withScope((scope) => {
+      if (error instanceof CustomException) {
+        addGenieBreadcrumb(scope, error.cause);
+      }
+
+      const transaction = context?.switchToHttp().getRequest();
+      if (transaction) {
+        scope.addEventProcessor((event) =>
+          addRequestDataToEvent(event, transaction, {
+            include: {
+              ip: true,
+              request: ['method', 'url', 'headers'],
+            },
+          }),
+        );
+      }
+
+      Sentry.captureException(
+        error,
+        error instanceof CustomException ? { extra: error.context } : undefined,
       );
-    }
-
-    Sentry.captureException(
-      error,
-      error instanceof CustomException ? { extra: error.context } : undefined,
-    );
-  });
+    });
+  }
 }

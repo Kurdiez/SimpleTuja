@@ -12,10 +12,10 @@ import {
 } from '@simpletuja/shared';
 import { Controller, Post, Body, UseFilters, Req } from '@nestjs/common';
 import { AuthService } from '../service/auth.service';
-import { ZodValidationPipe } from '~/commons/req-valitaions';
 import { Public } from '~/commons/decorators';
 import { HttpExceptionFilter } from '~/commons/filters/http-exception.filter';
 import { AuthenticatedRequest } from '~/commons/types/auth';
+import { ZodValidationPipe } from '~/commons/validations';
 
 @Controller('auth')
 @UseFilters(HttpExceptionFilter)

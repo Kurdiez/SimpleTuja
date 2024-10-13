@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { OpenSeaSDK } from 'opensea-js';
-import { OpenSeaAPIService } from '~/nft-loans/services/opensea-api.service';
+import { OpenSeaAPIService } from '~/crypto-lending/services/opensea-api.service';
 import Big from 'big.js';
 
 @Controller('admin/test-opensea')

@@ -16,13 +16,14 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
         primary: {
-          DEFAULT: "#f97316", // Orange color
-          light: "#fb923c", // Lighter shade for hover
-          dark: "#ea580c", // Darker shade for focus
+          DEFAULT: "#f97316",
+          light: "#fb923c",
+          dark: "#ea580c",
         },
       },
     },
   },
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [],
 };
 

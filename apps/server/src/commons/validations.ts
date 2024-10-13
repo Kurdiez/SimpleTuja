@@ -27,7 +27,13 @@ export class ZodValidationPipe implements PipeTransform {
   }
 }
 
-export const zodResTransform = (value: unknown, schema: ZodSchema) => {
+export const zodResTransform = <T>(
+  value: unknown,
+  schema: ZodSchema<T>,
+): T | null => {
+  if (value === null) {
+    return null;
+  }
   try {
     return schema.parse(value);
   } catch (error) {

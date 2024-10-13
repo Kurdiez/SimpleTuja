@@ -1,5 +1,5 @@
 import { Controller, Post, HttpCode } from '@nestjs/common';
-import { OpenSeaService } from '~/nft-loans/services/opensea.service';
+import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
 
 @Controller('admin/nft-loans')
 export class UpdateBidOffersForAllNFTCollectionsController {

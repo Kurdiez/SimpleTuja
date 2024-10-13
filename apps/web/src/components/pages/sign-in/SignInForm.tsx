@@ -4,14 +4,15 @@ import { signIn } from "@/utils/simpletuja/auth";
 import { SignInDto } from "@simpletuja/shared";
 import toast from "react-hot-toast";
 import { AxiosError } from "axios";
-import { LocalStorageKey } from "@/utils/const";
 import Logo from "@/components/common/Logo";
 import { AppRoute } from "@/utils/app-route";
+import { useGlobalStates } from "../app/global-states.context";
 
 const SignInForm: React.FC = () => {
   const router = useRouter();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const { setLoggedIn } = useGlobalStates();
 
   const handleLogoClick = () => {
     router.push("/");
@@ -22,9 +23,9 @@ const SignInForm: React.FC = () => {
 
     const signInDto: SignInDto = { email, password };
     try {
-      const response = await signIn(signInDto);
+      const accessToken = await signIn(signInDto);
+      setLoggedIn(accessToken);
       toast.success("Sign-in successful!");
-      localStorage.setItem(LocalStorageKey.AccessToken, response.accessToken);
       router.push(AppRoute.Dashboard);
     } catch (error: unknown) {
       const axiosError = error as AxiosError;
