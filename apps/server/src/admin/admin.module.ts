@@ -6,6 +6,7 @@ import { DatabaseModule } from '~/database/database.module';
 import { NftLoansModule } from '~/nft-loans/nft-loans.module';
 import { TestOpenSeaController } from './controllers/tests/test-opensea.controller';
 import { UpdateBidOffersForAllNFTCollectionsController } from './controllers/nft-loans/update-bid-offers-for-all-NFT-collections.controller';
+import { MonitorController } from './controllers/monitor.controller';
 
 @Module({
   imports: [DatabaseModule, NftLoansModule],
@@ -15,6 +16,7 @@ import { UpdateBidOffersForAllNFTCollectionsController } from './controllers/nft
     TestOpenSeaController,
     DataSeedController,
     UpdateBidOffersForAllNFTCollectionsController,
+    MonitorController,
   ],
 })
 export class AdminModule {}
