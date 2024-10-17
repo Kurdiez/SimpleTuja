@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import NFTfi from '@nftfi/js';
+// import NFTfi from '@nftfi/js';
 import { NFT_Address } from '~/commons/constants/nft';
 import { LoanContract } from '~/commons/constants/nftfi';
 import { Token } from '~/commons/constants/token';
@@ -12,21 +12,20 @@ export class TestNftFiController {
   private nftfi: any;
 
   constructor(private readonly configService: ConfigService) {
-    const nftfiApiKey = configService.get('NFTFI_API_KEY');
-    const walletPrivateKey = configService.get('CRYPTO_ACCOUNT_PRIVATE_KEY');
-    const providerUrl = configService.get('PROVIDER_URL');
-
-    NFTfi.init({
-      config: {
-        api: { key: nftfiApiKey },
-      },
-      ethereum: {
-        account: { privateKey: walletPrivateKey },
-        provider: { url: providerUrl },
-      },
-    }).then((result: any) => {
-      this.nftfi = result;
-    });
+    // const nftfiApiKey = configService.get('NFTFI_API_KEY');
+    // const walletPrivateKey = configService.get('CRYPTO_ACCOUNT_PRIVATE_KEY');
+    // const providerUrl = configService.get('PROVIDER_URL');
+    // NFTfi.init({
+    //   config: {
+    //     api: { key: nftfiApiKey },
+    //   },
+    //   ethereum: {
+    //     account: { privateKey: walletPrivateKey },
+    //     provider: { url: providerUrl },
+    //   },
+    // }).then((result: any) => {
+    //   this.nftfi = result;
+    // });
   }
 
   @Get()
