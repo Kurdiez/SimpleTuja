@@ -1316,9 +1316,9 @@
   resolved "https://registry.yarnpkg.com/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-14.2.15.tgz#18d68697002b282006771f8d92d79ade9efd35c4"
   integrity sha512-SzqGbsLsP9OwKNUG9nekShTwhj6JSB9ZLMWQ8g1gG6hdE5gQLncbnbymrwy2yVmH9nikSLYRYxYMFu78Ggp7/g==
 
-"@nftfi/js@git+ssh://git@github.com:NFTfi-Genesis/nftfi.js.git#v0.5.5":
+"@nftfi/js@https://github.com/NFTfi-Genesis/nftfi.js/archive/v0.5.5.tar.gz":
   version "0.5.5"
-  resolved "git+ssh://git@github.com:NFTfi-Genesis/nftfi.js.git#18df5317ee2bad37cc51d873474de9547cb6d819"
+  resolved "https://github.com/NFTfi-Genesis/nftfi.js/archive/v0.5.5.tar.gz#a50e15fffd792e110995f362b8b2374d1c85e869"
   dependencies:
     "@babel/runtime" "^7.17.9"
     "@safe-global/safe-core-sdk" "^3.2.2"
