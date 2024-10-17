@@ -4,7 +4,7 @@ import { Public } from '~/commons/decorators';
 @Controller('monitor')
 export class MonitorController {
   @Public()
-  @Get('helath')
+  @Get('health')
   async getHealth() {
     return { status: 'OK' };
   }
