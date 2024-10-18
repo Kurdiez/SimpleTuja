@@ -9,10 +9,14 @@
     "start": "PORT=8738 next start"
   },
   "dependencies": {
+    "@coinbase/wallet-sdk": "^4.1.0",
     "@headlessui/react": "^2.1.9",
     "@heroicons/react": "^2.1.5",
+    "@reown/appkit": "^1.1.5",
+    "@reown/appkit-adapter-ethers": "^1.1.5",
     "axios": "^1.7.7",
     "classnames": "^2.5.1",
+    "ethers": "^6.13.4",
     "next": "^14.2.15",
     "react": "^18",
     "react-dom": "^18",

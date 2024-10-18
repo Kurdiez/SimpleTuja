@@ -73,7 +73,7 @@ export default function PricingSection() {
                   Free Trial
                 </a>
                 <p className="mt-6 text-xs leading-5 text-gray-300">
-                  Log in to try the app for free first and upgrade later within
+                  Sign in to try the app for free first and upgrade later within
                   the app.
                 </p>
               </div>

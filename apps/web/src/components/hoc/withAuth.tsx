@@ -48,7 +48,8 @@ export const withAuth = (Component: ComponentType) => {
       };
 
       authenticateAndRedirect();
-    }, [isLoggedIn, router, setLoggedIn]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [router, setLoggedIn]);
 
     if (
       isAuthenticating ||

@@ -19,7 +19,7 @@ import {
 export enum OnboardingStep {
   OpenCryptoInvestmentAccount = "Open Crypto Investment Account",
   CompleteLoanSettings = "Complete Loan Settings",
-  FundTheAccount = "Fund The Account",
+  FundAccount = "Fund The Account",
 }
 
 type OnboardingContextType = {
@@ -55,7 +55,7 @@ const getCurrentStep = (
     return OnboardingStep.CompleteLoanSettings;
   }
 
-  return OnboardingStep.FundTheAccount;
+  return OnboardingStep.FundAccount;
 };
 
 export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({
@@ -87,7 +87,7 @@ export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({
       const stepOrder = [
         OnboardingStep.OpenCryptoInvestmentAccount,
         OnboardingStep.CompleteLoanSettings,
-        OnboardingStep.FundTheAccount,
+        OnboardingStep.FundAccount,
       ];
 
       const currentStepIndex = stepOrder.indexOf(currentStep);

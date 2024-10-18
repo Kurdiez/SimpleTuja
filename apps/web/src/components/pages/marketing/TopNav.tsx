@@ -12,7 +12,7 @@ const navigation = [
 
 export default function TopNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
 
   const handleSignInClick = () => {
     router.push("/sign-in");
@@ -112,11 +112,11 @@ export default function TopNav() {
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    handleSignInClick(); // Use the handler for navigation
+                    handleSignInClick();
                   }}
                   className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
-                  Log in
+                  Sign in
                 </button>
               </div>
             </div>

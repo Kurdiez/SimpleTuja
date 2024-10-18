@@ -8,6 +8,7 @@ import {
 import { CryptoLendingUserStateDto } from "@simpletuja/shared";
 import OpenAccountCTA from "./open-account-cta";
 import LoanSettings from "./loan-settings";
+import FundAccount from "./fund-account";
 
 interface OnboardingProps {
   onboardingProgress: CryptoLendingUserStateDto | null;
@@ -23,6 +24,9 @@ const OnboardingContent: React.FC = () => {
         <OpenAccountCTA />
       )}
       {currentStep === OnboardingStep.CompleteLoanSettings && <LoanSettings />}
+      {currentStep === OnboardingStep.FundAccount && (
+        <FundAccount destinationAddress={""} />
+      )}
     </>
   );
 };
