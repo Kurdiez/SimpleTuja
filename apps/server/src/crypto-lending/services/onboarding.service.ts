@@ -21,7 +21,7 @@ export class OnboardingService {
     return await this.cryptoLendingUserStateRepo.findOne({ where: { userId } });
   }
 
-  async openAccount(userId: string): Promise<void> {
+  async openAccount(userId: string) {
     this.logger.log(`Opening account for user ${userId}`);
 
     let userState = await this.getProgress(userId);
@@ -50,6 +50,8 @@ export class OnboardingService {
       await this.cryptoLendingUserStateRepo.save(userState);
 
       this.logger.log(`Account opened successfully for user ${userId}`);
+
+      return userState.walletAddress;
     } catch (error) {
       this.logger.error(`Error opening account for user ${userId}:`, error);
       throw new CustomException('Failed to open crypto investment account');

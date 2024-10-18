@@ -23,12 +23,8 @@ export class CryptoLendingController {
   }
 
   @Post('open-account')
-  async openAccount(
-    @Req() { user }: AuthenticatedRequest,
-    @Res() res: Response,
-  ) {
+  async openAccount(@Req() { user }: AuthenticatedRequest) {
     await this.onboardingService.openAccount(user.id);
-    res.json({ success: true });
   }
 
   @Post('update-loan-settings')
@@ -36,13 +32,11 @@ export class CryptoLendingController {
     @Req() req: AuthenticatedRequest,
     @Body(new ZodValidationPipe(LoanSettingsUpdateRequestSchema))
     loanSettingsUpdateDto: LoanSettingsUpdateDto,
-    @Res() res: Response,
   ) {
     const userId = req.user.id;
     await this.onboardingService.updateLoanSettings(
       userId,
       loanSettingsUpdateDto,
     );
-    res.json({ success: true });
   }
 }

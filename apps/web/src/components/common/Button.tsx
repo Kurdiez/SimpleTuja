@@ -5,6 +5,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   className?: string;
   loading?: boolean;
+  disabled?: boolean;
 }
 
 const Spinner: React.FC = () => (
@@ -15,6 +16,7 @@ const Button: React.FC<ButtonProps> = ({
   children,
   className,
   loading = false,
+  disabled = false,
   type = "button",
   ...props
 }) => {
@@ -22,13 +24,16 @@ const Button: React.FC<ButtonProps> = ({
     <button
       className={classNames(
         "rounded-md px-3.5 py-2.5 text-sm font-semibold text-white",
-        "bg-primary hover:bg-primary-light",
         "shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
         "flex items-center justify-center relative",
-        { "opacity-75 cursor-not-allowed": loading },
+        {
+          "bg-primary hover:bg-primary-light": !disabled,
+          "bg-gray-400 cursor-default": disabled,
+          "opacity-75 cursor-not-allowed": loading,
+        },
         className
       )}
-      disabled={loading}
+      disabled={disabled || loading}
       type={type}
       {...props}
     >

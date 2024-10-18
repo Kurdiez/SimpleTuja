@@ -15,7 +15,7 @@ interface OnboardingProps {
 }
 
 const OnboardingContent: React.FC = () => {
-  const { currentStep } = useOnboarding();
+  const { currentStep, onboardingProgress } = useOnboarding();
 
   return (
     <>
@@ -25,7 +25,7 @@ const OnboardingContent: React.FC = () => {
       )}
       {currentStep === OnboardingStep.CompleteLoanSettings && <LoanSettings />}
       {currentStep === OnboardingStep.FundAccount && (
-        <FundAccount destinationAddress={""} />
+        <FundAccount destinationAddress={onboardingProgress!.walletAddress!} />
       )}
     </>
   );

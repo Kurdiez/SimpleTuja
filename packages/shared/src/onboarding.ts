@@ -26,6 +26,7 @@ export const CryptoLendingUserStateDtoSchema = z
     hasFundedTheAccount: z.boolean(),
     ...LTVFieldsSchema.shape,
     foreclosureWalletAddress: WalletAddressSchema,
+    walletAddress: WalletAddressSchema,
   })
   .nullable();
 
