@@ -40,16 +40,19 @@ export class DataSeedService {
     );
 
     // Fetch contract addresses for each NFT collection
+    this.logger.log('Fetching contract addresses for NFT collections');
     for (const nftEntity of nftEntities) {
       const contractAddress = await this.getNftCollectionContractAddress(
         nftEntity.name,
       );
       if (contractAddress) {
         nftEntity.contractAddress = contractAddress; // Assign the fetched address
+        this.logger.log(`Fetched contract addresses for ${nftEntity.name}`);
       }
     }
 
     // Perform upsert in one batch
+    this.logger.log('Saving NFT collections to database');
     await this.nftCollectionRepo
       .createQueryBuilder()
       .insert()
