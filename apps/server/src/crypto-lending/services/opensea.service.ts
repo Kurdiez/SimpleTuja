@@ -179,8 +179,22 @@ export class OpenSeaService {
     openSeaSlug: string,
   ): Promise<Array<{ price: Big }>> {
     const response = await this.openSeaApi.run(async (sdk: OpenSeaSDK) => {
-      const offers = await sdk.api.getCollectionOffers(openSeaSlug);
-      return offers;
+      try {
+        const offers = await sdk.api.getCollectionOffers(openSeaSlug);
+        return offers;
+      } catch (error) {
+        const exception = new CustomException(
+          'Failed to get collection offers',
+          {
+            error,
+            openSeaSlug,
+          },
+        );
+        captureException({ error: exception });
+        return {
+          offers: [],
+        };
+      }
     });
 
     return this.extractTopFiveOffers(response);
