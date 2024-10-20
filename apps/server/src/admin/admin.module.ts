@@ -4,7 +4,7 @@ import { DataSeedController } from './controllers/nft-loans/data-seed/data-seed.
 import { DataSeedService } from './services/data-seed.service';
 import { DatabaseModule } from '~/database/database.module';
 import { TestOpenSeaController } from './controllers/tests/test-opensea.controller';
-import { UpdateBidOffersForAllNFTCollectionsController } from './controllers/nft-loans/update-bid-offers-for-all-NFT-collections.controller';
+import { NftLoansController } from './controllers/nft-loans/update-bid-offers-for-all-NFT-collections.controller';
 import { MonitorController } from './controllers/monitor.controller';
 import { CryptoLendingModule } from '~/crypto-lending/crypto-lending.module';
 
@@ -15,7 +15,7 @@ import { CryptoLendingModule } from '~/crypto-lending/crypto-lending.module';
     TestNftFiController,
     TestOpenSeaController,
     DataSeedController,
-    UpdateBidOffersForAllNFTCollectionsController,
+    NftLoansController,
     MonitorController,
   ],
 })

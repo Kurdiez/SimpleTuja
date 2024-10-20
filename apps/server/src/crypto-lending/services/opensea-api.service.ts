@@ -51,7 +51,7 @@ export class OpenSeaAPIService {
       const task = this.queue.shift();
       if (task) {
         await task();
-        await this.delay(1000); // Delay for 1 second between task executions
+        await this.delay(200); // Delay for 1 second between task executions
       }
     }
 

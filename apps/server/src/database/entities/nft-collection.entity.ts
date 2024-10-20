@@ -19,8 +19,8 @@ export class NftCollectionEntity {
   @Column({ default: false, type: 'boolean' })
   enabled!: boolean;
 
-  @Column({ default: false, type: 'boolean' })
-  blackListed!: boolean;
+  @Column({ default: null, type: 'boolean', nullable: true })
+  blackListed!: boolean | null;
 
   @Column({ default: 0, type: 'integer' })
   loanCount!: number;

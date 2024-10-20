@@ -26,7 +26,6 @@ export class OpenSeaService {
     const collections = await this.nftCollectionRepo.find({
       where: {
         blackListed: false,
-        openSeaSlug: Not(IsNull()),
       },
       order: { loanCount: 'DESC' },
       take: 100,
@@ -34,7 +33,7 @@ export class OpenSeaService {
     this.logger.log(`Found ${collections.length} collections to update`);
 
     const updatePromises = collections.map((collection) =>
-      this.processCollection(collection),
+      this.updateCollectionBidOffers(collection),
     );
 
     const results = await Promise.allSettled(updatePromises);
@@ -45,16 +44,74 @@ export class OpenSeaService {
           result.status === 'fulfilled' && result.value != null,
       )
       .map((result) => result.value);
-    this.logger.log(`Found ${updatedCollections.length} updated collections`);
 
     if (updatedCollections.length > 0) {
       await this.nftCollectionRepo.save(updatedCollections);
-      this.logger.log(`Updated ${updatedCollections.length} collections`);
+      this.logger.log(
+        `Updated ${updatedCollections.length} collections with new bid offers and enabled them`,
+      );
     }
     this.logger.log('Updated bid offers for all collections');
   }
 
-  private async processCollection(
+  async updateCollectionContractAddresses(): Promise<void> {
+    this.logger.log('Updating contract address for all collections');
+
+    // Set all collections without an openSeaSlug to blacklisted
+    await this.nftCollectionRepo
+      .createQueryBuilder()
+      .update(NftCollectionEntity)
+      .set({ blackListed: true })
+      .where('openSeaSlug IS NULL')
+      .execute();
+
+    this.logger.log(
+      'Set all collections without an openSeaSlug to blacklisted',
+    );
+
+    const collections = await this.nftCollectionRepo.find({
+      where: {
+        openSeaSlug: Not(IsNull()),
+        contractAddress: IsNull(),
+        blackListed: IsNull(),
+      },
+      order: { loanCount: 'DESC' },
+      take: 100,
+    });
+    this.logger.log(`Found ${collections.length} collections to update`);
+
+    const updatedCollections: NftCollectionEntity[] = [];
+    const updatePromises = collections.map(async (collection) => {
+      const collectionInfo = await this.getCollectionInfo(
+        collection.openSeaSlug!,
+      );
+
+      if (collectionInfo.contracts.length === 1) {
+        collection.blackListed = false;
+        collection.contractAddress = collectionInfo.contracts[0].address;
+        updatedCollections.push(collection);
+      } else {
+        collection.blackListed = true;
+        updatedCollections.push(collection);
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    if (updatedCollections.length > 0) {
+      await this.nftCollectionRepo.save(updatedCollections);
+    }
+    this.logger.log('Updated contract addresse for all collections');
+  }
+
+  private async getCollectionInfo(openSeaSlug: string) {
+    return await this.openSeaApi.run(async (sdk: OpenSeaSDK) => {
+      const collection = await sdk.api.getCollection(openSeaSlug);
+      return collection;
+    });
+  }
+
+  private async updateCollectionBidOffers(
     collection: NftCollectionEntity,
   ): Promise<NftCollectionEntity | null> {
     try {

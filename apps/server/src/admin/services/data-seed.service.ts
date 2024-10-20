@@ -16,14 +16,12 @@ export class DataSeedService {
     private readonly nftCollectionRepo: Repository<NftCollectionEntity>,
   ) {}
 
-  async initNftCollections(nftCollections: NftCollectionInfo[]) {
+  async seedNftCollections(nftCollections: NftCollectionInfo[]): Promise<void> {
     this.logger.log('Initializing NFT collection definitions');
 
-    // Disable all existing NFT collections
     await this.nftCollectionRepo.update({}, { enabled: false });
     this.logger.log('All NFT collections have been set to disabled');
 
-    // Prepare NFT entities for upsert and remove duplicates
     const nftEntities = Array.from(
       new Map(
         nftCollections.map((nft) => [
@@ -31,37 +29,18 @@ export class DataSeedService {
           {
             name: nft.collection,
             loanCount: nft.loanCount,
-            bestBid: new Big(0),
-            enabled: true,
-            contractAddress: null, // Initialize contractAddress
           } as NftCollectionEntity,
         ]),
       ).values(),
     );
 
-    // Fetch contract addresses for each NFT collection
-    this.logger.log('Fetching contract addresses for NFT collections');
-    for (const nftEntity of nftEntities) {
-      const contractAddress = await this.getNftCollectionContractAddress(
-        nftEntity.name,
-      );
-      if (contractAddress) {
-        nftEntity.contractAddress = contractAddress; // Assign the fetched address
-        this.logger.log(`Fetched contract addresses for ${nftEntity.name}`);
-      }
-    }
-
-    // Perform upsert in one batch
     this.logger.log('Saving NFT collections to database');
     await this.nftCollectionRepo
       .createQueryBuilder()
       .insert()
       .into(NftCollectionEntity)
       .values(nftEntities)
-      .orUpdate(
-        ['enabled', 'loanCount', 'bestBid', 'contractAddress'],
-        ['name'],
-      )
+      .orUpdate(['loanCount'], ['name'])
       .execute();
 
     this.logger.log('NFT collections have been initialized');
@@ -78,7 +57,7 @@ export class DataSeedService {
           const assetName = asset.name.toLowerCase();
 
           if (assetName.includes(name.toLowerCase())) {
-            return asset.contracts[0].address; // Return the contract address
+            return asset.contracts[0].address;
           }
         }
         return null;
