@@ -70,13 +70,15 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                 </button>
               </div>
             </TransitionChild>
-            <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4 ring-1 ring-white/10">
-              <Link
-                href={AppRoute.Dashboard}
-                className="flex h-16 shrink-0 items-center cursor-pointer select-none"
-              >
-                <Logo fontSize="text-2xl" />
-              </Link>
+            <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 py-4 ring-1 ring-white/10">
+              <div className="flex h-16 shrink-0 items-center justify-center">
+                <Link
+                  href={AppRoute.Dashboard}
+                  className="cursor-pointer select-none"
+                >
+                  <Logo />
+                </Link>
+              </div>
               <nav className="flex flex-1 flex-col">
                 <ul role="list" className="flex flex-1 flex-col gap-y-7">
                   <li>
@@ -120,13 +122,15 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
       </Dialog>
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4">
-          <Link
-            href={AppRoute.Dashboard}
-            className="flex h-16 shrink-0 items-center cursor-pointer select-none"
-          >
-            <Logo fontSize="text-2xl" />
-          </Link>
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 py-4">
+          <div className="flex h-16 shrink-0 items-center justify-center">
+            <Link
+              href={AppRoute.Dashboard}
+              className="cursor-pointer select-none"
+            >
+              <Logo />
+            </Link>
+          </div>
           <nav className="flex flex-1 flex-col">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>

@@ -1,19 +1,23 @@
 import React from "react";
+import classNames from "classnames";
 
 interface LogoProps {
-  fontSize?: string;
+  className?: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ fontSize = "text-2xl" }) => {
+const Logo: React.FC<LogoProps> = ({ className }) => {
   return (
-    <span className={`font-bold ${fontSize} select-none`}>
-      <span className="text-orange-600">S</span>
-      <span className="text-gray-400">imple</span>
-      <span className="text-orange-600">T</span>
-      <span className="text-gray-400">u</span>
-      <span className="text-orange-600">J</span>
-      <span className="text-gray-400">a</span>
-    </span>
+    <div
+      className={classNames(
+        "rounded-md font-semibold text-primary text-2xl py-1",
+        "shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+        "flex items-center justify-center border border-primary",
+        "select-none w-24 tracking-wider",
+        className
+      )}
+    >
+      STJ
+    </div>
   );
 };
 

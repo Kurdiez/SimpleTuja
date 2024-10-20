@@ -40,7 +40,7 @@ const RegisterForm: React.FC = () => {
     <div className="h-[520px]">
       <div>
         <div onClick={handleLogoClick} className="cursor-pointer select-none">
-          <Logo fontSize="text-2xl" />
+          <Logo />
         </div>
         <h2 className="mt-8 text-2xl font-bold leading-9 tracking-tight text-gray-100">
           {isRegistered ? "Account has been created!" : "Create your account"}

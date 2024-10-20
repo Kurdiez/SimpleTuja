@@ -34,7 +34,7 @@ export default function TopNav() {
             className="-m-1.5 p-1.5 cursor-pointer select-none"
           >
             <span className="sr-only">Your Company</span>
-            <Logo fontSize="text-2xl" />
+            <Logo />
           </div>
         </div>
         <div className="flex items-center gap-x-4 lg:hidden">
@@ -83,7 +83,7 @@ export default function TopNav() {
           <div className="flex items-center justify-between">
             <a href="#" className="-m-1.5 p-1.5">
               <span className="sr-only">Your Company</span>
-              <Logo fontSize="text-2xl" />
+              <Logo />
             </a>
             <button
               type="button"
