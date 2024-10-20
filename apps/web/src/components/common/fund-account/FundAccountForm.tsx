@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import classNames from "classnames";
 import { useFundAccount } from "./fund-account.context";
 import Button from "@/components/common/Button";
 import { CryptoToken } from "@simpletuja/shared";
 import { CheckCircleIcon } from "@heroicons/react/20/solid";
+import { useModal } from "@/components/modal/modal.context";
+import { OnboardingFundAccountAmountModal } from "@/components/modal/content/OnboardingFundAccountAmount/OnboardingFundAccountAmountModal";
 
 interface FundAccountFormData {
-  amount: number;
   token: CryptoToken;
   startLendingRightAway: boolean;
 }
@@ -26,20 +27,34 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
     connectSenderWallet,
   } = useFundAccount();
 
+  const { openModal } = useModal();
+  const [amount, setAmount] = useState<string>("0.0");
+
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { isSubmitting },
   } = useForm<FundAccountFormData>({
     defaultValues: {
       token: CryptoToken.WETH,
-      amount: 0,
       startLendingRightAway: true,
     },
   });
 
   const onSubmit: SubmitHandler<FundAccountFormData> = async (data) => {
-    await fundAccount(data.token, data.amount.toString());
+    await fundAccount(data.token, amount);
+  };
+
+  const handleAmountClick = () => {
+    if (isWalletConnected && isConnectWalletInitiated) {
+      openModal(
+        <OnboardingFundAccountAmountModal
+          onAmountSelected={(amount) => setAmount(amount.toString())}
+          token={CryptoToken.WETH}
+          ltvThreshold={0.6}
+        />
+      );
+    }
   };
 
   return (
@@ -123,27 +138,18 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
                 Amount
               </label>
               <div className="mt-1">
-                <input
-                  id="amount"
-                  type="number"
-                  step="any"
-                  {...register("amount", {
-                    required: "Please enter an amount",
-                    min: {
-                      value: 0.000000000000000001,
-                      message: "Amount must be more than 0",
-                    },
-                    valueAsNumber: true,
-                  })}
-                  className="block w-full rounded-md border-gray-300 bg-white/5 py-2 px-3 text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-                  placeholder="0.0"
-                />
+                <Button
+                  type="button"
+                  className="max-w-full min-w-[120px] justify-end"
+                  onClick={handleAmountClick}
+                  disabled={!isWalletConnected || !isConnectWalletInitiated}
+                >
+                  <span className="flex items-center space-x-2">
+                    <span>{amount}</span>
+                    <span className="text-xs">▼</span>
+                  </span>
+                </Button>
               </div>
-              {errors.amount && (
-                <p className="mt-2 text-sm text-red-600">
-                  {errors.amount.message}
-                </p>
-              )}
             </div>
             <div className="relative flex items-start mb-6">
               <div className="flex h-6 items-center">

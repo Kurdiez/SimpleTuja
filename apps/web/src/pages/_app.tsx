@@ -8,6 +8,8 @@ import { http, WagmiProvider } from "wagmi";
 import { AppKitNetwork, mainnet } from "@reown/appkit/networks";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
+import { ModalProvider } from "@/components/modal/modal.context";
+import Modal from "@/components/modal/Modal";
 
 const queryClient = new QueryClient();
 const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID!;
@@ -46,7 +48,10 @@ export default function App({ Component, pageProps }: AppProps) {
     <WagmiProvider config={wagmiAdapter.wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <GlobalStatesProvider>
-          <AuthComponent {...pageProps} />
+          <ModalProvider>
+            <AuthComponent {...pageProps} />
+            <Modal />
+          </ModalProvider>
           <Toaster
             position="top-center"
             reverseOrder={false}

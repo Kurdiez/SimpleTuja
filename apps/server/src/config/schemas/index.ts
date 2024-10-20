@@ -22,6 +22,11 @@ export const configSchema = z
     OPENSEA_API_KEY: z.string(),
     JWT_SECRET: z.string(),
     BREVO_API_KEY: z.string(),
+    NUM_LENDING_ELIGIBLE_NFT_COLLECTIONS: z
+      .number()
+      .int()
+      .positive()
+      .default(30),
   })
   .merge(databaseConfigSchema)
   .strip();

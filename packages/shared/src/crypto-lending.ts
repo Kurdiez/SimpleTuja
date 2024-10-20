@@ -41,3 +41,16 @@ export const LoanSettingsUpdateRequestSchema = LTVFieldsSchema.extend({
 export type LoanSettingsUpdateDto = z.infer<
   typeof LoanSettingsUpdateRequestSchema
 >;
+
+export const LoanEligibleNftCollectionsDtoSchema = z.array(
+  z.object({
+    name: z.string().min(1),
+    loanCount: z.number().int(),
+    openSeaSlug: z.string().min(1),
+    avgTopBids: z.number(),
+  })
+);
+
+export type LoanEligibleNftCollectionsDto = z.infer<
+  typeof LoanEligibleNftCollectionsDtoSchema
+>;

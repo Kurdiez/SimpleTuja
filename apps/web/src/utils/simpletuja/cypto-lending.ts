@@ -1,5 +1,6 @@
 import {
   CryptoLendingUserStateDto,
+  LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
 } from "@simpletuja/shared";
 import { apiRequest } from "./api";
@@ -24,3 +25,12 @@ export const updateLoanSettings = async (
 ): Promise<void> => {
   await apiRequest(`${BaseUrl}/update-loan-settings`, loanSettingsUpdateDto);
 };
+
+export const getLoanEligibleNftCollections =
+  async (): Promise<LoanEligibleNftCollectionsDto> => {
+    const response = await apiRequest<LoanEligibleNftCollectionsDto>(
+      `${BaseUrl}/get-loan-eligible-nft-collections`,
+      {}
+    );
+    return response;
+  };

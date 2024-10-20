@@ -4,6 +4,7 @@ import { OpenSeaAPIService } from './services/opensea-api.service';
 import { ScheduledTasksService } from './services/scheduled-tasks.service';
 import { CryptoLendingController } from './controllers/crypto-lending.controller';
 import { OnboardingService } from './services/onboarding.service';
+import { CryptoLendingService } from './services/crypto-lending.service';
 import { DatabaseModule } from '~/database/database.module';
 
 @Module({
@@ -13,8 +14,9 @@ import { DatabaseModule } from '~/database/database.module';
     OpenSeaAPIService,
     OpenSeaService,
     ScheduledTasksService,
+    CryptoLendingService,
   ],
-  exports: [OpenSeaAPIService, OpenSeaService],
+  exports: [OpenSeaAPIService, OpenSeaService, CryptoLendingService],
   controllers: [CryptoLendingController],
 })
 export class CryptoLendingModule {}

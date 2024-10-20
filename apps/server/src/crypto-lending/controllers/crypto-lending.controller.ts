@@ -4,14 +4,19 @@ import { OnboardingService } from '../services/onboarding.service';
 import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
 import {
   CryptoLendingUserStateDtoSchema,
+  LoanEligibleNftCollectionsDtoSchema,
   LoanSettingsUpdateDto,
   LoanSettingsUpdateRequestSchema,
 } from '@simpletuja/shared';
 import { Response } from 'express';
+import { CryptoLendingService } from '../services/crypto-lending.service';
 
 @Controller('crypto-lending')
 export class CryptoLendingController {
-  constructor(private readonly onboardingService: OnboardingService) {}
+  constructor(
+    private readonly onboardingService: OnboardingService,
+    private readonly cryptoLendingService: CryptoLendingService,
+  ) {}
 
   @Post('get-onboarding-progress')
   async getProgress(
@@ -38,5 +43,12 @@ export class CryptoLendingController {
       userId,
       loanSettingsUpdateDto,
     );
+  }
+
+  @Post('get-loan-eligible-nft-collections')
+  async getLoanEligibleNftCollections() {
+    const collections =
+      await this.cryptoLendingService.getLoanEligibleNftCollections();
+    return zodResTransform(collections, LoanEligibleNftCollectionsDtoSchema);
   }
 }
