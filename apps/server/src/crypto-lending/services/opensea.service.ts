@@ -8,6 +8,7 @@ import Big from 'big.js';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { ConfigService } from '~/config';
+import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
 
 @Injectable()
 export class OpenSeaService {
@@ -20,6 +21,10 @@ export class OpenSeaService {
     private readonly configService: ConfigService,
   ) {}
 
+  @CronWithErrorHandling({
+    cronTime: '0 * * * *', // Run every hour at the start of the hour
+    taskName: 'Update Bid Offers for All Collections',
+  })
   async updateBidOffersForAllCollections(): Promise<void> {
     const numLendingEligibleCollections = this.configService.get(
       'NUM_LENDING_ELIGIBLE_NFT_COLLECTIONS',

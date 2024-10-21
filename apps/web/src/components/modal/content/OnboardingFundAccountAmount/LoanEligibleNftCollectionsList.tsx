@@ -3,6 +3,7 @@ import { CryptoToken, LoanEligibleNftCollectionsDto } from "@simpletuja/shared";
 import LoadSpinner from "@/components/common/LoadSpinner";
 import { debounce } from "lodash";
 import Button from "@/components/common/Button";
+import toast from "react-hot-toast";
 
 type LoanEligibleNftCollectionsListProps = {
   nftCollections: LoanEligibleNftCollectionsDto;
@@ -10,16 +11,20 @@ type LoanEligibleNftCollectionsListProps = {
   token: CryptoToken;
   ltvThreshold: number;
   onAmountSelected: (amount: number) => void;
+  initialAmount: number;
 };
 
 export function LoanEligibleNftCollectionsList({
   nftCollections,
   isLoading,
-  token = CryptoToken.WETH,
-  ltvThreshold = 0.5,
+  token,
+  ltvThreshold,
   onAmountSelected,
+  initialAmount = 0,
 }: LoanEligibleNftCollectionsListProps): React.ReactElement {
-  const [depositAmount, setDepositAmount] = useState<string>("");
+  const [depositAmount, setDepositAmount] = useState<string>(
+    initialAmount.toString()
+  );
   const [highlightedCollections, setHighlightedCollections] = useState<
     string[]
   >([]);
@@ -27,7 +32,9 @@ export function LoanEligibleNftCollectionsList({
   const updateHighlightedCollections = useCallback(
     (amount: number) => {
       const newHighlightedCollections = nftCollections
-        .filter((collection) => amount > collection.avgTopBids * ltvThreshold)
+        .filter(
+          (collection) => amount > collection.avgTopBids * (ltvThreshold / 100)
+        )
         .map((collection) => collection.openSeaSlug);
       setHighlightedCollections(newHighlightedCollections);
     },
@@ -51,6 +58,11 @@ export function LoanEligibleNftCollectionsList({
     };
   }, [depositAmount, debouncedUpdateHighlights]);
 
+  useEffect(() => {
+    // Update highlighted collections when the component mounts
+    updateHighlightedCollections(initialAmount);
+  }, [initialAmount, updateHighlightedCollections]);
+
   if (isLoading) {
     return <LoadSpinner />;
   }
@@ -67,26 +79,46 @@ export function LoanEligibleNftCollectionsList({
     const numericAmount = parseFloat(depositAmount);
     if (!isNaN(numericAmount) && numericAmount > 0) {
       onAmountSelected(numericAmount);
+    } else {
+      toast.error("Please enter a valid amount greater than 0");
     }
+  };
+
+  const formatNumber = (value: number): string => {
+    return new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: 6,
+      maximumFractionDigits: 6,
+    }).format(value);
   };
 
   return (
     <div className="w-full">
       <p className="text-sm text-gray-300 mb-4">
-        Explore top NFT collections for lending in{" "}
-        <span className="text-primary">{token}</span>, sorted by popularity.
-        Enter your deposit amount to see eligible collections highlighted in
-        real-time.
+        Below is a list of popular NFT collections for lending, sorted by how
+        often they&apos;re used for loans. The highest loan-to-value (LTV) ratio
+        you&apos;ve set is{" "}
+        <span className="text-primary font-semibold">{ltvThreshold}%</span>.
+        This means you can lend up to this percentage of an NFT&apos;s value.
+      </p>
+      <p className="text-sm text-gray-300 mb-4">
+        Enter your deposit amount in{" "}
+        <span className="text-primary font-semibold">{token}</span> to see which
+        collections you can afford to lend against.{" "}
+        <span className="text-green-500 font-semibold">
+          Collections highlighted in green
+        </span>{" "}
+        are those you can currently afford to lend to, based on your deposit and
+        LTV settings.
       </p>
       <div className="flex mb-4">
         <input
           type="number"
-          min="0"
+          min="0.000001"
           step="any"
           value={depositAmount}
           onChange={handleInputChange}
           className="flex-grow p-2 bg-gray-700 text-white rounded-l"
-          placeholder="Enter your deposit amount"
+          placeholder={`Enter your ${token} deposit amount`}
         />
         <Button onClick={handleSave} className="rounded-l-none">
           Save
@@ -130,7 +162,7 @@ export function LoanEligibleNftCollectionsList({
             <p className="text-xs text-gray-400">
               Avg. Top Bids:{" "}
               <span className="text-primary">
-                {collection.avgTopBids.toFixed(2)}
+                {formatNumber(collection.avgTopBids)}
               </span>
             </p>
           </li>

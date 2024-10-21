@@ -3,6 +3,7 @@ import { AuthenticatedRequest } from '~/commons/types/auth';
 import { OnboardingService } from '../services/onboarding.service';
 import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
 import {
+  CryptoExchangeRatesDtoSchema,
   CryptoLendingUserStateDtoSchema,
   LoanEligibleNftCollectionsDtoSchema,
   LoanSettingsUpdateDto,
@@ -10,12 +11,14 @@ import {
 } from '@simpletuja/shared';
 import { Response } from 'express';
 import { CryptoLendingService } from '../services/crypto-lending.service';
+import { CoinlayerService } from '../services/coinlayer.service';
 
 @Controller('crypto-lending')
 export class CryptoLendingController {
   constructor(
     private readonly onboardingService: OnboardingService,
     private readonly cryptoLendingService: CryptoLendingService,
+    private readonly coinlayerService: CoinlayerService,
   ) {}
 
   @Post('get-onboarding-progress')
@@ -50,5 +53,11 @@ export class CryptoLendingController {
     const collections =
       await this.cryptoLendingService.getLoanEligibleNftCollections();
     return zodResTransform(collections, LoanEligibleNftCollectionsDtoSchema);
+  }
+
+  @Post('get-crypto-exchange-rates')
+  getCryptoExchangeRates() {
+    const rates = this.coinlayerService.getExchangeRates();
+    return zodResTransform(rates, CryptoExchangeRatesDtoSchema);
   }
 }

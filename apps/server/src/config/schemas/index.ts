@@ -27,6 +27,7 @@ export const configSchema = z
       .int()
       .positive()
       .default(30),
+    COINLAYER_API_KEY: z.string(),
   })
   .merge(databaseConfigSchema)
   .strip();

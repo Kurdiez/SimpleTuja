@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import classNames from "classnames";
 import { useFundAccount } from "./fund-account.context";
@@ -7,6 +7,8 @@ import { CryptoToken } from "@simpletuja/shared";
 import { CheckCircleIcon } from "@heroicons/react/20/solid";
 import { useModal } from "@/components/modal/modal.context";
 import { OnboardingFundAccountAmountModal } from "@/components/modal/content/OnboardingFundAccountAmount/OnboardingFundAccountAmountModal";
+import { useOnboarding } from "@/components/pages/crypto-lending/onboarding/onboarding.context";
+import toast from "react-hot-toast";
 
 interface FundAccountFormData {
   token: CryptoToken;
@@ -26,6 +28,7 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
     isConnectWalletInitiated,
     connectSenderWallet,
   } = useFundAccount();
+  const { onboardingProgress } = useOnboarding();
 
   const { openModal } = useModal();
   const [amount, setAmount] = useState<string>("0.0");
@@ -33,6 +36,7 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { isSubmitting },
   } = useForm<FundAccountFormData>({
     defaultValues: {
@@ -41,7 +45,31 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
     },
   });
 
+  const selectedToken = watch("token");
+
+  // Reset amount when token changes
+  useEffect(() => {
+    setAmount("0.0");
+  }, [selectedToken]);
+
+  const highestLtv = useMemo(() => {
+    if (!onboardingProgress) return 0;
+    const ltvValues = [
+      onboardingProgress.oneWeekLTV,
+      onboardingProgress.twoWeeksLTV,
+      onboardingProgress.oneMonthLTV,
+      onboardingProgress.twoMonthsLTV,
+      onboardingProgress.threeMonthsLTV,
+    ].filter((ltv): ltv is number => ltv !== null);
+    return Math.max(...ltvValues, 0);
+  }, [onboardingProgress]);
+
   const onSubmit: SubmitHandler<FundAccountFormData> = async (data) => {
+    const numericAmount = parseFloat(amount);
+    if (numericAmount <= 0) {
+      toast.error("Please enter a valid amount greater than 0");
+      return;
+    }
     await fundAccount(data.token, amount);
   };
 
@@ -50,8 +78,9 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
       openModal(
         <OnboardingFundAccountAmountModal
           onAmountSelected={(amount) => setAmount(amount.toString())}
-          token={CryptoToken.WETH}
-          ltvThreshold={0.6}
+          token={selectedToken as CryptoToken}
+          ltvThreshold={highestLtv}
+          initialAmount={parseFloat(amount)}
         />
       );
     }
@@ -175,7 +204,11 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
                 type="submit"
                 className="w-full"
                 loading={isSubmitting}
-                disabled={!isWalletConnected || !isConnectWalletInitiated}
+                disabled={
+                  !isWalletConnected ||
+                  !isConnectWalletInitiated ||
+                  parseFloat(amount) <= 0
+                }
               >
                 2. Deposit
               </Button>

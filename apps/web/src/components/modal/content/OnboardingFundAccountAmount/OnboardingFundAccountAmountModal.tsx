@@ -1,33 +1,64 @@
-// import { useModal } from "../../modal.context";
+import { useModal } from "../../modal.context";
 import { CryptoToken, LoanEligibleNftCollectionsDto } from "@simpletuja/shared";
 import { useEffect, useState } from "react";
-import { getLoanEligibleNftCollections } from "@/utils/simpletuja/cypto-lending";
+import {
+  getCryptoExchangeRates,
+  getLoanEligibleNftCollections,
+} from "@/utils/simpletuja/cypto-lending";
 import { LoanEligibleNftCollectionsList } from "./LoanEligibleNftCollectionsList";
+import toast from "react-hot-toast";
 
 type OnboardingFundAccountAmountModalProps = {
   onAmountSelected: (amount: number) => void;
   token: CryptoToken;
   ltvThreshold: number;
+  initialAmount: number;
 };
 
 export function OnboardingFundAccountAmountModal({
-  // onAmountSelected,
+  onAmountSelected,
   token,
   ltvThreshold,
+  initialAmount,
 }: OnboardingFundAccountAmountModalProps) {
-  // const { closeModal } = useModal();
+  const { closeModal } = useModal();
   const [nftCollections, setNftCollections] =
     useState<LoanEligibleNftCollectionsDto>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchNftCollections = async () => {
-      const collections = await getLoanEligibleNftCollections();
-      setNftCollections(collections);
-      setIsLoading(false);
+    const fetchData = async () => {
+      try {
+        const [collections, rates] = await Promise.all([
+          getLoanEligibleNftCollections(),
+          getCryptoExchangeRates(),
+        ]);
+
+        if (token !== CryptoToken.WETH) {
+          collections.forEach((collection) => {
+            collection.avgTopBids = collection.avgTopBids * rates[token];
+          });
+        }
+
+        setNftCollections(collections);
+        setIsLoading(false);
+      } catch {
+        toast.error("Error fetching necessary data");
+        setIsLoading(false);
+      }
     };
-    fetchNftCollections();
-  }, []);
+
+    fetchData();
+  }, [token]);
+
+  const handleAmountSelected = (amount: number) => {
+    if (amount > 0) {
+      onAmountSelected(amount);
+      closeModal();
+    } else {
+      toast.error("Please enter a valid amount greater than 0");
+    }
+  };
 
   return (
     <div className="flex flex-col justify-center">
@@ -43,9 +74,8 @@ export function OnboardingFundAccountAmountModal({
           isLoading={isLoading}
           token={token}
           ltvThreshold={ltvThreshold}
-          onAmountSelected={function (): void {
-            throw new Error("Function not implemented.");
-          }}
+          onAmountSelected={handleAmountSelected}
+          initialAmount={initialAmount} // Pass the initial amount
         />
       </div>
     </div>

@@ -1,4 +1,5 @@
 import {
+  CryptoExchangeRatesDto,
   CryptoLendingUserStateDto,
   LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
@@ -30,6 +31,15 @@ export const getLoanEligibleNftCollections =
   async (): Promise<LoanEligibleNftCollectionsDto> => {
     const response = await apiRequest<LoanEligibleNftCollectionsDto>(
       `${BaseUrl}/get-loan-eligible-nft-collections`,
+      {}
+    );
+    return response;
+  };
+
+export const getCryptoExchangeRates =
+  async (): Promise<CryptoExchangeRatesDto> => {
+    const response = await apiRequest<CryptoExchangeRatesDto>(
+      `${BaseUrl}/get-crypto-exchange-rates`,
       {}
     );
     return response;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CryptoToken } from "./const";
 
 // Base schema for LTV fields
 const LTVSchema = z.number().int().gte(10).lte(100).nullable();
@@ -53,4 +54,14 @@ export const LoanEligibleNftCollectionsDtoSchema = z.array(
 
 export type LoanEligibleNftCollectionsDto = z.infer<
   typeof LoanEligibleNftCollectionsDtoSchema
+>;
+
+export const CryptoExchangeRatesDtoSchema = z.object({
+  [CryptoToken.WETH]: z.number(),
+  [CryptoToken.DAI]: z.number(),
+  [CryptoToken.USDC]: z.number(),
+});
+
+export type CryptoExchangeRatesDto = z.infer<
+  typeof CryptoExchangeRatesDtoSchema
 >;
