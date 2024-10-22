@@ -44,3 +44,15 @@ export const getCryptoExchangeRates =
     );
     return response;
   };
+
+export const updateActiveStatus = async (active: boolean): Promise<void> => {
+  await apiRequest(`${BaseUrl}/update-active-status`, { active });
+};
+
+export const completeOnboardingFuncAccount = async (
+  startLendingRightAway: boolean
+): Promise<void> => {
+  await apiRequest(`${BaseUrl}/complete-onboarding-fund-account`, {
+    startLendingRightAway,
+  });
+};

@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { ethers } from 'ethers';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
-import { LoanSettingsUpdateDto } from '@simpletuja/shared';
 
 @Injectable()
 export class OnboardingService {
@@ -58,33 +57,13 @@ export class OnboardingService {
     }
   }
 
-  async updateLoanSettings(
+  async completeOnboardingFundAccount(
     userId: string,
-    loanSettingsUpdateDto: LoanSettingsUpdateDto,
-  ): Promise<void> {
-    this.logger.log(`Updating loan settings for user ${userId}`);
-
-    const userState = await this.getProgress(userId);
-
-    if (!userState) {
-      throw new CustomException('User state not found');
-    }
-
-    userState.oneWeekLTV = loanSettingsUpdateDto.oneWeekLTV;
-    userState.twoWeeksLTV = loanSettingsUpdateDto.twoWeeksLTV;
-    userState.oneMonthLTV = loanSettingsUpdateDto.oneMonthLTV;
-    userState.twoMonthsLTV = loanSettingsUpdateDto.twoMonthsLTV;
-    userState.threeMonthsLTV = loanSettingsUpdateDto.threeMonthsLTV;
-    userState.foreclosureWalletAddress =
-      loanSettingsUpdateDto.foreclosureWalletAddress;
-    userState.hasCompletedLoanSettings = true;
-
-    await this.cryptoLendingUserStateRepo.save(userState);
-
-    this.logger.log(
-      `Loan settings updated successfully for user ${userId}. ${JSON.stringify(
-        loanSettingsUpdateDto,
-      )}`,
-    );
+    startLendingRightAway: boolean,
+  ) {
+    await this.cryptoLendingUserStateRepo.update(userId, {
+      hasFundedTheAccount: true,
+      active: startLendingRightAway,
+    });
   }
 }

@@ -70,7 +70,7 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
       toast.error("Please enter a valid amount greater than 0");
       return;
     }
-    await fundAccount(data.token, amount);
+    await fundAccount(data.token, amount, data.startLendingRightAway);
   };
 
   const handleAmountClick = () => {

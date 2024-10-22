@@ -65,3 +65,17 @@ export const CryptoExchangeRatesDtoSchema = z.object({
 export type CryptoExchangeRatesDto = z.infer<
   typeof CryptoExchangeRatesDtoSchema
 >;
+
+export const UpdateActiveStatusDtoSchema = z.object({
+  active: z.boolean(),
+});
+
+export type UpdateActiveStatusDto = z.infer<typeof UpdateActiveStatusDtoSchema>;
+
+export const CompleteOnboardingFuncAccountDtoSchema = z.object({
+  startLendingRightAway: z.boolean(),
+});
+
+export type CompleteOnboardingFuncAccountDto = z.infer<
+  typeof CompleteOnboardingFuncAccountDtoSchema
+>;

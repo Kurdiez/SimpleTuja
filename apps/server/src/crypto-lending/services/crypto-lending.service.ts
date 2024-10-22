@@ -2,8 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
-import { LoanEligibleNftCollectionsDto } from '@simpletuja/shared';
-import { ConfigService } from '~/config';
+import {
+  LoanEligibleNftCollectionsDto,
+  LoanSettingsUpdateDto,
+} from '@simpletuja/shared';
+import { OnboardingService } from './onboarding.service';
+import { CustomException } from '~/commons/errors/custom-exception';
+import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
 
 @Injectable()
 export class CryptoLendingService {
@@ -12,8 +17,40 @@ export class CryptoLendingService {
   constructor(
     @InjectRepository(NftCollectionEntity)
     private readonly nftCollectionRepo: Repository<NftCollectionEntity>,
-    private readonly configService: ConfigService,
+    @InjectRepository(CryptoLendingUserStateEntity)
+    private readonly cryptoLendingUserStateRepo: Repository<CryptoLendingUserStateEntity>,
+    private readonly onboardingService: OnboardingService,
   ) {}
+
+  async updateLoanSettings(
+    userId: string,
+    loanSettingsUpdateDto: LoanSettingsUpdateDto,
+  ): Promise<void> {
+    this.logger.log(`Updating loan settings for user ${userId}`);
+
+    const userState = await this.onboardingService.getProgress(userId);
+
+    if (!userState) {
+      throw new CustomException('User state not found');
+    }
+
+    userState.oneWeekLTV = loanSettingsUpdateDto.oneWeekLTV;
+    userState.twoWeeksLTV = loanSettingsUpdateDto.twoWeeksLTV;
+    userState.oneMonthLTV = loanSettingsUpdateDto.oneMonthLTV;
+    userState.twoMonthsLTV = loanSettingsUpdateDto.twoMonthsLTV;
+    userState.threeMonthsLTV = loanSettingsUpdateDto.threeMonthsLTV;
+    userState.foreclosureWalletAddress =
+      loanSettingsUpdateDto.foreclosureWalletAddress;
+    userState.hasCompletedLoanSettings = true;
+
+    await this.cryptoLendingUserStateRepo.save(userState);
+
+    this.logger.log(
+      `Loan settings updated successfully for user ${userId}. ${JSON.stringify(
+        loanSettingsUpdateDto,
+      )}`,
+    );
+  }
 
   async getLoanEligibleNftCollections(): Promise<LoanEligibleNftCollectionsDto> {
     this.logger.log('Fetching loan eligible NFT collections');
@@ -26,5 +63,9 @@ export class CryptoLendingService {
       ...collection,
       avgTopBids: collection.avgTopFiveBids.toNumber(),
     }));
+  }
+
+  async updateActiveStatus(userId: string, active: boolean) {
+    await this.cryptoLendingUserStateRepo.update(userId, { active });
   }
 }

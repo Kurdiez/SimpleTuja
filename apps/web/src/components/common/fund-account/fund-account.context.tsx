@@ -22,6 +22,10 @@ import toast from "react-hot-toast";
 import { getBalance, http, createConfig } from "@wagmi/core";
 import { mainnet } from "@wagmi/core/chains";
 import { writeContract } from "@wagmi/core";
+import {
+  completeOnboardingFuncAccount,
+  updateActiveStatus,
+} from "@/utils/simpletuja/cypto-lending";
 
 const config = createConfig({
   chains: [mainnet],
@@ -31,7 +35,11 @@ const config = createConfig({
 });
 
 type FundAccountContextType = {
-  fundAccount: (token: CryptoToken, amount: string) => Promise<void>;
+  fundAccount: (
+    token: CryptoToken,
+    amount: string,
+    startLendingRightAway: boolean
+  ) => Promise<void>;
   connectSenderWallet: () => void;
   isWalletConnected: boolean;
   isConnectWalletInitiated: boolean;
@@ -95,7 +103,11 @@ export const FundAccountProvider: React.FC<FundAccountProviderProps> = ({
   }, [open]);
 
   const fundAccount = useCallback(
-    async (token: CryptoToken, amount: string): Promise<void> => {
+    async (
+      token: CryptoToken,
+      amount: string,
+      startLendingRightAway: boolean
+    ): Promise<void> => {
       try {
         const tokenAddress = CryptoTokenAddress[token];
         const decimals = CryptoTokenDecimals[token];
@@ -129,6 +141,8 @@ export const FundAccountProvider: React.FC<FundAccountProviderProps> = ({
         toast.error(`Transfer failed: ${(error as Error).message}`);
         return;
       }
+
+      await completeOnboardingFuncAccount(startLendingRightAway);
     },
     [address, destinationAddress]
   );

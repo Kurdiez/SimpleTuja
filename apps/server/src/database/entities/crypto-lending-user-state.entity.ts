@@ -21,6 +21,10 @@ export class CryptoLendingUserStateEntity {
   @JoinColumn()
   user?: UserEntity;
 
+  @Index()
+  @Column({ type: 'boolean', default: false })
+  active!: boolean;
+
   @Column({ type: 'boolean', default: false })
   hasOpenedCryptoInvestmentAccount!: boolean;
 

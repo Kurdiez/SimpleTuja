@@ -3,11 +3,15 @@ import { AuthenticatedRequest } from '~/commons/types/auth';
 import { OnboardingService } from '../services/onboarding.service';
 import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
 import {
+  CompleteOnboardingFuncAccountDto,
+  CompleteOnboardingFuncAccountDtoSchema,
   CryptoExchangeRatesDtoSchema,
   CryptoLendingUserStateDtoSchema,
   LoanEligibleNftCollectionsDtoSchema,
   LoanSettingsUpdateDto,
   LoanSettingsUpdateRequestSchema,
+  UpdateActiveStatusDto,
+  UpdateActiveStatusDtoSchema,
 } from '@simpletuja/shared';
 import { Response } from 'express';
 import { CryptoLendingService } from '../services/crypto-lending.service';
@@ -42,9 +46,30 @@ export class CryptoLendingController {
     loanSettingsUpdateDto: LoanSettingsUpdateDto,
   ) {
     const userId = req.user.id;
-    await this.onboardingService.updateLoanSettings(
+    await this.cryptoLendingService.updateLoanSettings(
       userId,
       loanSettingsUpdateDto,
+    );
+  }
+
+  @Post('update-active-status')
+  async updateActiveStatus(
+    @Req() req: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(UpdateActiveStatusDtoSchema))
+    { active }: UpdateActiveStatusDto,
+  ) {
+    await this.cryptoLendingService.updateActiveStatus(req.user.id, active);
+  }
+
+  @Post('complete-onboarding-fund-account')
+  async completeOnboardingFundAccount(
+    @Req() req: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(CompleteOnboardingFuncAccountDtoSchema))
+    { startLendingRightAway }: CompleteOnboardingFuncAccountDto,
+  ) {
+    await this.onboardingService.completeOnboardingFundAccount(
+      req.user.id,
+      startLendingRightAway,
     );
   }
 
