@@ -127,6 +127,7 @@ export const FundAccountProvider: React.FC<FundAccountProviderProps> = ({
       } catch (error) {
         toast.dismiss(Toast_TransferringToastId);
         toast.error(`Transfer failed: ${(error as Error).message}`);
+        return;
       }
     },
     [address, destinationAddress]

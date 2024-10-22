@@ -9,6 +9,7 @@ import { CustomException } from '~/commons/errors/custom-exception';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { ConfigService } from '~/config';
 import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
+import { retry } from '~/commons/error-handlers/retry';
 
 @Injectable()
 export class OpenSeaService {
@@ -183,26 +184,27 @@ export class OpenSeaService {
   private async getTopFiveOffers(
     openSeaSlug: string,
   ): Promise<Array<{ price: Big }>> {
-    const response = await this.openSeaApi.run(async (sdk: OpenSeaSDK) => {
-      try {
-        const offers = await sdk.api.getCollectionOffers(openSeaSlug);
-        return offers;
-      } catch (error) {
-        const exception = new CustomException(
-          'Failed to get collection offers',
-          {
-            error,
-            openSeaSlug,
-          },
-        );
-        captureException({ error: exception });
-        return {
-          offers: [],
-        };
-      }
-    });
+    try {
+      const response = await retry(
+        () =>
+          this.openSeaApi.run(async (sdk: OpenSeaSDK) => {
+            return await sdk.api.getCollectionOffers(openSeaSlug);
+          }),
+        this.logger,
+      );
 
-    return this.extractTopFiveOffers(response);
+      return this.extractTopFiveOffers(response);
+    } catch (error) {
+      const exception = new CustomException(
+        'Failed to get collection offers after multiple retries',
+        {
+          error,
+          openSeaSlug,
+        },
+      );
+      captureException({ error: exception });
+      return [];
+    }
   }
 
   private extractTopFiveOffers(
