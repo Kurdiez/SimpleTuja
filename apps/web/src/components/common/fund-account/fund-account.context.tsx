@@ -22,10 +22,7 @@ import toast from "react-hot-toast";
 import { getBalance, http, createConfig } from "@wagmi/core";
 import { mainnet } from "@wagmi/core/chains";
 import { writeContract } from "@wagmi/core";
-import {
-  completeOnboardingFuncAccount,
-  updateActiveStatus,
-} from "@/utils/simpletuja/cypto-lending";
+import { completeOnboardingFuncAccount } from "@/utils/simpletuja/cypto-lending";
 
 const config = createConfig({
   chains: [mainnet],

@@ -5,8 +5,10 @@ import {
   OneToOne,
   JoinColumn,
   Index,
+  OneToMany,
 } from 'typeorm';
 import { UserEntity } from './user.entity';
+import { CryptoLoanOfferEntity } from './crypto-loan-offer.entity';
 
 @Entity('crypto_lending_user_state')
 export class CryptoLendingUserStateEntity {
@@ -57,4 +59,7 @@ export class CryptoLendingUserStateEntity {
 
   @Column({ type: 'text', nullable: true })
   foreclosureWalletAddress?: string;
+
+  @OneToMany(() => CryptoLoanOfferEntity, (offer) => offer.userState)
+  offers!: CryptoLoanOfferEntity[];
 }

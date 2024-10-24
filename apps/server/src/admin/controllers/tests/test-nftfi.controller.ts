@@ -1,9 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
 // import NFTfi from '@nftfi/js';
-import { NFT_Address } from '~/commons/constants/nft';
-import { LoanContract } from '~/commons/constants/nftfi';
-import { Token } from '~/commons/constants/token';
-import { WalletAddress } from '~/commons/constants/wallet';
 import { ConfigService } from '~/config';
 // import { BigNumber, ethers } from 'ethers';
 
@@ -71,41 +67,5 @@ export class TestNftFiController {
     //     console.log(`[INFO] listing #${i + 1}: ${JSON.stringify(listing)} \n`);
     //   }
     // }
-  }
-
-  private async getOffers(
-    nftAddress: NFT_Address,
-    lenderWalletAddress: WalletAddress,
-    nftfiLoanContract: LoanContract,
-  ) {
-    return this.nftfi.offers.get({
-      filters: {
-        nft: {
-          address: nftAddress,
-        },
-        lender: {
-          address: {
-            eq: lenderWalletAddress,
-          },
-        },
-        nftfi: {
-          contract: {
-            name: nftfiLoanContract,
-          },
-        },
-      },
-    });
-  }
-
-  private async getBalance(token: Token): Promise<string> {
-    let tokenAddress: string;
-    if (token === Token.WETH) {
-      tokenAddress = this.nftfi.config.erc20.weth.address;
-    }
-    const balance = await this.nftfi.erc20.balanceOf({
-      token: { address: tokenAddress },
-    });
-
-    return balance;
   }
 }

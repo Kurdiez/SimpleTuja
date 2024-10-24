@@ -1,6 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { bigTransformer } from '../utils/big-transformer';
 import Big from 'big.js';
+import { CryptoLoanOfferEntity } from './crypto-loan-offer.entity';
 
 @Entity('nft_collection')
 export class NftCollectionEntity {
@@ -10,6 +17,7 @@ export class NftCollectionEntity {
   @Column({ type: 'varchar', unique: true })
   name!: string;
 
+  @Index()
   @Column({ type: 'varchar', nullable: true })
   contractAddress!: string | null;
 
@@ -44,4 +52,16 @@ export class NftCollectionEntity {
     default: 0,
   })
   avgTopFiveBids!: Big;
+
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 15,
+    transformer: bigTransformer,
+    nullable: true,
+  })
+  averageApr!: Big;
+
+  @OneToMany(() => CryptoLoanOfferEntity, (offer) => offer.nftCollection)
+  offers!: CryptoLoanOfferEntity[];
 }

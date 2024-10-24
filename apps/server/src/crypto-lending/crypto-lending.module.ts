@@ -6,6 +6,8 @@ import { OnboardingService } from './services/onboarding.service';
 import { CryptoLendingService } from './services/crypto-lending.service';
 import { DatabaseModule } from '~/database/database.module';
 import { CoinlayerService } from './services/coinlayer.service';
+import { LoanService } from './services/loan.service';
+import { NftFiApiService } from './services/nftfi-api.service';
 
 @Module({
   imports: [DatabaseModule],
@@ -15,12 +17,16 @@ import { CoinlayerService } from './services/coinlayer.service';
     OpenSeaService,
     CryptoLendingService,
     CoinlayerService,
+    LoanService,
+    NftFiApiService,
   ],
   exports: [
     OpenSeaAPIService,
     OpenSeaService,
     CryptoLendingService,
     CoinlayerService,
+    LoanService,
+    NftFiApiService,
   ],
   controllers: [CryptoLendingController],
 })
