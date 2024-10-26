@@ -90,15 +90,9 @@ export class LoanService {
     if (updatedCollections.length > 0) {
       await this.nftCollectionRepo.manager.transaction(
         async (transactionalEntityManager) => {
-          const eligibleCollections = updatedCollections.slice(
-            0,
-            numLendingEligibleCollections,
-          );
-
-          // Set eligible collections to enabled
-          eligibleCollections.forEach(
-            (collection) => (collection.enabled = true),
-          );
+          const eligibleCollections = updatedCollections
+            .filter((c) => c.enabled)
+            .slice(0, numLendingEligibleCollections);
 
           // Set all other collections to disabled
           await transactionalEntityManager.update(
