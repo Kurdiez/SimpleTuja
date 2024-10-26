@@ -96,6 +96,9 @@ export class CryptoLoanOfferEntity {
   })
   loanEffectiveApr!: Big;
 
+  @Column({ type: 'text', nullable: true })
+  errorMessage!: string | null;
+
   @Index()
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;

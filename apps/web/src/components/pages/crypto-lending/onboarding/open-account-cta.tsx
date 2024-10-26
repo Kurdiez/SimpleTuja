@@ -1,22 +1,33 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Button from "../../../common/Button";
 import toast from "react-hot-toast";
 import { useOnboarding } from "./onboarding.context";
+import { useModal } from "@/components/modal/modal.context";
+import { OpenAccountLearnMoreModal } from "@/components/modal/content/OpenAccountLearnMoreModal";
+import { OpenAccountWalletAddressModal } from "@/components/modal/content/OpenAccountWalletAddressModal";
 
 const OpenAccountCTA: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { openCryptoInvestmentAccount } = useOnboarding();
+  const { openModal } = useModal();
 
   const handleOpenAccount = async () => {
     setIsLoading(true);
     try {
-      await openCryptoInvestmentAccount();
-      toast.success("Account opened successfully");
+      const walletAddress = await openCryptoInvestmentAccount();
+      openModal(
+        <OpenAccountWalletAddressModal walletAddress={walletAddress} />
+      );
     } catch {
       toast.error("Failed to open account");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const onLearnMoreClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    openModal(<OpenAccountLearnMoreModal />);
   };
 
   return (
@@ -58,7 +69,11 @@ const OpenAccountCTA: React.FC = () => {
             <Button onClick={handleOpenAccount} loading={isLoading}>
               Open Account
             </Button>
-            <a href="#" className="text-sm font-semibold leading-6 text-white">
+            <a
+              href="#"
+              className="text-sm font-semibold leading-6 text-white"
+              onClick={onLearnMoreClick}
+            >
               Learn more <span aria-hidden="true">→</span>
             </a>
           </div>

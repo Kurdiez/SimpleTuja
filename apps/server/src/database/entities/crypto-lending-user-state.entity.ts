@@ -19,9 +19,11 @@ export class CryptoLendingUserStateEntity {
   @Column({ type: 'uuid' })
   userId!: string;
 
-  @OneToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn()
-  user?: UserEntity;
+  @OneToOne(() => UserEntity, (user) => user.cryptoLendingUserState, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'userId' })
+  user!: UserEntity;
 
   @Index()
   @Column({ type: 'boolean', default: false })

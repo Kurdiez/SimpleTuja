@@ -25,7 +25,7 @@ export enum OnboardingStep {
 type OnboardingContextType = {
   onboardingProgress: CryptoLendingUserStateDto;
   currentStep: OnboardingStep;
-  openCryptoInvestmentAccount: () => Promise<void>;
+  openCryptoInvestmentAccount: () => Promise<string>;
   jumpToStep: (step: OnboardingStep) => void;
   updateLoanSettings: (
     loanSettingsUpdateDto: LoanSettingsUpdateDto
@@ -77,9 +77,10 @@ export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({
   }, [progress]);
 
   const openCryptoInvestmentAccount = useCallback(async () => {
-    await openAccount();
+    const walletAddress = await openAccount();
     const newProgress = await getOnboardingProgress();
     setProgress(newProgress);
+    return walletAddress;
   }, []);
 
   const jumpToStep = useCallback(

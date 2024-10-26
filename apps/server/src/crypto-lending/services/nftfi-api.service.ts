@@ -6,6 +6,9 @@ import { CustomException } from '~/commons/errors/custom-exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
 import { Repository } from 'typeorm';
+import { CryptoToken, CryptoTokenAddress } from '@simpletuja/shared';
+
+const CollectionLoanOfferContractName = 'v2-3.loan.fixed.collection';
 
 @Injectable()
 export class NftFiApiService {
@@ -22,8 +25,8 @@ export class NftFiApiService {
   ): Promise<NftFiLoanOffer[]> {
     const nftfiClient = await this.getNftFiClient(walletPrivateKey);
     const offers = await nftfiClient.offers.get();
-    const activeOffers = offers.filter((offer) => offer.errors === null);
-    return activeOffers as NftFiLoanOffer[];
+    this.logger.log(`offers: ${JSON.stringify(offers, null, 2)}`);
+    return offers as NftFiLoanOffer[];
   }
 
   async getOffersForUser(userId: string) {
@@ -89,12 +92,69 @@ export class NftFiApiService {
       terms,
     });
 
-    if (result.error) {
+    if (result.error || result.errors) {
       throw new CustomException('Failed to make loan offer with NFTfi', {
         terms,
-        errorFromNftfi: result.error,
+        errorFromNftfi: result.error || result.errors,
       });
     }
+  }
+
+  async getTokenAllowanceForWallet(
+    walletPrivateKey: string,
+    token: CryptoToken,
+  ) {
+    const nftfiClient = await this.getNftFiClient(walletPrivateKey);
+    const allowance = await nftfiClient.erc20.allowance({
+      token: { address: CryptoTokenAddress[token] },
+      nftfi: {
+        contract: { name: CollectionLoanOfferContractName },
+      },
+    });
+    return allowance.toString();
+  }
+
+  async getTokenAllowanceForUser(userId: string, token: CryptoToken) {
+    const userState = await this.cryptoLendingUserStateRepo.findOneOrFail({
+      where: { userId },
+    });
+    return await this.getTokenAllowanceForWallet(
+      userState.walletPrivateKey,
+      token,
+    );
+  }
+
+  async approveTokenMaxAllowanceForWallet(
+    walletPrivateKey: string,
+    token: CryptoToken,
+  ) {
+    const nftfiClient = await this.getNftFiClient(walletPrivateKey);
+
+    const options = {
+      token: { address: CryptoTokenAddress[token] },
+      nftfi: {
+        contract: {
+          name: nftfiClient.config.protocol.v3.type.collection.name,
+        },
+      },
+    };
+
+    const result = await nftfiClient.erc20.approveMax(options);
+
+    console.log('options: ', JSON.stringify(options, null, 2));
+    console.log('result: ', JSON.stringify(result, null, 2));
+
+    return result;
+  }
+
+  async approveTokenMaxAllowanceForUser(userId: string, token: CryptoToken) {
+    const userState = await this.cryptoLendingUserStateRepo.findOneOrFail({
+      where: { userId },
+    });
+    return await this.approveTokenMaxAllowanceForWallet(
+      userState.walletPrivateKey,
+      token,
+    );
   }
 
   private async getNftFiClient(walletPrivateKey?: string) {

@@ -1,6 +1,21 @@
+import { CryptoToken } from '@simpletuja/shared';
 import { z } from 'zod';
 
 export const userIdDtoSchema = z.object({
   userId: z.string(),
 });
 export type UserIdDto = z.infer<typeof userIdDtoSchema>;
+
+export const getTokenAllowanceDtoSchema = z.object({
+  userId: z.string(),
+  token: z.nativeEnum(CryptoToken),
+});
+export type GetTokenAllowanceDto = z.infer<typeof getTokenAllowanceDtoSchema>;
+
+export const approveTokenMaxAllowanceDtoSchema = z.object({
+  userId: z.string(),
+  token: z.nativeEnum(CryptoToken),
+});
+export type ApproveTokenMaxAllowanceDto = z.infer<
+  typeof approveTokenMaxAllowanceDtoSchema
+>;

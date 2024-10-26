@@ -5,6 +5,7 @@ import { RegisterDto } from "@simpletuja/shared";
 import toast from "react-hot-toast";
 import { AxiosError } from "axios";
 import Logo from "@/components/common/Logo";
+import Button from "@/components/common/Button";
 
 const RegisterForm: React.FC = () => {
   const router = useRouter();
@@ -12,6 +13,7 @@ const RegisterForm: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleLogoClick = () => {
     router.push("/");
@@ -24,6 +26,7 @@ const RegisterForm: React.FC = () => {
       return;
     }
 
+    setIsLoading(true);
     const registerDto: RegisterDto = { email, password };
     try {
       await register(registerDto);
@@ -33,6 +36,8 @@ const RegisterForm: React.FC = () => {
       const axiosError = error as AxiosError;
       const data = axiosError.response?.data as { message: string };
       toast.error(data.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -133,12 +138,9 @@ const RegisterForm: React.FC = () => {
             </div>
 
             <div>
-              <button
-                type="submit"
-                className="mt-8 flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
+              <Button type="submit" className="w-full mt-8" loading={isLoading}>
                 Register
-              </button>
+              </Button>
             </div>
           </form>
         </div>

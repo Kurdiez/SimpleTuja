@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  Index,
+  OneToOne,
+} from 'typeorm';
+import { CryptoLendingUserStateEntity } from './crypto-lending-user-state.entity';
 
 @Entity('user')
 export class UserEntity {
@@ -18,4 +25,7 @@ export class UserEntity {
   @Index()
   @Column({ type: 'varchar', nullable: true })
   emailConfirmationToken!: string | null;
+
+  @OneToOne(() => CryptoLendingUserStateEntity, (userState) => userState.user)
+  cryptoLendingUserState!: CryptoLendingUserStateEntity;
 }

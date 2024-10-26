@@ -18,7 +18,7 @@ export const getOnboardingProgress =
   };
 
 export const openAccount = async (): Promise<void> => {
-  await apiRequest(`${BaseUrl}/open-account`, {});
+  return await apiRequest(`${BaseUrl}/open-account`, {});
 };
 
 export const updateLoanSettings = async (

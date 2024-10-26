@@ -5,6 +5,7 @@ import { SignInDto } from "@simpletuja/shared";
 import toast from "react-hot-toast";
 import { AxiosError } from "axios";
 import Logo from "@/components/common/Logo";
+import Button from "@/components/common/Button";
 import { AppRoute } from "@/utils/app-route";
 import { useGlobalStates } from "../app/global-states.context";
 
@@ -12,6 +13,7 @@ const SignInForm: React.FC = () => {
   const router = useRouter();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { setLoggedIn } = useGlobalStates();
 
   const handleLogoClick = () => {
@@ -20,6 +22,7 @@ const SignInForm: React.FC = () => {
 
   const handleSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
+    setIsLoading(true);
 
     const signInDto: SignInDto = { email, password };
     try {
@@ -31,6 +34,8 @@ const SignInForm: React.FC = () => {
       const axiosError = error as AxiosError;
       const data = axiosError.response?.data as { message: string };
       toast.error(data.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -118,12 +123,9 @@ const SignInForm: React.FC = () => {
           </div>
 
           <div>
-            <button
-              type="submit"
-              className="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
+            <Button type="submit" className="w-full" loading={isLoading}>
               Sign in
-            </button>
+            </Button>
           </div>
         </form>
       </div>

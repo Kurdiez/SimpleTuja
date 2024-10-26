@@ -69,12 +69,12 @@ const Header: React.FC<HeaderProps> = ({ setSidebarOpen }) => {
                 />
               </span>
             </MenuButton>
-            <MenuItems className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in">
+            <MenuItems className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md border-[1px] border-whtie bg-gray-600 py-2 shadow-lg ring-1 ring-gray-900/5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in">
               {userNavigation.map((item) => (
                 <MenuItem key={item.name}>
                   <a
                     href={item.href}
-                    className="block px-3 py-1 text-sm leading-6 text-gray-900 data-[focus]:bg-gray-50"
+                    className="block px-3 py-1 text-sm leading-6 hover:bg-gray-500"
                     onClick={
                       item.name === "Sign out" ? handleSignOut : undefined
                     }

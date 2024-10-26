@@ -36,7 +36,7 @@ export class CryptoLendingController {
 
   @Post('open-account')
   async openAccount(@Req() { user }: AuthenticatedRequest) {
-    await this.onboardingService.openAccount(user.id);
+    return await this.onboardingService.openAccount(user.id);
   }
 
   @Post('update-loan-settings')

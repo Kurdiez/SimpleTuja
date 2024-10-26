@@ -19,7 +19,7 @@ import { ConfigService } from '~/config';
 import { OpenSeaService } from './opensea.service';
 import { ethers } from 'ethers';
 import { CoinlayerService } from './coinlayer.service';
-import { realToScientific, scientificToReal } from '../utils';
+import { actualToWei, weiToActual } from '../utils';
 
 @Injectable()
 export class LoanService {
@@ -256,7 +256,7 @@ export class LoanService {
     durationInDays: number;
   }) {
     try {
-      const principal = realToScientific(requiredLtvAmount, token).toNumber();
+      const principal = actualToWei(requiredLtvAmount, token).toNumber();
 
       await this.nftfiApiService.makeLoanOffer({
         walletPrivateKey: userState.walletPrivateKey,
@@ -318,17 +318,15 @@ export class LoanService {
           userStateId: userState.id,
           loanCurrency: token,
           loanDuration: new Big(offer.terms.loan.duration.toString()),
-          loanRepayment: scientificToReal(offer.terms.loan.repayment, token),
-          loanPrincipal: scientificToReal(offer.terms.loan.principal, token),
+          loanRepayment: weiToActual(offer.terms.loan.repayment, token),
+          loanPrincipal: weiToActual(offer.terms.loan.principal, token),
           loanApr: new Big(offer.terms.loan.apr.toString()),
           loanExpiry: new Date(offer.terms.loan.expiry * 1000),
           loanInterestProrated: offer.terms.loan.interest.prorated,
-          loanOrigination: scientificToReal(
-            offer.terms.loan.origination,
-            token,
-          ),
+          loanOrigination: weiToActual(offer.terms.loan.origination, token),
           loanEffectiveApr: new Big(offer.terms.loan.effectiveApr),
           isActive: true,
+          errorMessage: offer.errors ? JSON.stringify(offer.errors) : null,
         };
       }),
     );
