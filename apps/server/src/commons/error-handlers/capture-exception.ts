@@ -3,17 +3,24 @@ import { addRequestDataToEvent } from '@sentry/node';
 import { ExecutionContext, Logger } from '@nestjs/common';
 import { CustomException, getErrorMessages } from '../errors/custom-exception';
 
-function addGenieBreadcrumb(scope: Sentry.Scope, error: unknown) {
+function addCustomBreadcrumb(scope: Sentry.Scope, error: unknown) {
   if (!(error instanceof CustomException)) return;
 
-  addGenieBreadcrumb(scope, error.cause);
+  addCustomBreadcrumb(scope, error.cause);
+
+  const stringifiedContext: Record<string, string> = {};
+  if (error.context) {
+    for (const [key, value] of Object.entries(error.context)) {
+      stringifiedContext[key] = JSON.stringify(value, null, 2);
+    }
+  }
 
   scope.addBreadcrumb({
     type: 'error',
     category: 'exception',
     level: 'error',
     message: `${error.name}: ${error.message}`,
-    data: error.context,
+    data: stringifiedContext,
     timestamp: error.createdAt.getTime() / 1000,
   });
 }
@@ -40,7 +47,7 @@ export function captureException({
   if (!isDevelopment) {
     Sentry.withScope((scope) => {
       if (error instanceof CustomException) {
-        addGenieBreadcrumb(scope, error.cause);
+        addCustomBreadcrumb(scope, error.cause);
       }
 
       const transaction = context?.switchToHttp().getRequest();

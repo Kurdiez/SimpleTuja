@@ -37,5 +37,11 @@ export interface NftFiLoanOffer {
     };
   };
   signature: string;
-  errors: null | any;
+  errors: {
+    'lender.nonce': {
+      status: string;
+      type: string;
+      msg: string;
+    }[];
+  } | null;
 }

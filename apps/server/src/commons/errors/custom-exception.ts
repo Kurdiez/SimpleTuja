@@ -27,7 +27,11 @@ export const getErrorMessages = (
 ): string[] => {
   const messages = _messages ?? [];
   if (error instanceof CustomException) {
-    messages.push(`${error.name}: ${error.message}`);
+    messages.push(
+      `${error.name}: ${error.message} :: context: ${JSON.stringify(
+        error.context,
+      )}`,
+    );
     if (error.cause) {
       getErrorMessages(error.cause, messages);
     }

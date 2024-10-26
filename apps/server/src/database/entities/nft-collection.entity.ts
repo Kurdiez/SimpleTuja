@@ -60,7 +60,7 @@ export class NftCollectionEntity {
     transformer: bigTransformer,
     nullable: true,
   })
-  averageApr!: Big;
+  averageApr: Big;
 
   @OneToMany(() => CryptoLoanOfferEntity, (offer) => offer.nftCollection)
   offers!: CryptoLoanOfferEntity[];

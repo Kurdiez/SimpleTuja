@@ -2,19 +2,35 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '~/config';
 import NFTfi from '@nftfi/js';
 import { NftFiLoanOffer } from '../types/nftfi-types';
+import { CustomException } from '~/commons/errors/custom-exception';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class NftFiApiService {
   private readonly logger = new Logger(NftFiApiService.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(CryptoLendingUserStateEntity)
+    private readonly cryptoLendingUserStateRepo: Repository<CryptoLendingUserStateEntity>,
+  ) {}
 
   async getOffersForWallet(
     walletPrivateKey: string,
   ): Promise<NftFiLoanOffer[]> {
     const nftfiClient = await this.getNftFiClient(walletPrivateKey);
     const offers = await nftfiClient.offers.get();
-    return offers as NftFiLoanOffer[];
+    const activeOffers = offers.filter((offer) => offer.errors === null);
+    return activeOffers as NftFiLoanOffer[];
+  }
+
+  async getOffersForUser(userId: string) {
+    const userState = await this.cryptoLendingUserStateRepo.findOneOrFail({
+      where: { userId },
+    });
+    return await this.getOffersForWallet(userState.walletPrivateKey);
   }
 
   async getAllOffersForCollection(collectionAddress: string) {
@@ -27,6 +43,58 @@ export class NftFiApiService {
       },
     });
     return offers as NftFiLoanOffer[];
+  }
+
+  async makeLoanOffer({
+    walletPrivateKey,
+    collectionAddress,
+    currencyAddress,
+    principal,
+    apr,
+    durationInDays,
+    originationFee,
+    interestProrated,
+  }: {
+    walletPrivateKey: string;
+    collectionAddress: string;
+    currencyAddress: string;
+    principal: number;
+    apr: number;
+    durationInDays: number;
+    originationFee: number;
+    interestProrated: boolean;
+  }) {
+    const nftfiClient = await this.getNftFiClient(walletPrivateKey);
+    const aprBufferPerDay = 0.1;
+    const aprWithBuffer = aprBufferPerDay * durationInDays + apr;
+    const numSecondsInDay = 86400;
+    const terms = {
+      currency: currencyAddress,
+      principal,
+      repayment: nftfiClient.utils.calcRepaymentAmount(
+        principal,
+        aprWithBuffer,
+        durationInDays,
+      ),
+      duration: numSecondsInDay * durationInDays,
+      expiry: numSecondsInDay * 1,
+      origination: originationFee,
+      interest: { prorated: interestProrated },
+    };
+    const loanOfferType = nftfiClient.config.protocol.v3.type.collection.name;
+
+    const result = await nftfiClient.offers.create({
+      type: loanOfferType,
+      nft: { address: collectionAddress },
+      terms,
+    });
+
+    if (result.error) {
+      throw new CustomException('Failed to make loan offer with NFTfi', {
+        terms,
+        errorFromNftfi: result.error,
+      });
+    }
   }
 
   private async getNftFiClient(walletPrivateKey?: string) {
