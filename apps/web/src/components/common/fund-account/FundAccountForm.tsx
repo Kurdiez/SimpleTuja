@@ -9,6 +9,7 @@ import { useModal } from "@/components/modal/modal.context";
 import { OnboardingFundAccountAmountModal } from "@/components/modal/content/OnboardingFundAccountAmount/OnboardingFundAccountAmountModal";
 import { useOnboarding } from "@/components/pages/crypto-lending/onboarding/onboarding.context";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 interface FundAccountFormData {
   token: CryptoToken;
@@ -94,10 +95,11 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
       )}
     >
       <div className="relative overflow-hidden bg-primary-light w-1/2 h-min-full w-min-full flex-1">
-        <img
-          className="h-full w-full object-cover"
-          src="https://www.sapphiresolutions.net/images/bitcoin_wallet_development/images/bitcoin_wallet_banner.svg"
-          alt=""
+        <Image
+          src="/img/deposit-wallet.svg"
+          alt="Bitcoin wallet banner"
+          layout="fill"
+          objectFit="cover"
         />
       </div>
       <div className="flex flex-col justify-center w-full md:w-1/2 px-8 py-12 lg:px-14 lg:py-16">

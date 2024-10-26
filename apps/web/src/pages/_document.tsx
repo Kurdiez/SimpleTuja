@@ -20,7 +20,6 @@ class MyDocument extends Document {
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <meta name="theme-color" content="#000000" />
 
-          <title>STJ - Automated Self-Managed Investment Tool</title>
           <meta
             name="description"
             content="STJ is an automation tool for self-managed investments across diverse assets, helping you optimize and streamline your investment portfolio."

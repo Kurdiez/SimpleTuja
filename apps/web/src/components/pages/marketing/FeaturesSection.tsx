@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
+import Image from "next/image";
 
 const tabs = [
   {
@@ -107,11 +108,13 @@ export default function FeaturesSection() {
                     </div>
                     <div className="lg:col-span-7">
                       <div className="aspect-w-16 aspect-h-9 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
-                        <img
+                        <Image
                           alt={tab.name}
-                          src={tab.imageUrl} // Use the imageUrl from the tab object
-                          className="object-cover h-full w-full"
-                          style={{ height: "300px", width: "100%" }} // Adjust height as needed
+                          src={tab.imageUrl}
+                          width={1600}
+                          height={300}
+                          className="object-cover w-full"
+                          style={{ height: "300px" }}
                         />
                       </div>
                     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { CryptoToken, LoanEligibleNftCollectionsDto } from "@simpletuja/shared";
 import LoadSpinner from "@/components/common/LoadSpinner";
 import { debounce } from "lodash";
@@ -41,10 +41,17 @@ export function LoanEligibleNftCollectionsList({
     [nftCollections, ltvThreshold]
   );
 
-  const debouncedUpdateHighlights = useCallback(
-    debounce((amount: number) => updateHighlightedCollections(amount), 500),
+  const debouncedUpdateHighlights = useMemo(
+    () =>
+      debounce((amount: number) => updateHighlightedCollections(amount), 500),
     [updateHighlightedCollections]
   );
+
+  useEffect(() => {
+    return () => {
+      debouncedUpdateHighlights.cancel();
+    };
+  }, [debouncedUpdateHighlights]);
 
   useEffect(() => {
     const numericAmount = parseFloat(depositAmount);
@@ -53,9 +60,6 @@ export function LoanEligibleNftCollectionsList({
     } else {
       setHighlightedCollections([]);
     }
-    return () => {
-      debouncedUpdateHighlights.cancel();
-    };
   }, [depositAmount, debouncedUpdateHighlights]);
 
   useEffect(() => {

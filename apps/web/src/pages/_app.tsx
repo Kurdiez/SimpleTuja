@@ -10,12 +10,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { ModalProvider } from "@/components/modal/modal.context";
 import Modal from "@/components/modal/Modal";
+import Head from "next/head";
 
 const queryClient = new QueryClient();
 const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID!;
 const metadata = {
-  name: "My Crypto Investment App",
-  description: "A simple crypto investment app",
+  name: "Automated Self-Managed Investment Tool",
+  description:
+    "Automate and optimize your self-managed investments across diverse assets with STJ, the intelligent investment automation tool.",
   url: process.env.NEXT_PUBLIC_WEB_APP_URL || "",
   icons: [],
 };
@@ -49,6 +51,9 @@ export default function App({ Component, pageProps }: AppProps) {
       <QueryClientProvider client={queryClient}>
         <GlobalStatesProvider>
           <ModalProvider>
+            <Head>
+              <title>STJ - Automated Self-Managed Investment Tool</title>
+            </Head>
             <AuthComponent {...pageProps} />
             <Modal />
           </ModalProvider>

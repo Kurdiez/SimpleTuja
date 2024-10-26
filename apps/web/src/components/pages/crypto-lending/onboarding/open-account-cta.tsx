@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Button from "../../../common/Button";
 import toast from "react-hot-toast";
 import { useOnboarding } from "./onboarding.context";
 import { useModal } from "@/components/modal/modal.context";
 import { OpenAccountLearnMoreModal } from "@/components/modal/content/OpenAccountLearnMoreModal";
 import { OpenAccountWalletAddressModal } from "@/components/modal/content/OpenAccountWalletAddressModal";
+import Image from "next/image";
 
 const OpenAccountCTA: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -79,9 +80,9 @@ const OpenAccountCTA: React.FC = () => {
           </div>
         </div>
         <div className="relative mt-16 h-80 lg:mt-8">
-          <img
+          <Image
             alt="Crypto lending platform screenshot"
-            src="https://res.cloudinary.com/djlyb27k0/image/upload/v1694464651/bitcoin-lending-lc-header_gmfvqo.jpg"
+            src="/img/bitcoin-trade.jpg"
             width={1824}
             height={1080}
             className="absolute left-0 top-0 w-[57rem] max-w-none rounded-md bg-white/5 ring-1 ring-white/10"

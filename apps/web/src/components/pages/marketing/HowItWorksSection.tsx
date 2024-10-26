@@ -3,6 +3,7 @@ import {
   LockClosedIcon,
   ServerIcon,
 } from "@heroicons/react/20/solid";
+import Image from "next/image";
 
 const steps = [
   {
@@ -62,9 +63,9 @@ export default function HowItWorksSection() {
             </div>
           </div>
           <div className="flex items-start justify-end lg:order-first">
-            <img
+            <Image
               alt="Product screenshot"
-              src="https://tailwindui.com/plus/img/component-images/dark-project-app-screenshot.png"
+              src="/img/app-placeholder.png"
               width={2432}
               height={1442}
               className="w-[48rem] max-w-none rounded-xl shadow-xl ring-1 ring-gray-400/10 sm:w-[57rem]"

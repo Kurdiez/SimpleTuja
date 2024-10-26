@@ -17,7 +17,7 @@ export const getOnboardingProgress =
     return response;
   };
 
-export const openAccount = async (): Promise<void> => {
+export const openAccount = async (): Promise<string> => {
   return await apiRequest(`${BaseUrl}/open-account`, {});
 };
 

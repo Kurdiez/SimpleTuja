@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -12,10 +13,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           <div className="mx-auto w-full max-w-sm lg:w-96">{children}</div>
         </div>
         <div className="relative hidden lg:flex lg:flex-1">
-          <img
+          <Image
             alt=""
-            src="https://images.unsplash.com/photo-1496917756835-20cb06e75b4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1908&q=80"
-            className="absolute inset-0 h-full w-full object-cover rounded-l-md" // Use rounded-l-md for left corners
+            src="/img/desk.avif"
+            fill
+            className="object-cover rounded-l-md"
           />
         </div>
       </div>
