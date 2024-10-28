@@ -19,3 +19,9 @@ export const approveTokenMaxAllowanceDtoSchema = z.object({
 export type ApproveTokenMaxAllowanceDto = z.infer<
   typeof approveTokenMaxAllowanceDtoSchema
 >;
+
+export const getTokenBalanceDtoSchema = z.object({
+  userId: z.string(),
+  token: z.nativeEnum(CryptoToken),
+});
+export type GetTokenBalanceDto = z.infer<typeof getTokenBalanceDtoSchema>;

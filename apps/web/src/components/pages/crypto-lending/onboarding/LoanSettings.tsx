@@ -7,8 +7,8 @@ import { useOnboarding } from "./onboarding.context";
 export default function LoanSettings() {
   const { updateLoanSettings, onboardingProgress } = useOnboarding();
 
-  const handleSubmit = (data: LoanSettingsSnapshot) => {
-    updateLoanSettings(data);
+  const handleSubmit = async (data: LoanSettingsSnapshot) => {
+    await updateLoanSettings(data);
   };
 
   const currentSnapshot = !onboardingProgress?.hasCompletedLoanSettings

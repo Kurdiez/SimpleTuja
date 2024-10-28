@@ -14,12 +14,13 @@ import {
   getOnboardingProgress,
   openAccount,
   updateLoanSettings as updateLoanSettingsApi,
-} from "@/utils/simpletuja/cypto-lending";
+} from "@/utils/simpletuja/crypto-lending";
 
 export enum OnboardingStep {
   OpenCryptoInvestmentAccount = "Open Crypto Investment Account",
   CompleteLoanSettings = "Complete Loan Settings",
   FundAccount = "Fund The Account",
+  ActivateLending = "Activate Lending",
 }
 
 type OnboardingContextType = {
@@ -54,8 +55,11 @@ const getCurrentStep = (
   if (!progress.hasCompletedLoanSettings) {
     return OnboardingStep.CompleteLoanSettings;
   }
+  if (!progress.hasFundedTheAccount) {
+    return OnboardingStep.FundAccount;
+  }
 
-  return OnboardingStep.FundAccount;
+  return OnboardingStep.ActivateLending;
 };
 
 export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({
@@ -89,6 +93,7 @@ export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({
         OnboardingStep.OpenCryptoInvestmentAccount,
         OnboardingStep.CompleteLoanSettings,
         OnboardingStep.FundAccount,
+        OnboardingStep.ActivateLending,
       ];
 
       const currentStepIndex = stepOrder.indexOf(currentStep);

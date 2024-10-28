@@ -38,6 +38,11 @@ const ProgressIndicator: React.FC = () => {
       status: getStepStatus(OnboardingStep.FundAccount, currentStep),
       onboardingStep: OnboardingStep.FundAccount,
     },
+    {
+      name: "Activate Lending",
+      status: getStepStatus(OnboardingStep.ActivateLending, currentStep),
+      onboardingStep: OnboardingStep.ActivateLending,
+    },
   ];
 
   function getStepStatus(

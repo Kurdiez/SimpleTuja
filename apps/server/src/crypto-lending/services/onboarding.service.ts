@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { ethers } from 'ethers';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
+import { NftFiApiService } from './nftfi-api.service';
+import { CryptoToken } from '@simpletuja/shared';
+import { LoanService } from './loan.service';
 
 @Injectable()
 export class OnboardingService {
@@ -12,6 +15,8 @@ export class OnboardingService {
   constructor(
     @InjectRepository(CryptoLendingUserStateEntity)
     private readonly cryptoLendingUserStateRepo: Repository<CryptoLendingUserStateEntity>,
+    private readonly nftfiApiService: NftFiApiService,
+    private readonly loanService: LoanService,
   ) {}
 
   async getProgress(
@@ -57,13 +62,57 @@ export class OnboardingService {
     }
   }
 
-  async completeOnboardingFundAccount(
-    userId: string,
-    startLendingRightAway: boolean,
-  ) {
-    await this.cryptoLendingUserStateRepo.update(userId, {
-      hasFundedTheAccount: true,
-      active: startLendingRightAway,
+  async completeOnboardingFundAccount(userId: string): Promise<void> {
+    this.logger.log(`Completing onboarding for user ${userId}`);
+    await this.cryptoLendingUserStateRepo.update(
+      { userId },
+      { hasFundedTheAccount: true },
+    );
+
+    const tokens = Object.values(CryptoToken).filter(
+      (token) => token !== CryptoToken.ETH,
+    );
+    for (const token of tokens) {
+      this.logger.log(
+        `Checking token allowance for user ${userId} and token ${token}`,
+      );
+      const allowance = await this.nftfiApiService.getTokenAllowanceForUser(
+        userId,
+        token,
+      );
+      this.logger.log(
+        `Allowance for user ${userId} and token ${token}: ${allowance}`,
+      );
+      if (allowance.eq(0)) {
+        this.logger.log(
+          `Approving token max allowance for user ${userId} and token ${token}`,
+        );
+        await this.nftfiApiService.approveTokenMaxAllowanceForUser(
+          userId,
+          token,
+        );
+        this.logger.log(
+          `Token max allowance approved for user ${userId} and token ${token}`,
+        );
+      }
+    }
+
+    this.logger.log(`Making loan offers for user ${userId}`);
+    const userState = await this.cryptoLendingUserStateRepo.findOneOrFail({
+      where: { userId },
     });
+    const loanEligibleCollections =
+      await this.loanService.getLoanEligibleCollections();
+    await this.loanService.makeLoanOffersForUser(
+      userState,
+      loanEligibleCollections,
+    );
+    this.logger.log(`Loan offers made for user ${userId}`);
+
+    await this.cryptoLendingUserStateRepo.update(
+      { userId },
+      { hasAllTokenAllowancesApproved: true, active: true },
+    );
+    this.logger.log(`All token allowances approved for user ${userId}`);
   }
 }

@@ -25,12 +25,13 @@ export const CryptoLendingUserStateDtoSchema = z
     hasOpenedCryptoInvestmentAccount: z.boolean(),
     hasCompletedLoanSettings: z.boolean(),
     hasFundedTheAccount: z.boolean(),
+    hasAllTokenAllowancesApproved: z.boolean(),
     ...LTVFieldsSchema.shape,
     foreclosureWalletAddress: WalletAddressSchema,
     walletAddress: WalletAddressSchema,
+    active: z.boolean(),
   })
   .nullable();
-
 export type CryptoLendingUserStateDto = z.infer<
   typeof CryptoLendingUserStateDtoSchema
 >;
@@ -38,7 +39,6 @@ export type CryptoLendingUserStateDto = z.infer<
 export const LoanSettingsUpdateRequestSchema = LTVFieldsSchema.extend({
   foreclosureWalletAddress: WalletAddressSchema,
 });
-
 export type LoanSettingsUpdateDto = z.infer<
   typeof LoanSettingsUpdateRequestSchema
 >;
@@ -51,7 +51,6 @@ export const LoanEligibleNftCollectionsDtoSchema = z.array(
     avgTopBids: z.number(),
   })
 );
-
 export type LoanEligibleNftCollectionsDto = z.infer<
   typeof LoanEligibleNftCollectionsDtoSchema
 >;
@@ -61,7 +60,6 @@ export const CryptoExchangeRatesDtoSchema = z.object({
   [CryptoToken.DAI]: z.number(),
   [CryptoToken.USDC]: z.number(),
 });
-
 export type CryptoExchangeRatesDto = z.infer<
   typeof CryptoExchangeRatesDtoSchema
 >;
@@ -69,13 +67,9 @@ export type CryptoExchangeRatesDto = z.infer<
 export const UpdateActiveStatusDtoSchema = z.object({
   active: z.boolean(),
 });
-
 export type UpdateActiveStatusDto = z.infer<typeof UpdateActiveStatusDtoSchema>;
 
-export const CompleteOnboardingFuncAccountDtoSchema = z.object({
-  startLendingRightAway: z.boolean(),
+export const getTokenBalanceDtoSchema = z.object({
+  token: z.nativeEnum(CryptoToken),
 });
-
-export type CompleteOnboardingFuncAccountDto = z.infer<
-  typeof CompleteOnboardingFuncAccountDtoSchema
->;
+export type GetTokenBalanceDto = z.infer<typeof getTokenBalanceDtoSchema>;

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import classNames from "classnames";
 import Toggle from "@/components/common/Toggle";
@@ -23,7 +23,7 @@ interface LoanSettingsFormData {
 }
 
 interface LoanSettingsFormProps {
-  onSubmit: (data: LoanSettingsSnapshot) => void;
+  onSubmit: (data: LoanSettingsSnapshot) => Promise<void>;
   snapshot?: LoanSettingsSnapshot;
 }
 
@@ -73,11 +73,14 @@ export default function LoanSettingsForm({
           threeMonthsLTV: 40,
           foreclosureWalletAddress: "",
         },
+    mode: "onSubmit",
   });
+
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   const watchedValues = watch();
 
-  const onSubmitHandler: SubmitHandler<LoanSettingsFormData> = (data) => {
+  const onSubmitHandler: SubmitHandler<LoanSettingsFormData> = async (data) => {
     // Validation: At least one Loan Duration should be enabled
     const isAnyDurationEnabled = loanDurations.some(
       ({ key }) => data[`${key}Enabled` as keyof LoanSettingsFormData]
@@ -110,7 +113,8 @@ export default function LoanSettingsForm({
       foreclosureWalletAddress: data.foreclosureWalletAddress,
     };
 
-    onSubmit(snapshotData);
+    setIsSubmittingForm(true);
+    await onSubmit(snapshotData);
   };
 
   const renderLtvInput = (key: string, recommendedLtv: number) => (
@@ -334,7 +338,9 @@ export default function LoanSettingsForm({
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-x-6">
-        <Button type="submit">Save</Button>
+        <Button type="submit" loading={isSubmittingForm}>
+          Save
+        </Button>
       </div>
     </form>
   );

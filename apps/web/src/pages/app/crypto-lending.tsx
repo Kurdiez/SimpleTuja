@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import AppLayout from "../../components/common/app-layout/AppLayout";
 import CryptoLendingDescription from "../../components/pages/crypto-lending/CryptoLendingDescription";
 import { CryptoLendingUserStateDto } from "@simpletuja/shared";
-import { getOnboardingProgress } from "@/utils/simpletuja/cypto-lending";
+import { getOnboardingProgress } from "@/utils/simpletuja/crypto-lending";
 import Onboarding from "@/components/pages/crypto-lending/onboarding/onboarding";
 
 const CryptoLending: React.FC = () => {
@@ -28,7 +28,8 @@ const CryptoLending: React.FC = () => {
     onboardingProgress != null &&
     onboardingProgress.hasOpenedCryptoInvestmentAccount &&
     onboardingProgress.hasCompletedLoanSettings &&
-    onboardingProgress.hasFundedTheAccount;
+    onboardingProgress.hasFundedTheAccount &&
+    onboardingProgress.hasAllTokenAllowancesApproved;
 
   return (
     <AppLayout>

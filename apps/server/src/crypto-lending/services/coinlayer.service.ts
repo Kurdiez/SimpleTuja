@@ -7,6 +7,7 @@ import axios from 'axios';
 @Injectable()
 export class CoinlayerService implements OnModuleInit {
   private exchangeRates: Record<CryptoToken, number> = {
+    [CryptoToken.ETH]: 1,
     [CryptoToken.WETH]: 1,
     [CryptoToken.DAI]: 2678.2,
     [CryptoToken.USDC]: 2678.2,
@@ -37,6 +38,7 @@ export class CoinlayerService implements OnModuleInit {
     if (data.success) {
       const ETH_USD = data.rates.ETH;
       this.exchangeRates = {
+        [CryptoToken.ETH]: 1,
         [CryptoToken.WETH]: 1,
         [CryptoToken.DAI]: ETH_USD,
         [CryptoToken.USDC]: ETH_USD,

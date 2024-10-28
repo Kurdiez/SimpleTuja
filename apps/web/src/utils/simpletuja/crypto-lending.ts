@@ -1,6 +1,7 @@
 import {
   CryptoExchangeRatesDto,
   CryptoLendingUserStateDto,
+  CryptoToken,
   LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
 } from "@simpletuja/shared";
@@ -49,10 +50,14 @@ export const updateActiveStatus = async (active: boolean): Promise<void> => {
   await apiRequest(`${BaseUrl}/update-active-status`, { active });
 };
 
-export const completeOnboardingFuncAccount = async (
-  startLendingRightAway: boolean
-): Promise<void> => {
-  await apiRequest(`${BaseUrl}/complete-onboarding-fund-account`, {
-    startLendingRightAway,
-  });
+export const completeOnboardingFundAccount = async (): Promise<void> => {
+  await apiRequest(`${BaseUrl}/complete-onboarding-fund-account`);
+};
+
+export const getTokenBalances = async (token: CryptoToken): Promise<string> => {
+  const response = await apiRequest<string>(
+    `${BaseUrl}/investment-wallet/get-token-balance`,
+    { token }
+  );
+  return response;
 };

@@ -136,61 +136,45 @@ export class LoanService {
     );
 
     await Promise.all(
-      activeUsers.map(async (userState) => {
-        try {
-          this.logger.log(`Syncing loan offers for userState ${userState.id}`);
-          const numActiveOffers = await this.syncLoanOffers(userState);
-          this.logger.log(
-            `Synced ${numActiveOffers} active loan offers for userState ${userState.id}`,
-          );
-
-          if (numActiveOffers >= 1 || !userState.active) {
-            this.logger.log(
-              `Skipping making loan offers for userState ${userState.id}`,
-            );
-            return;
-          }
-
-          await Promise.all(
-            loanEligibleCollections.map((collection) =>
-              this.makeLoanOffersForCollection(collection, userState),
-            ),
-          );
-          this.logger.log(
-            `Dispatched loan offers for ${loanEligibleCollections.length} collections`,
-          );
-        } catch (error) {
-          const exception = new CustomException('Failed to make loan offers', {
-            error,
-            userStateId: userState.id,
-          });
-          captureException({ error: exception });
-        }
-      }),
+      activeUsers.map((userState) =>
+        this.makeLoanOffersForUser(userState, loanEligibleCollections),
+      ),
     );
   }
 
-  async getTokenBalances(userId: string): Promise<Record<CryptoToken, string>> {
-    const userState = await this.userStateRepo.findOneOrFail({
-      where: { userId },
-    });
+  async makeLoanOffersForUser(
+    userState: CryptoLendingUserStateEntity,
+    loanEligibleCollections: NftCollectionEntity[],
+  ) {
+    try {
+      this.logger.log(`Syncing loan offers for userState ${userState.id}`);
+      const numActiveOffers = await this.syncLoanOffers(userState);
+      this.logger.log(
+        `Synced ${numActiveOffers} active loan offers for userState ${userState.id}`,
+      );
 
-    const walletAddress = userState.walletAddress;
+      if (numActiveOffers >= 1 || !userState.active) {
+        this.logger.log(
+          `Skipping making loan offers for userState ${userState.id}`,
+        );
+        return;
+      }
 
-    return {
-      [CryptoToken.WETH]: await this.getTokenBalance(
-        CryptoToken.WETH,
-        walletAddress,
-      ).toString(),
-      [CryptoToken.DAI]: await this.getTokenBalance(
-        CryptoToken.DAI,
-        walletAddress,
-      ).toString(),
-      [CryptoToken.USDC]: await this.getTokenBalance(
-        CryptoToken.USDC,
-        walletAddress,
-      ).toString(),
-    };
+      await Promise.all(
+        loanEligibleCollections.map((collection) =>
+          this.makeLoanOffersForCollection(collection, userState),
+        ),
+      );
+      this.logger.log(
+        `Dispatched loan offers for ${loanEligibleCollections.length} collections`,
+      );
+    } catch (error) {
+      const exception = new CustomException('Failed to make loan offers', {
+        error,
+        userStateId: userState.id,
+      });
+      captureException({ error: exception });
+    }
   }
 
   private async makeLoanOffersForCollection(
@@ -212,7 +196,9 @@ export class LoanService {
       { ltv: 'threeMonthsLTV', days: 90 },
     ];
 
-    for (const token of Object.values(CryptoToken)) {
+    for (const token of Object.values(CryptoToken).filter(
+      (t) => t !== CryptoToken.ETH,
+    )) {
       const balance = await this.getTokenBalance(token, walletAddress);
       if (balance.eq(0)) continue;
 
@@ -287,7 +273,7 @@ export class LoanService {
     }
   }
 
-  private async getLoanEligibleCollections() {
+  async getLoanEligibleCollections() {
     return await this.nftCollectionRepo.find({
       where: { enabled: true },
     });

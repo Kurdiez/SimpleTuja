@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   getCryptoExchangeRates,
   getLoanEligibleNftCollections,
-} from "@/utils/simpletuja/cypto-lending";
+} from "@/utils/simpletuja/crypto-lending";
 import { LoanEligibleNftCollectionsList } from "./LoanEligibleNftCollectionsList";
 import toast from "react-hot-toast";
 
@@ -34,7 +34,7 @@ export function OnboardingFundAccountAmountModal({
           getCryptoExchangeRates(),
         ]);
 
-        if (token !== CryptoToken.WETH) {
+        if (token !== CryptoToken.WETH && token !== CryptoToken.ETH) {
           collections.forEach((collection) => {
             collection.avgTopBids = collection.avgTopBids * rates[token];
           });

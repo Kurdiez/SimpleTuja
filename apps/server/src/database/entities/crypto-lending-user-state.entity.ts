@@ -38,6 +38,9 @@ export class CryptoLendingUserStateEntity {
   @Column({ type: 'boolean', default: false })
   hasFundedTheAccount!: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  hasAllTokenAllowancesApproved!: boolean;
+
   @Column({ type: 'text', nullable: false })
   walletAddress: string;
 

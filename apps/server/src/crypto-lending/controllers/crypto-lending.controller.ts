@@ -3,8 +3,6 @@ import { AuthenticatedRequest } from '~/commons/types/auth';
 import { OnboardingService } from '../services/onboarding.service';
 import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
 import {
-  CompleteOnboardingFuncAccountDto,
-  CompleteOnboardingFuncAccountDtoSchema,
   CryptoExchangeRatesDtoSchema,
   CryptoLendingUserStateDtoSchema,
   LoanEligibleNftCollectionsDtoSchema,
@@ -62,15 +60,8 @@ export class CryptoLendingController {
   }
 
   @Post('complete-onboarding-fund-account')
-  async completeOnboardingFundAccount(
-    @Req() req: AuthenticatedRequest,
-    @Body(new ZodValidationPipe(CompleteOnboardingFuncAccountDtoSchema))
-    { startLendingRightAway }: CompleteOnboardingFuncAccountDto,
-  ) {
-    await this.onboardingService.completeOnboardingFundAccount(
-      req.user.id,
-      startLendingRightAway,
-    );
+  async completeOnboardingFundAccount(@Req() req: AuthenticatedRequest) {
+    await this.onboardingService.completeOnboardingFundAccount(req.user.id);
   }
 
   @Post('get-loan-eligible-nft-collections')

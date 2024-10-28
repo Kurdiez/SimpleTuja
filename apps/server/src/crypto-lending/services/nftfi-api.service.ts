@@ -7,8 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
 import { Repository } from 'typeorm';
 import { CryptoToken, CryptoTokenAddress } from '@simpletuja/shared';
-
-const CollectionLoanOfferContractName = 'v2-3.loan.fixed.collection';
+import Big from 'big.js';
 
 @Injectable()
 export class NftFiApiService {
@@ -102,18 +101,21 @@ export class NftFiApiService {
   async getTokenAllowanceForWallet(
     walletPrivateKey: string,
     token: CryptoToken,
-  ) {
+  ): Promise<Big> {
     const nftfiClient = await this.getNftFiClient(walletPrivateKey);
     const allowance = await nftfiClient.erc20.allowance({
       token: { address: CryptoTokenAddress[token] },
       nftfi: {
-        contract: { name: CollectionLoanOfferContractName },
+        contract: { name: nftfiClient.config.protocol.v3.erc20Manager.v1.name },
       },
     });
-    return allowance.toString();
+    return new Big(allowance.toString());
   }
 
-  async getTokenAllowanceForUser(userId: string, token: CryptoToken) {
+  async getTokenAllowanceForUser(
+    userId: string,
+    token: CryptoToken,
+  ): Promise<Big> {
     const userState = await this.cryptoLendingUserStateRepo.findOneOrFail({
       where: { userId },
     });
@@ -138,12 +140,7 @@ export class NftFiApiService {
       },
     };
 
-    const result = await nftfiClient.erc20.approveMax(options);
-
-    console.log('options: ', JSON.stringify(options, null, 2));
-    console.log('result: ', JSON.stringify(result, null, 2));
-
-    return result;
+    return await nftfiClient.erc20.approveMax(options);
   }
 
   async approveTokenMaxAllowanceForUser(userId: string, token: CryptoToken) {

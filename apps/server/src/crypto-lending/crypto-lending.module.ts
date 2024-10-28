@@ -8,6 +8,8 @@ import { DatabaseModule } from '~/database/database.module';
 import { CoinlayerService } from './services/coinlayer.service';
 import { LoanService } from './services/loan.service';
 import { NftFiApiService } from './services/nftfi-api.service';
+import { InvestmentWalletService } from './services/investment-wallet.service';
+import { InvestmentWalletController } from './controllers/investment-wallet.controller';
 
 @Module({
   imports: [DatabaseModule],
@@ -19,6 +21,7 @@ import { NftFiApiService } from './services/nftfi-api.service';
     CoinlayerService,
     LoanService,
     NftFiApiService,
+    InvestmentWalletService,
   ],
   exports: [
     OpenSeaAPIService,
@@ -27,7 +30,8 @@ import { NftFiApiService } from './services/nftfi-api.service';
     CoinlayerService,
     LoanService,
     NftFiApiService,
+    InvestmentWalletService,
   ],
-  controllers: [CryptoLendingController],
+  controllers: [CryptoLendingController, InvestmentWalletController],
 })
 export class CryptoLendingModule {}
