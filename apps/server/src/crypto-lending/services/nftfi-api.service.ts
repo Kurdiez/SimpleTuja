@@ -25,7 +25,6 @@ export class NftFiApiService {
   ): Promise<NftFiLoanOffer[]> {
     const nftfiClient = await this.getNftFiClient(walletPrivateKey);
     const offers = await nftfiClient.offers.get();
-    this.logger.log(`offers: ${JSON.stringify(offers, null, 2)}`);
     return offers as NftFiLoanOffer[];
   }
 
@@ -134,7 +133,7 @@ export class NftFiApiService {
       token: { address: CryptoTokenAddress[token] },
       nftfi: {
         contract: {
-          name: nftfiClient.config.protocol.v3.type.collection.name,
+          name: nftfiClient.config.protocol.v3.erc20Manager.v1.name,
         },
       },
     };

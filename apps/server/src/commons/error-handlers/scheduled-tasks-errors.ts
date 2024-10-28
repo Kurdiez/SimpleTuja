@@ -16,13 +16,6 @@ function handleErrors(taskName: string) {
     const logger = new Logger(taskName);
 
     descriptor.value = async function (...args: unknown[]) {
-      const runScheduledTasks = process.env.RUN_SCHEDULED_TASKS !== 'false';
-
-      if (!runScheduledTasks) {
-        logger.log(`Skipping scheduled task: ${taskName}`);
-        return;
-      }
-
       logger.log('Running scheduled task: ' + taskName);
       const startTime = performance.now();
       try {
@@ -56,6 +49,13 @@ export function CronWithErrorHandling({
     propertyKey: string,
     descriptor: TypedPropertyDescriptor<(...args: unknown[]) => Promise<void>>,
   ) {
+    const runScheduledTasks = process.env.RUN_SCHEDULED_TASKS !== 'false';
+    const logger = new Logger(taskName);
+    if (!runScheduledTasks) {
+      logger.log(`Skipping scheduled task: ${taskName}`);
+      return;
+    }
+
     handleErrors(taskName)(target, propertyKey, descriptor);
     Cron(cronTime, { name: taskName, utcOffset: 0 })(
       target,
