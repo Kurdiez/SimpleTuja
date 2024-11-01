@@ -9,10 +9,10 @@ import { apiRequest } from "./api";
 
 const BaseUrl = "/crypto-lending";
 
-export const getOnboardingProgress =
+export const getCryptoUserState =
   async (): Promise<CryptoLendingUserStateDto> => {
     const response = await apiRequest<CryptoLendingUserStateDto>(
-      `${BaseUrl}/get-onboarding-progress`,
+      `${BaseUrl}/get-crypto-user-state`,
       {}
     );
     return response;

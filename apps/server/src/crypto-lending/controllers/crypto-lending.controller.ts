@@ -23,7 +23,7 @@ export class CryptoLendingController {
     private readonly coinlayerService: CoinlayerService,
   ) {}
 
-  @Post('get-onboarding-progress')
+  @Post('get-crypto-user-state')
   async getProgress(
     @Req() { user }: AuthenticatedRequest,
     @Res() res: Response,

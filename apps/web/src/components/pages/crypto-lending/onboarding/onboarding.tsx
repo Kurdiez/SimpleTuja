@@ -5,15 +5,10 @@ import {
   OnboardingStep,
   useOnboarding,
 } from "./onboarding.context";
-import { CryptoLendingUserStateDto } from "@simpletuja/shared";
 import OpenAccountCTA from "./OpenAccountCTA";
 import LoanSettings from "./LoanSettings";
 import FundAccount from "./FundAccount";
 import ActivateLending from "./ActivateLending";
-
-interface OnboardingProps {
-  onboardingProgress: CryptoLendingUserStateDto | null;
-}
 
 const OnboardingContent: React.FC = () => {
   const { currentStep, onboardingProgress } = useOnboarding();
@@ -33,9 +28,9 @@ const OnboardingContent: React.FC = () => {
   );
 };
 
-const Onboarding: React.FC<OnboardingProps> = ({ onboardingProgress }) => {
+const Onboarding = () => {
   return (
-    <OnboardingProvider onboardingProgress={onboardingProgress}>
+    <OnboardingProvider>
       <OnboardingContent />
     </OnboardingProvider>
   );

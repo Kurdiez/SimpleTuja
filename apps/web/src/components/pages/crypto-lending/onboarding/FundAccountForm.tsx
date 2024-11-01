@@ -91,7 +91,7 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
       const daiBal = await getTokenBalance(CryptoToken.DAI);
       const usdcBal = await getTokenBalance(CryptoToken.USDC);
 
-      setEthBalance(ethBal ? Number(ethBal).toFixed(8) : "-");
+      setEthBalance(ethBal ? Number(ethBal).toFixed(8) : "0");
       setTokenBalances({
         [CryptoToken.WETH]: wethBal?.toString() ?? "-",
         [CryptoToken.DAI]: daiBal?.toString() ?? "-",

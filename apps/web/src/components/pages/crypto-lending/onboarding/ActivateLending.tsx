@@ -2,7 +2,7 @@ import Button from "@/components/common/Button";
 import LoadSpinner from "@/components/common/LoadSpinner";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { getOnboardingProgress } from "@/utils/simpletuja/crypto-lending";
+import { getCryptoUserState } from "@/utils/simpletuja/crypto-lending";
 import { AppRoute } from "@/utils/app-route";
 
 const ActivateLending: React.FC = () => {
@@ -12,7 +12,7 @@ const ActivateLending: React.FC = () => {
   useEffect(() => {
     const checkActivationStatus = async () => {
       try {
-        const userState = await getOnboardingProgress();
+        const userState = await getCryptoUserState();
         setIsActivating(!userState?.active);
       } catch (error) {
         console.error("Failed to check activation status:", error);

@@ -11,10 +11,11 @@ import {
   LoanSettingsUpdateDto,
 } from "@simpletuja/shared";
 import {
-  getOnboardingProgress,
+  getCryptoUserState,
   openAccount,
   updateLoanSettings as updateLoanSettingsApi,
 } from "@/utils/simpletuja/crypto-lending";
+import { useCryptoLending } from "../crypto-lending.context";
 
 export enum OnboardingStep {
   OpenCryptoInvestmentAccount = "Open Crypto Investment Account",
@@ -39,7 +40,6 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(
 
 type OnboardingProviderProps = {
   children: ReactNode;
-  onboardingProgress: CryptoLendingUserStateDto;
 };
 
 const getCurrentStep = (
@@ -64,8 +64,8 @@ const getCurrentStep = (
 
 export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({
   children,
-  onboardingProgress,
 }) => {
+  const { userState: onboardingProgress } = useCryptoLending();
   const [progress, setProgress] =
     useState<CryptoLendingUserStateDto>(onboardingProgress);
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(
@@ -82,7 +82,7 @@ export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({
 
   const openCryptoInvestmentAccount = useCallback(async () => {
     const walletAddress = await openAccount();
-    const newProgress = await getOnboardingProgress();
+    const newProgress = await getCryptoUserState();
     setProgress(newProgress);
     return walletAddress;
   }, []);
@@ -121,7 +121,7 @@ export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({
   const updateLoanSettings = useCallback(
     async (loanSettingsUpdateDto: LoanSettingsUpdateDto) => {
       await updateLoanSettingsApi(loanSettingsUpdateDto);
-      const newProgress = await getOnboardingProgress();
+      const newProgress = await getCryptoUserState();
       setProgress(newProgress);
     },
     []
