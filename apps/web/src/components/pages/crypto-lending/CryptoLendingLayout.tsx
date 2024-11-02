@@ -14,7 +14,7 @@ export const CryptoLendingLayout: React.FC<CryptoLendingLayoutProps> = ({
     <AppLayout>
       <div className="container mx-auto">
         <h1 className="text-2xl font-bold mb-4">Crypto P2P Lending</h1>
-        <div className="mb-14">
+        <div className="mb-10">
           <CryptoLendingDescription />
         </div>
         <CryptoLendingProvider>{children}</CryptoLendingProvider>

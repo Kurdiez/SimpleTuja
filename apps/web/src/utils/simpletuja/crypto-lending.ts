@@ -54,7 +54,7 @@ export const completeOnboardingFundAccount = async (): Promise<void> => {
   await apiRequest(`${BaseUrl}/complete-onboarding-fund-account`);
 };
 
-export const getTokenBalances = async (token: CryptoToken): Promise<string> => {
+export const getTokenBalance = async (token: CryptoToken): Promise<string> => {
   const response = await apiRequest<string>(
     `${BaseUrl}/investment-wallet/get-token-balance`,
     { token }

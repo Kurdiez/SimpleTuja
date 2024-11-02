@@ -22,7 +22,7 @@ import toast from "react-hot-toast";
 import { getBalance, http, createConfig } from "@wagmi/core";
 import { mainnet } from "@wagmi/core/chains";
 import { writeContract } from "@wagmi/core";
-import { getTokenBalances } from "@/utils/simpletuja/crypto-lending";
+import { getTokenBalance as getTokenBalanceFromApi } from "@/utils/simpletuja/crypto-lending";
 import { sendTransaction } from "@wagmi/core";
 
 const config = createConfig({
@@ -169,7 +169,7 @@ export const InvestmentWalletProvider: React.FC<
 
   const getTokenBalance = useCallback(
     async (token: CryptoToken): Promise<string> => {
-      const balance = await getTokenBalances(token);
+      const balance = await getTokenBalanceFromApi(token);
       return balance;
     },
     []

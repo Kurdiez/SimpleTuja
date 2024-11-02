@@ -66,6 +66,7 @@ export const CryptoLendingProvider: React.FC<CryptoLendingProviderProps> = ({
     };
 
     fetchUserState();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
