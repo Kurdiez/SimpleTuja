@@ -6,6 +6,11 @@ export const userIdDtoSchema = z.object({
 });
 export type UserIdDto = z.infer<typeof userIdDtoSchema>;
 
+export const collectionAddressDtoSchema = z.object({
+  collectionAddress: z.string(),
+});
+export type CollectionAddressDto = z.infer<typeof collectionAddressDtoSchema>;
+
 export const getTokenAllowanceDtoSchema = z.object({
   userId: z.string(),
   token: z.nativeEnum(CryptoToken),

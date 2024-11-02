@@ -6,6 +6,8 @@ import { NftFiApiService } from '~/crypto-lending/services/nftfi-api.service';
 import {
   ApproveTokenMaxAllowanceDto,
   approveTokenMaxAllowanceDtoSchema,
+  CollectionAddressDto,
+  collectionAddressDtoSchema,
   GetTokenAllowanceDto,
   getTokenAllowanceDtoSchema,
   GetTokenBalanceDto,
@@ -30,6 +32,16 @@ export class NftLoansController {
     { userId }: UserIdDto,
   ) {
     return await this.nftFiApiService.getOffersForUser(userId);
+  }
+
+  @Post('get-all-offers-for-collection')
+  async getAllOffersForCollection(
+    @Body(new ZodValidationPipe(collectionAddressDtoSchema))
+    { collectionAddress }: CollectionAddressDto,
+  ) {
+    return await this.nftFiApiService.getAllOffersForCollection(
+      collectionAddress,
+    );
   }
 
   @Post('update-bid-offers')

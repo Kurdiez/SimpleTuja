@@ -45,3 +45,11 @@ export interface NftFiLoanOffer {
     }[];
   } | null;
 }
+
+export interface NftFiPaginatedResponse<T> {
+  pagination: { total: number };
+  data: {
+    results: T[];
+  };
+  error: any | null;
+}
