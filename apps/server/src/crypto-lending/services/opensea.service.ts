@@ -3,11 +3,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
 import { OpenSeaAPIService } from './opensea-api.service';
-import { ListCollectionOffersResponse, OpenSeaSDK } from 'opensea-js';
+import {
+  CollectionOffer,
+  ListCollectionOffersResponse,
+  OpenSeaSDK,
+} from 'opensea-js';
 import Big from 'big.js';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { retry } from '~/commons/error-handlers/retry';
+import { ConfigService } from '~/config';
+import axios from 'axios';
 
 @Injectable()
 export class OpenSeaService {
@@ -17,6 +23,7 @@ export class OpenSeaService {
     @InjectRepository(NftCollectionEntity)
     private readonly nftCollectionRepo: Repository<NftCollectionEntity>,
     private readonly openSeaApi: OpenSeaAPIService,
+    private readonly configService: ConfigService,
   ) {}
 
   async updateCollectionContractAddresses(): Promise<void> {
@@ -104,6 +111,58 @@ export class OpenSeaService {
     }
   }
 
+  async getCollectionOffers(collectionId: string) {
+    const nftCollection = await this.nftCollectionRepo.findOneOrFail({
+      where: { id: collectionId },
+    });
+
+    const slug = nftCollection.openSeaSlug;
+    const apiKey = this.configService.get('OPENSEA_API_KEY');
+
+    const response = await axios.get(
+      `https://api.opensea.io/api/v2/offers/collection/${slug}`,
+      {
+        headers: {
+          accept: 'application/json',
+          'x-api-key': apiKey,
+        },
+      },
+    );
+
+    const offers = response.data.offers;
+
+    // sort the offers by price in descending order
+    // new Big(b.price.value) and compare
+    offers.sort((a, b) => {
+      const aAmount = new Big(a.price.value);
+      const bAmount = new Big(b.price.value);
+      return bAmount.minus(aAmount).toNumber();
+    });
+
+    return offers;
+  }
+
+  async getCollectionStats(collectionId: string) {
+    const nftCollection = await this.nftCollectionRepo.findOneOrFail({
+      where: { id: collectionId },
+    });
+
+    const slug = nftCollection.openSeaSlug;
+    const apiKey = this.configService.get('OPENSEA_API_KEY');
+
+    const response = await axios.get(
+      `https://api.opensea.io/api/v2/collections/${slug}/stats`,
+      {
+        headers: {
+          accept: 'application/json',
+          'x-api-key': apiKey,
+        },
+      },
+    );
+
+    return response.data;
+  }
+
   private async getTopFiveOffers(
     openSeaSlug: string,
   ): Promise<Array<{ price: Big }>> {
@@ -136,14 +195,45 @@ export class OpenSeaService {
     const offers = response.offers;
 
     const sortedOffers = offers.sort((a: any, b: any) => {
-      const aAmount = BigInt(a.price.value);
-      const bAmount = BigInt(b.price.value);
-      return bAmount > aAmount ? 1 : bAmount < aAmount ? -1 : 0;
+      const nftCollectionAddress =
+        a['criteria']['contract']['address'].toLowerCase();
+
+      const aOfferAmount = new Big(a.price.value);
+      const aConsiderations: CollectionOffer['protocol_data']['parameters']['consideration'] =
+        a['protocol_data']['parameters']['consideration'];
+      const aNftConsideration = aConsiderations.find(
+        (c) => c.token.toLowerCase() === nftCollectionAddress,
+      );
+
+      const bOfferAmount = new Big(b.price.value);
+      const bConsiderations: CollectionOffer['protocol_data']['parameters']['consideration'] =
+        b['protocol_data']['parameters']['consideration'];
+      const bNftConsideration = bConsiderations.find(
+        (c) => c.token.toLowerCase() === nftCollectionAddress,
+      );
+      const bQuantity = new Big(bNftConsideration['endAmount']);
+      const bPricePerNft = bOfferAmount.div(bQuantity);
+
+      const aQuantity = new Big(aNftConsideration['endAmount']);
+      const aPricePerNft = aOfferAmount.div(aQuantity);
+
+      return bPricePerNft.minus(aPricePerNft).toNumber();
     });
 
-    return sortedOffers.slice(0, 5).map((offer: any) => ({
-      price: this.weiToEth(offer.price.value),
-    }));
+    return sortedOffers.slice(0, 5).map((offer: any) => {
+      const nftCollectionAddress =
+        offer['criteria']['contract']['address'].toLowerCase();
+      const offerAmount = new Big(offer.price.value);
+      const considerations: CollectionOffer['protocol_data']['parameters']['consideration'] =
+        offer['protocol_data']['parameters']['consideration'];
+      const nftConsideration = considerations.find(
+        (c) => c.token.toLowerCase() === nftCollectionAddress,
+      );
+      const quantity = new Big(nftConsideration['endAmount']);
+      return {
+        price: this.weiToEth(offerAmount.div(quantity).toString()),
+      };
+    });
   }
 
   private weiToEth(weiValue: string): Big {

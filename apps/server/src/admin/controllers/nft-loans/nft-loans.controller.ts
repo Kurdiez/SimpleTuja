@@ -8,6 +8,8 @@ import {
   approveTokenMaxAllowanceDtoSchema,
   CollectionAddressDto,
   collectionAddressDtoSchema,
+  CollectionIdDto,
+  collectionIdDtoSchema,
   GetTokenAllowanceDto,
   getTokenAllowanceDtoSchema,
   GetTokenBalanceDto,
@@ -16,6 +18,7 @@ import {
   userIdDtoSchema,
 } from '../schema';
 import { InvestmentWalletService } from '~/crypto-lending/services/investment-wallet.service';
+import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
 
 @Controller('admin/nft-loans')
 export class NftLoansController {
@@ -24,6 +27,7 @@ export class NftLoansController {
     private readonly loanService: LoanService,
     private readonly nftFiApiService: NftFiApiService,
     private readonly investmentWalletService: InvestmentWalletService,
+    private readonly openSeaService: OpenSeaService,
   ) {}
 
   @Post('get-active-offers')
@@ -96,5 +100,21 @@ export class NftLoansController {
     { userId, token }: GetTokenBalanceDto,
   ) {
     return await this.investmentWalletService.getTokenBalance(userId, token);
+  }
+
+  @Post('get-opensea-collection-offers')
+  async getOpenseaCollectionOffers(
+    @Body(new ZodValidationPipe(collectionIdDtoSchema))
+    { collectionId }: CollectionIdDto,
+  ) {
+    return await this.openSeaService.getCollectionOffers(collectionId);
+  }
+
+  @Post('get-opensea-collection-stats')
+  async getOpenseaCollectionStats(
+    @Body(new ZodValidationPipe(collectionIdDtoSchema))
+    { collectionId }: CollectionIdDto,
+  ) {
+    return await this.openSeaService.getCollectionStats(collectionId);
   }
 }
