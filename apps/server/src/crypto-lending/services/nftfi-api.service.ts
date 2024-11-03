@@ -37,8 +37,34 @@ export class NftFiApiService {
   ): Promise<NftFiLoanOffer[]> {
     return this.enqueueRequest(async () => {
       const nftfiClient = await this.getNftFiClient(walletPrivateKey);
-      const offers = await nftfiClient.offers.get();
-      return offers as NftFiLoanOffer[];
+      const allOffers: NftFiLoanOffer[] = [];
+      const PageSize = 10;
+      let currentPage = 1;
+
+      while (true) {
+        const result = (await nftfiClient.offers.get({
+          pagination: {
+            page: currentPage,
+            limit: PageSize,
+          },
+        })) as NftFiPaginatedResponse<NftFiLoanOffer>;
+
+        const pageOffers = result.data.results;
+
+        if (!pageOffers.length) {
+          break;
+        }
+
+        allOffers.push(...pageOffers);
+
+        if (pageOffers.length < PageSize) {
+          break;
+        }
+
+        currentPage++;
+      }
+
+      return allOffers;
     });
   }
 
