@@ -10,6 +10,8 @@ import {
   collectionAddressDtoSchema,
   CollectionIdDto,
   collectionIdDtoSchema,
+  GetLentLoansDto,
+  getLentLoansDtoSchema,
   GetTokenAllowanceDto,
   getTokenAllowanceDtoSchema,
   GetTokenBalanceDto,
@@ -48,9 +50,9 @@ export class NftLoansController {
     );
   }
 
-  @Post('update-bid-offers')
-  async updateBidOffersForAllCollections() {
-    await this.loanService.updateBidOffersForAllCollections();
+  @Post('sync-nft-collections')
+  async syncNftCollections() {
+    await this.loanService.syncNftCollections();
   }
 
   @Post('refresh-crypto-exchange-rates')
@@ -58,9 +60,9 @@ export class NftLoansController {
     await this.coinlayerService.updateCryptoExchangeRates();
   }
 
-  @Post('make-loan-offers')
-  async makeLoanOffers() {
-    await this.loanService.makeLoanOffers();
+  @Post('sync-loans')
+  async syncLoans() {
+    await this.loanService.syncLoans();
   }
 
   @Post('get-token-balances')
@@ -116,5 +118,13 @@ export class NftLoansController {
     { collectionId }: CollectionIdDto,
   ) {
     return await this.openSeaService.getCollectionStats(collectionId);
+  }
+
+  @Post('get-lent-loans')
+  async getLentLoans(
+    @Body(new ZodValidationPipe(getLentLoansDtoSchema))
+    { userId, status }: GetLentLoansDto,
+  ) {
+    return await this.nftFiApiService.getLentLoansForUser(userId, status);
   }
 }

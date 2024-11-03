@@ -15,6 +15,7 @@ import { bigTransformer } from '../utils/big-transformer';
 import Big from 'big.js';
 
 @Entity('crypto_loan_offer')
+@Index(['userStateId', 'isActive', 'createdAt'])
 export class CryptoLoanOfferEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -99,7 +100,6 @@ export class CryptoLoanOfferEntity {
   @Column({ type: 'text', nullable: true })
   errorMessage!: string | null;
 
-  @Index()
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;
 

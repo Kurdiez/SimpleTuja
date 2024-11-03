@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '~/config';
 import NFTfi from '@nftfi/js';
-import { NftFiLoanOffer, NftFiPaginatedResponse } from '../types/nftfi-types';
+import {
+  NftFiActiveLoan,
+  NftFiLoanOffer,
+  NftFiLoanStatus,
+  NftFiPaginatedResponse,
+  NftFiLoanSortDirection,
+  NftFiLoanSort,
+} from '../types/nftfi-types';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
@@ -37,34 +44,11 @@ export class NftFiApiService {
   ): Promise<NftFiLoanOffer[]> {
     return this.enqueueRequest(async () => {
       const nftfiClient = await this.getNftFiClient(walletPrivateKey);
-      const allOffers: NftFiLoanOffer[] = [];
-      const PageSize = 10;
-      let currentPage = 1;
-
-      while (true) {
-        const result = (await nftfiClient.offers.get({
-          pagination: {
-            page: currentPage,
-            limit: PageSize,
-          },
-        })) as NftFiPaginatedResponse<NftFiLoanOffer>;
-
-        const pageOffers = result.data.results;
-
-        if (!pageOffers.length) {
-          break;
-        }
-
-        allOffers.push(...pageOffers);
-
-        if (pageOffers.length < PageSize) {
-          break;
-        }
-
-        currentPage++;
-      }
-
-      return allOffers;
+      return this.fetchAllPages<NftFiLoanOffer>((page) =>
+        nftfiClient.offers.get({
+          pagination: { page, limit: 10 },
+        }),
+      );
     });
   }
 
@@ -81,41 +65,16 @@ export class NftFiApiService {
     collectionAddress: string,
   ): Promise<NftFiLoanOffer[]> {
     const nftfiClient = await this.getNftFiClient();
-    const allOffers: NftFiLoanOffer[] = [];
-    const PageSize = 10;
-    let currentPage = 1;
-
-    while (true) {
-      const result = await this.enqueueRequest(async () => {
-        return nftfiClient.offers.get({
+    return this.fetchAllPages<NftFiLoanOffer>((page) =>
+      this.enqueueRequest(() =>
+        nftfiClient.offers.get({
           filters: {
-            nft: {
-              address: collectionAddress,
-            },
+            nft: { address: collectionAddress },
           },
-          pagination: {
-            page: currentPage,
-            limit: PageSize,
-          },
-        }) as Promise<NftFiPaginatedResponse<NftFiLoanOffer>>;
-      });
-
-      const pageOffers = result.data.results;
-
-      if (!pageOffers.length) {
-        break;
-      }
-
-      allOffers.push(...pageOffers);
-
-      if (pageOffers.length < PageSize) {
-        break;
-      }
-
-      currentPage++;
-    }
-
-    return allOffers;
+          pagination: { page, limit: 10 },
+        }),
+      ),
+    );
   }
 
   async makeLoanOffer({
@@ -137,37 +96,41 @@ export class NftFiApiService {
     originationFee: number;
     interestProrated: boolean;
   }) {
-    const nftfiClient = await this.getNftFiClient(walletPrivateKey);
-    const aprBufferPerDay = 0.1;
-    const aprWithBuffer = aprBufferPerDay * durationInDays + apr;
-    const numSecondsInDay = 86400;
-    const terms = {
-      currency: currencyAddress,
-      principal,
-      repayment: nftfiClient.utils.calcRepaymentAmount(
+    return this.enqueueRequest(async () => {
+      const nftfiClient = await this.getNftFiClient(walletPrivateKey);
+      const aprBufferPerDay = 0.1;
+      const aprWithBuffer = aprBufferPerDay * durationInDays + apr;
+      const numSecondsInDay = 86400;
+      const terms = {
+        currency: currencyAddress,
         principal,
-        aprWithBuffer,
-        durationInDays,
-      ),
-      duration: numSecondsInDay * durationInDays,
-      expiry: numSecondsInDay * 1,
-      origination: originationFee,
-      interest: { prorated: interestProrated },
-    };
-    const loanOfferType = nftfiClient.config.protocol.v3.type.collection.name;
+        repayment: nftfiClient.utils.calcRepaymentAmount(
+          principal,
+          aprWithBuffer,
+          durationInDays,
+        ),
+        duration: numSecondsInDay * durationInDays,
+        expiry: numSecondsInDay * 1,
+        origination: originationFee,
+        interest: { prorated: interestProrated },
+      };
+      const loanOfferType = nftfiClient.config.protocol.v3.type.collection.name;
 
-    const result = await nftfiClient.offers.create({
-      type: loanOfferType,
-      nft: { address: collectionAddress },
-      terms,
-    });
-
-    if (result.error || result.errors) {
-      throw new CustomException('Failed to make loan offer with NFTfi', {
+      const result = await nftfiClient.offers.create({
+        type: loanOfferType,
+        nft: { address: collectionAddress },
         terms,
-        errorFromNftfi: result.error || result.errors,
       });
-    }
+
+      if (result.error || result.errors) {
+        throw new CustomException('Failed to make loan offer with NFTfi', {
+          terms,
+          errorFromNftfi: result.error || result.errors,
+        });
+      }
+
+      return result;
+    });
   }
 
   async getTokenAllowanceForWallet(
@@ -201,18 +164,20 @@ export class NftFiApiService {
     walletPrivateKey: string,
     token: CryptoToken,
   ) {
-    const nftfiClient = await this.getNftFiClient(walletPrivateKey);
+    return this.enqueueRequest(async () => {
+      const nftfiClient = await this.getNftFiClient(walletPrivateKey);
 
-    const options = {
-      token: { address: CryptoTokenAddress[token] },
-      nftfi: {
-        contract: {
-          name: nftfiClient.config.protocol.v3.erc20Manager.v1.name,
+      const options = {
+        token: { address: CryptoTokenAddress[token] },
+        nftfi: {
+          contract: {
+            name: nftfiClient.config.protocol.v3.erc20Manager.v1.name,
+          },
         },
-      },
-    };
+      };
 
-    return await nftfiClient.erc20.approveMax(options);
+      return await nftfiClient.erc20.approveMax(options);
+    });
   }
 
   async approveTokenMaxAllowanceForUser(userId: string, token: CryptoToken) {
@@ -222,6 +187,73 @@ export class NftFiApiService {
     return await this.approveTokenMaxAllowanceForWallet(
       userState.walletPrivateKey,
       token,
+    );
+  }
+
+  async getLentLoansForWallet(
+    walletPrivateKey: string,
+    status: NftFiLoanStatus,
+  ): Promise<NftFiActiveLoan[]> {
+    return this.enqueueRequest(async () => {
+      const nftfiClient = await this.getNftFiClient(walletPrivateKey);
+      return this.fetchAllPages<NftFiActiveLoan>((page) =>
+        nftfiClient.loans.get({
+          filters: {
+            lender: { address: nftfiClient.account.getAddress() },
+            status: status,
+          },
+          pagination: { page, limit: 10 },
+        }),
+      );
+    });
+  }
+
+  async getLentLoansForUser(userId: string, status: NftFiLoanStatus) {
+    const userState = await this.cryptoLendingUserStateRepo.findOneOrFail({
+      where: { userId },
+    });
+    return await this.getLentLoansForWallet(userState.walletPrivateKey, status);
+  }
+
+  async getLentLoansForWalletPaginated(
+    walletPrivateKey: string,
+    status: NftFiLoanStatus,
+    page: number,
+    limit: number = 10,
+    sort?: NftFiLoanSort,
+  ): Promise<NftFiPaginatedResponse<NftFiActiveLoan>> {
+    return this.enqueueRequest(async () => {
+      const nftfiClient = await this.getNftFiClient(walletPrivateKey);
+
+      return nftfiClient.loans.get({
+        filters: {
+          status,
+          lender: {
+            address: nftfiClient.account.getAddress(),
+          },
+        },
+        pagination: { page, limit },
+        sort,
+      });
+    });
+  }
+
+  async getLentLoansForUserPaginated(
+    userId: string,
+    status: NftFiLoanStatus,
+    page: number,
+    limit: number = 10,
+    sort?: NftFiLoanSort,
+  ) {
+    const userState = await this.cryptoLendingUserStateRepo.findOneOrFail({
+      where: { userId },
+    });
+    return await this.getLentLoansForWalletPaginated(
+      userState.walletPrivateKey,
+      status,
+      page,
+      limit,
+      sort,
     );
   }
 
@@ -300,5 +332,32 @@ export class NftFiApiService {
         provider: { url: providerUrl },
       },
     });
+  }
+
+  private async fetchAllPages<T>(
+    fetchPage: (page: number) => Promise<NftFiPaginatedResponse<T>>,
+  ): Promise<T[]> {
+    const allResults: T[] = [];
+    const PageSize = 10;
+    let currentPage = 1;
+
+    while (true) {
+      const result = await fetchPage(currentPage);
+      const pageResults = result.data.results;
+
+      if (!pageResults.length) {
+        break;
+      }
+
+      allResults.push(...pageResults);
+
+      if (pageResults.length < PageSize) {
+        break;
+      }
+
+      currentPage++;
+    }
+
+    return allResults;
   }
 }

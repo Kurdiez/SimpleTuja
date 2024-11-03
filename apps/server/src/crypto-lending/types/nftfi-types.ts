@@ -53,3 +53,72 @@ export interface NftFiPaginatedResponse<T> {
   };
   error: any | null;
 }
+
+export interface NftFiActiveLoan {
+  id: number;
+  status: NftFiLoanStatus;
+  date: {
+    started: string;
+    repaid: string | null;
+    due: string;
+  };
+  nft: {
+    id: string;
+    address: string;
+    name: string;
+    project: {
+      name: string;
+    };
+    image: {
+      uri: string;
+    };
+  };
+  borrower: {
+    address: string;
+  };
+  lender: {
+    address: string;
+  };
+  terms: {
+    loan: {
+      duration: number;
+      repayment: number;
+      principal: number;
+      apr: number;
+      interest: number;
+      currency: string;
+      unit: string;
+    };
+  };
+  nftfi: {
+    contract: {
+      name: string;
+    };
+  };
+}
+
+export enum NftFiLoanStatus {
+  Active = 'active',
+  Repaid = 'repaid',
+  Defaulted = 'defaulted',
+  Liquidated = 'liquidated',
+}
+
+export enum NftFiLoanSortBy {
+  Repayment = 'repayment',
+  Interest = 'interest',
+  Apr = 'apr',
+  Duration = 'duration',
+  DueDate = 'dueDate',
+  NftName = 'nftName',
+}
+
+export enum NftFiLoanSortDirection {
+  Asc = 'asc',
+  Desc = 'desc',
+}
+
+export interface NftFiLoanSort {
+  by: NftFiLoanSortBy;
+  direction: NftFiLoanSortDirection;
+}

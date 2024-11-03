@@ -20,6 +20,13 @@ import { OpenSeaService } from './opensea.service';
 import { ethers } from 'ethers';
 import { CoinlayerService } from './coinlayer.service';
 import { actualToWei, weiToActual } from '../utils';
+import { InvestmentWalletService } from './investment-wallet.service';
+import {
+  NftFiLoanSortBy,
+  NftFiLoanSortDirection,
+  NftFiLoanStatus,
+} from '../types/nftfi-types';
+import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
 
 @Injectable()
 export class LoanService {
@@ -32,17 +39,20 @@ export class LoanService {
     private readonly nftCollectionRepo: Repository<NftCollectionEntity>,
     @InjectRepository(CryptoLoanOfferEntity)
     private readonly loanOfferRepo: Repository<CryptoLoanOfferEntity>,
+    @InjectRepository(CryptoLoanEntity)
+    private readonly loanRepo: Repository<CryptoLoanEntity>,
     private readonly nftfiApiService: NftFiApiService,
     private readonly configService: ConfigService,
     private readonly openSeaService: OpenSeaService,
     private readonly coinlayerService: CoinlayerService,
+    private readonly investmentWalletService: InvestmentWalletService,
   ) {}
 
   @CronWithErrorHandling({
-    cronTime: '0 * * * *', // Run every hour at the start of the hour
-    taskName: 'Update Bid Offers for All Collections',
+    cronTime: '0 * * * *',
+    taskName: 'Sync NFT collections',
   })
-  async updateBidOffersForAllCollections() {
+  async syncNftCollections() {
     const numLendingEligibleCollections = this.configService.get(
       'NUM_LENDING_ELIGIBLE_NFT_COLLECTIONS',
     );
@@ -117,10 +127,10 @@ export class LoanService {
   }
 
   @CronWithErrorHandling({
-    cronTime: '*/10 * * * *',
-    taskName: 'Make Loan Offers',
+    cronTime: '30 * * * *',
+    taskName: 'Sync loans',
   })
-  async makeLoanOffers() {
+  async syncLoans() {
     this.logger.log('Updating loan status');
 
     const activeUsers = await this.userStateRepo.find({
@@ -136,9 +146,11 @@ export class LoanService {
     );
 
     await Promise.all(
-      activeUsers.map((userState) =>
-        this.makeLoanOffersForUser(userState, loanEligibleCollections),
-      ),
+      activeUsers.map(async (userState) => {
+        await this.makeLoanOffersForUser(userState, loanEligibleCollections);
+        await this.syncCurrentlyActiveLoans(userState);
+        // await this.takeDashboardSnapshot(userState);
+      }),
     );
   }
 
@@ -175,6 +187,12 @@ export class LoanService {
       });
       captureException({ error: exception });
     }
+  }
+
+  async getLoanEligibleCollections() {
+    return await this.nftCollectionRepo.find({
+      where: { enabled: true },
+    });
   }
 
   private async makeLoanOffersForCollection(
@@ -273,12 +291,6 @@ export class LoanService {
     }
   }
 
-  async getLoanEligibleCollections() {
-    return await this.nftCollectionRepo.find({
-      where: { enabled: true },
-    });
-  }
-
   private async syncLoanOffers(userState: CryptoLendingUserStateEntity) {
     const activeOffers = await this.nftfiApiService.getOffersForWallet(
       userState.walletPrivateKey,
@@ -375,5 +387,199 @@ export class LoanService {
     );
     const balance = await contract.balanceOf(walletAddress);
     return new Big(ethers.formatUnits(balance, CryptoTokenDecimals[token]));
+  }
+
+  private async syncCurrentlyActiveLoans(
+    userState: CryptoLendingUserStateEntity,
+  ) {
+    this.logger.log(`Syncing active loans for userState ${userState.id}`);
+
+    const currentActiveLoans = await this.loanRepo.find({
+      where: {
+        userStateId: userState.id,
+        status: NftFiLoanStatus.Active,
+      },
+      order: {
+        dueAt: 'DESC',
+      },
+    });
+
+    this.logger.log(
+      `Found ${currentActiveLoans.length} currently active loans in DB`,
+    );
+
+    const currentActiveLoansMap = new Map(
+      currentActiveLoans.map((loan) => [loan.nftfiLoanId, loan]),
+    );
+
+    const nftCollectionMap = new Map<string, NftCollectionEntity>();
+
+    // Sync Active Loans
+    await this.fetchAndProcessLoans(
+      userState,
+      NftFiLoanStatus.Active,
+      currentActiveLoans,
+      currentActiveLoansMap,
+      nftCollectionMap,
+    );
+
+    // Sync Defaulted Loans
+    await this.fetchAndProcessLoans(
+      userState,
+      NftFiLoanStatus.Defaulted,
+      currentActiveLoans,
+      currentActiveLoansMap,
+      nftCollectionMap,
+    );
+
+    // Sync Repaid Loans
+    await this.fetchAndProcessLoans(
+      userState,
+      NftFiLoanStatus.Repaid,
+      currentActiveLoans,
+      currentActiveLoansMap,
+      nftCollectionMap,
+    );
+
+    this.logger.log(`Finished syncing loans for userState ${userState.id}`);
+  }
+
+  private async fetchAndProcessLoans(
+    userState: CryptoLendingUserStateEntity,
+    status: NftFiLoanStatus,
+    currentActiveLoans: CryptoLoanEntity[],
+    currentActiveLoansMap: Map<string, CryptoLoanEntity>,
+    nftCollectionMap: Map<string, NftCollectionEntity>,
+  ) {
+    let page = 1;
+    const pageSize = 10;
+    const earliestActiveLoanDueDate =
+      currentActiveLoans[currentActiveLoans.length - 1]?.dueAt;
+    const loansToCreate: Partial<CryptoLoanEntity>[] = [];
+    const loansToUpdate: { id: string; updates: Partial<CryptoLoanEntity> }[] =
+      [];
+
+    while (true) {
+      this.logger.log(`Fetching page ${page} of ${status} loans from NFTfi`);
+
+      const sortOption = {
+        by: NftFiLoanSortBy.DueDate,
+        direction: NftFiLoanSortDirection.Desc,
+      };
+      const response =
+        await this.nftfiApiService.getLentLoansForWalletPaginated(
+          userState.walletPrivateKey,
+          status,
+          page,
+          pageSize,
+          sortOption,
+        );
+
+      const fetchedLoans = response.data.results;
+      if (fetchedLoans.length === 0) {
+        this.logger.log('No more loans found from NFTfi');
+        break;
+      }
+
+      this.logger.log(`Processing ${fetchedLoans.length} loans from NFTfi`);
+
+      const lastFetchedLoan = fetchedLoans[fetchedLoans.length - 1];
+      const lastFetchedLoanDueDate = new Date(lastFetchedLoan.date.due);
+
+      for (const loan of fetchedLoans) {
+        const loanDueDate = new Date(loan.date.due);
+        if (loanDueDate < earliestActiveLoanDueDate) {
+          this.logger.log(
+            'Reached loans earlier than earliest active loan, breaking',
+          );
+          break;
+        }
+
+        const existingLoan = currentActiveLoansMap.get(loan.id.toString());
+        const nftAddress = loan.nft.address.toLowerCase();
+
+        if (status === NftFiLoanStatus.Active && !existingLoan) {
+          let nftCollection = nftCollectionMap.get(nftAddress);
+          if (!nftCollection) {
+            nftCollection = await this.nftCollectionRepo.findOne({
+              where: { contractAddress: nftAddress },
+            });
+            if (!nftCollection) {
+              this.logger.warn(
+                `NFT Collection not found for address ${nftAddress}`,
+              );
+              continue;
+            }
+            nftCollectionMap.set(nftAddress, nftCollection);
+          }
+
+          const token = this.getTokenFromAddress(loan.terms.loan.currency);
+
+          loansToCreate.push({
+            nftfiLoanId: loan.id.toString(),
+            userStateId: userState.id,
+            status: NftFiLoanStatus.Active,
+            startedAt: new Date(loan.date.started),
+            repaidAt: null,
+            dueAt: loanDueDate,
+            nftCollectionId: nftCollection.id,
+            nftTokenId: loan.nft.id,
+            nftImageUrl: loan.nft.image.uri,
+            borrowerWalletAddress: loan.borrower.address,
+            loanDuration: loan.terms.loan.duration,
+            loanRepayment: weiToActual(loan.terms.loan.repayment, token),
+            loanPrincipal: weiToActual(loan.terms.loan.principal, token),
+            loanApr: new Big(loan.terms.loan.apr),
+            token,
+            nftfiContractName: loan.nftfi.contract.name,
+          });
+        } else if (existingLoan) {
+          if (status === NftFiLoanStatus.Defaulted) {
+            loansToUpdate.push({
+              id: existingLoan.id,
+              updates: { status: NftFiLoanStatus.Defaulted },
+            });
+          } else if (status === NftFiLoanStatus.Repaid) {
+            loansToUpdate.push({
+              id: existingLoan.id,
+              updates: {
+                status: NftFiLoanStatus.Repaid,
+                repaidAt: new Date(loan.date.repaid),
+              },
+            });
+          }
+        }
+      }
+
+      if (fetchedLoans.length < pageSize) {
+        this.logger.log('Received less loans than page size, breaking');
+        break;
+      }
+      if (lastFetchedLoanDueDate < earliestActiveLoanDueDate) {
+        this.logger.log(
+          'Last fetched loan is earlier than earliest active loan, breaking',
+        );
+        break;
+      }
+      page++;
+    }
+
+    this.logger.log(
+      `Found ${loansToCreate.length} loans to create and ${loansToUpdate.length} loans to update`,
+    );
+
+    await Promise.all([
+      loansToCreate.length > 0 && this.loanRepo.save(loansToCreate),
+      ...loansToUpdate.map(({ id, updates }) =>
+        this.loanRepo.update({ id }, updates),
+      ),
+    ]);
+  }
+
+  private async takeDashboardSnapshot(userState: CryptoLendingUserStateEntity) {
+    const tokenBalances = await this.investmentWalletService.getTokenBalances(
+      userState.userId,
+    );
+    // const
   }
 }

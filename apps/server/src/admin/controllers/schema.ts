@@ -1,5 +1,6 @@
 import { CryptoToken } from '@simpletuja/shared';
 import { z } from 'zod';
+import { NftFiLoanStatus } from '~/crypto-lending/types/nftfi-types';
 
 export const userIdDtoSchema = z.object({
   userId: z.string(),
@@ -35,3 +36,9 @@ export const getTokenBalanceDtoSchema = z.object({
   token: z.nativeEnum(CryptoToken),
 });
 export type GetTokenBalanceDto = z.infer<typeof getTokenBalanceDtoSchema>;
+
+export const getLentLoansDtoSchema = z.object({
+  userId: z.string(),
+  status: z.nativeEnum(NftFiLoanStatus),
+});
+export type GetLentLoansDto = z.infer<typeof getLentLoansDtoSchema>;
