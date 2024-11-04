@@ -27,6 +27,7 @@ import {
   NftFiLoanStatus,
 } from '../types/nftfi-types';
 import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
+import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-dashboard-snapshot.entity';
 
 @Injectable()
 export class LoanService {
@@ -46,10 +47,12 @@ export class LoanService {
     private readonly openSeaService: OpenSeaService,
     private readonly coinlayerService: CoinlayerService,
     private readonly investmentWalletService: InvestmentWalletService,
+    @InjectRepository(CryptoDashboardSnapshotEntity)
+    private readonly snapshotRepo: Repository<CryptoDashboardSnapshotEntity>,
   ) {}
 
   @CronWithErrorHandling({
-    cronTime: '0 * * * *',
+    cronTime: '0 0 * * *',
     taskName: 'Sync NFT collections',
   })
   async syncNftCollections() {
@@ -127,7 +130,7 @@ export class LoanService {
   }
 
   @CronWithErrorHandling({
-    cronTime: '30 * * * *',
+    cronTime: '0 6,18 * * *',
     taskName: 'Sync loans',
   })
   async syncLoans() {
@@ -149,7 +152,7 @@ export class LoanService {
       activeUsers.map(async (userState) => {
         await this.makeLoanOffersForUser(userState, loanEligibleCollections);
         await this.syncCurrentlyActiveLoans(userState);
-        // await this.takeDashboardSnapshot(userState);
+        await this.takeDashboardSnapshot(userState);
       }),
     );
   }
@@ -172,13 +175,23 @@ export class LoanService {
         return;
       }
 
+      const tokenBalances = await this.investmentWalletService.getTokenBalances(
+        userState.userId,
+      );
+      const exchangeRates = this.coinlayerService.getExchangeRates();
+
       await Promise.all(
         loanEligibleCollections.map((collection) =>
-          this.makeLoanOffersForCollection(collection, userState),
+          this.makeLoanOffersForCollection(
+            collection,
+            userState,
+            tokenBalances,
+            exchangeRates,
+          ),
         ),
       );
       this.logger.log(
-        `Dispatched loan offers for ${loanEligibleCollections.length} collections`,
+        `Processed loan offers for ${loanEligibleCollections.length} collections for userState ${userState.id}`,
       );
     } catch (error) {
       const exception = new CustomException('Failed to make loan offers', {
@@ -198,10 +211,10 @@ export class LoanService {
   private async makeLoanOffersForCollection(
     collection: NftCollectionEntity,
     userState: CryptoLendingUserStateEntity,
+    tokenBalances: Record<CryptoToken, string>,
+    exchangeRates: Record<CryptoToken, number>,
   ): Promise<void> {
     const collectionEthBidPrice = collection.avgTopFiveBids;
-    const walletAddress = userState.walletAddress;
-    const exchangeRates = this.coinlayerService.getExchangeRates();
 
     const ltvDurations: Array<{
       ltv: keyof CryptoLendingUserStateEntity;
@@ -217,7 +230,7 @@ export class LoanService {
     for (const token of Object.values(CryptoToken).filter(
       (t) => t !== CryptoToken.ETH,
     )) {
-      const balance = await this.getTokenBalance(token, walletAddress);
+      const balance = new Big(tokenBalances[token]);
       if (balance.eq(0)) continue;
 
       const collectionBidPriceInToken = new Big(collectionEthBidPrice).mul(
@@ -241,6 +254,10 @@ export class LoanService {
             requiredLtvAmount,
             durationInDays: days,
           });
+
+          this.logger.log(
+            `Made loan offer for collection ${collection.id} with token ${token} for userState ${userState.id} for ${days} days`,
+          );
         }),
       );
     }
@@ -577,9 +594,161 @@ export class LoanService {
   }
 
   private async takeDashboardSnapshot(userState: CryptoLendingUserStateEntity) {
+    this.logger.log(`Taking dashboard snapshot for userState ${userState.id}`);
+
     const tokenBalances = await this.investmentWalletService.getTokenBalances(
       userState.userId,
     );
-    // const
+    this.logger.log(`Retrieved token balances for userState ${userState.id}`);
+
+    const activeLoanOffersCount = await this.loanOfferRepo.count({
+      where: {
+        userStateId: userState.id,
+        isActive: true,
+      },
+    });
+    this.logger.log(
+      `Found ${activeLoanOffersCount} active loan offers for userState ${userState.id}`,
+    );
+
+    const loanMetrics = await this.aggregateLoanMetrics(userState.id);
+    this.logger.log(
+      `Aggregated loan metrics for userState ${userState.id}: ` +
+        `${loanMetrics.activeLoans} active, ${loanMetrics.repaidLoans} repaid, ${loanMetrics.liquidatedLoans} liquidated`,
+    );
+
+    await this.snapshotRepo.upsert(
+      {
+        userStateId: userState.id,
+        ethBalance: new Big(tokenBalances[CryptoToken.ETH]),
+        wethBalance: new Big(tokenBalances[CryptoToken.WETH]),
+        daiBalance: new Big(tokenBalances[CryptoToken.DAI]),
+        usdcBalance: new Big(tokenBalances[CryptoToken.USDC]),
+        activeOffers: activeLoanOffersCount,
+        activeLoans: loanMetrics.activeLoans,
+        repaidLoans: loanMetrics.repaidLoans,
+        liquidatedLoans: loanMetrics.liquidatedLoans,
+        wethActiveLoansPrincipal: loanMetrics.wethActiveLoansPrincipal,
+        daiActiveLoansPrincipal: loanMetrics.daiActiveLoansPrincipal,
+        usdcActiveLoansPrincipal: loanMetrics.usdcActiveLoansPrincipal,
+        wethActiveLoansRepayment: loanMetrics.wethActiveLoansRepayment,
+        daiActiveLoansRepayment: loanMetrics.daiActiveLoansRepayment,
+        usdcActiveLoansRepayment: loanMetrics.usdcActiveLoansRepayment,
+      },
+      {
+        conflictPaths: ['userStateId'],
+        skipUpdateIfNoValuesChanged: true,
+      },
+    );
+
+    this.logger.log(`Updated dashboard snapshot for userState ${userState.id}`);
+  }
+
+  private async aggregateLoanMetrics(userStateId: string): Promise<{
+    activeLoans: number;
+    repaidLoans: number;
+    liquidatedLoans: number;
+    wethActiveLoansPrincipal: Big;
+    daiActiveLoansPrincipal: Big;
+    usdcActiveLoansPrincipal: Big;
+    wethActiveLoansRepayment: Big;
+    daiActiveLoansRepayment: Big;
+    usdcActiveLoansRepayment: Big;
+  }> {
+    const pageSize = 1000;
+    const totalLoans = await this.loanRepo.count({ where: { userStateId } });
+    const totalPages = Math.ceil(totalLoans / pageSize);
+    const pages = Array.from({ length: totalPages }, (_, i) => i);
+
+    const pageResults = await Promise.all(
+      pages.map(async (page) => {
+        const loans = await this.loanRepo.find({
+          where: { userStateId },
+          skip: page * pageSize,
+          take: pageSize,
+        });
+
+        return loans.reduce(
+          (metrics, loan) => {
+            if (loan.status === NftFiLoanStatus.Active) {
+              metrics.activeLoans++;
+              switch (loan.token) {
+                case CryptoToken.WETH:
+                  metrics.wethActiveLoansPrincipal =
+                    metrics.wethActiveLoansPrincipal.plus(loan.loanPrincipal);
+                  metrics.wethActiveLoansRepayment =
+                    metrics.wethActiveLoansRepayment.plus(loan.loanRepayment);
+                  break;
+                case CryptoToken.DAI:
+                  metrics.daiActiveLoansPrincipal =
+                    metrics.daiActiveLoansPrincipal.plus(loan.loanPrincipal);
+                  metrics.daiActiveLoansRepayment =
+                    metrics.daiActiveLoansRepayment.plus(loan.loanRepayment);
+                  break;
+                case CryptoToken.USDC:
+                  metrics.usdcActiveLoansPrincipal =
+                    metrics.usdcActiveLoansPrincipal.plus(loan.loanPrincipal);
+                  metrics.usdcActiveLoansRepayment =
+                    metrics.usdcActiveLoansRepayment.plus(loan.loanRepayment);
+                  break;
+              }
+            } else if (loan.status === NftFiLoanStatus.Repaid) {
+              metrics.repaidLoans++;
+            } else if (loan.status === NftFiLoanStatus.Liquidated) {
+              metrics.liquidatedLoans++;
+            }
+            return metrics;
+          },
+          {
+            activeLoans: 0,
+            repaidLoans: 0,
+            liquidatedLoans: 0,
+            wethActiveLoansPrincipal: new Big(0),
+            daiActiveLoansPrincipal: new Big(0),
+            usdcActiveLoansPrincipal: new Big(0),
+            wethActiveLoansRepayment: new Big(0),
+            daiActiveLoansRepayment: new Big(0),
+            usdcActiveLoansRepayment: new Big(0),
+          },
+        );
+      }),
+    );
+
+    return pageResults.reduce(
+      (total, page) => ({
+        activeLoans: total.activeLoans + page.activeLoans,
+        repaidLoans: total.repaidLoans + page.repaidLoans,
+        liquidatedLoans: total.liquidatedLoans + page.liquidatedLoans,
+        wethActiveLoansPrincipal: total.wethActiveLoansPrincipal.plus(
+          page.wethActiveLoansPrincipal,
+        ),
+        daiActiveLoansPrincipal: total.daiActiveLoansPrincipal.plus(
+          page.daiActiveLoansPrincipal,
+        ),
+        usdcActiveLoansPrincipal: total.usdcActiveLoansPrincipal.plus(
+          page.usdcActiveLoansPrincipal,
+        ),
+        wethActiveLoansRepayment: total.wethActiveLoansRepayment.plus(
+          page.wethActiveLoansRepayment,
+        ),
+        daiActiveLoansRepayment: total.daiActiveLoansRepayment.plus(
+          page.daiActiveLoansRepayment,
+        ),
+        usdcActiveLoansRepayment: total.usdcActiveLoansRepayment.plus(
+          page.usdcActiveLoansRepayment,
+        ),
+      }),
+      {
+        activeLoans: 0,
+        repaidLoans: 0,
+        liquidatedLoans: 0,
+        wethActiveLoansPrincipal: new Big(0),
+        daiActiveLoansPrincipal: new Big(0),
+        usdcActiveLoansPrincipal: new Big(0),
+        wethActiveLoansRepayment: new Big(0),
+        daiActiveLoansRepayment: new Big(0),
+        usdcActiveLoansRepayment: new Big(0),
+      },
+    );
   }
 }
