@@ -1,8 +1,8 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { CryptoToken } from '@simpletuja/shared';
+import axios from 'axios';
 import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
 import { ConfigService } from '~/config';
-import axios from 'axios';
 
 @Injectable()
 export class CoinlayerService implements OnModuleInit {

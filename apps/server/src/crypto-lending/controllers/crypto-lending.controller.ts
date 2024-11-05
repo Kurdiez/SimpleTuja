@@ -1,19 +1,20 @@
 import { Body, Controller, Post, Req, Res } from '@nestjs/common';
-import { AuthenticatedRequest } from '~/commons/types/auth';
-import { OnboardingService } from '../services/onboarding.service';
-import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
 import {
-  CryptoExchangeRatesDtoSchema,
-  CryptoLendingUserStateDtoSchema,
-  LoanEligibleNftCollectionsDtoSchema,
+  cryptoExchangeRatesDtoSchema,
+  cryptoLendingDashboardDataDtoSchema,
+  cryptoLendingUserStateDtoSchema,
+  loanEligibleNftCollectionsDtoSchema,
   LoanSettingsUpdateDto,
-  LoanSettingsUpdateRequestSchema,
+  loanSettingsUpdateRequestSchema,
   UpdateActiveStatusDto,
-  UpdateActiveStatusDtoSchema,
+  updateActiveStatusDtoSchema,
 } from '@simpletuja/shared';
 import { Response } from 'express';
-import { CryptoLendingService } from '../services/crypto-lending.service';
+import { AuthenticatedRequest } from '~/commons/types/auth';
+import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
 import { CoinlayerService } from '../services/coinlayer.service';
+import { CryptoLendingService } from '../services/crypto-lending.service';
+import { OnboardingService } from '../services/onboarding.service';
 
 @Controller('crypto-lending')
 export class CryptoLendingController {
@@ -29,7 +30,7 @@ export class CryptoLendingController {
     @Res() res: Response,
   ) {
     const userState = await this.onboardingService.getProgress(user.id);
-    res.json(zodResTransform(userState, CryptoLendingUserStateDtoSchema));
+    res.json(zodResTransform(userState, cryptoLendingUserStateDtoSchema));
   }
 
   @Post('open-account')
@@ -40,7 +41,7 @@ export class CryptoLendingController {
   @Post('update-loan-settings')
   async updateLoanSettings(
     @Req() req: AuthenticatedRequest,
-    @Body(new ZodValidationPipe(LoanSettingsUpdateRequestSchema))
+    @Body(new ZodValidationPipe(loanSettingsUpdateRequestSchema))
     loanSettingsUpdateDto: LoanSettingsUpdateDto,
   ) {
     const userId = req.user.id;
@@ -53,7 +54,7 @@ export class CryptoLendingController {
   @Post('update-active-status')
   async updateActiveStatus(
     @Req() req: AuthenticatedRequest,
-    @Body(new ZodValidationPipe(UpdateActiveStatusDtoSchema))
+    @Body(new ZodValidationPipe(updateActiveStatusDtoSchema))
     { active }: UpdateActiveStatusDto,
   ) {
     await this.cryptoLendingService.updateActiveStatus(req.user.id, active);
@@ -68,12 +69,18 @@ export class CryptoLendingController {
   async getLoanEligibleNftCollections() {
     const collections =
       await this.cryptoLendingService.getLoanEligibleNftCollections();
-    return zodResTransform(collections, LoanEligibleNftCollectionsDtoSchema);
+    return zodResTransform(collections, loanEligibleNftCollectionsDtoSchema);
   }
 
   @Post('get-crypto-exchange-rates')
   getCryptoExchangeRates() {
     const rates = this.coinlayerService.getExchangeRates();
-    return zodResTransform(rates, CryptoExchangeRatesDtoSchema);
+    return zodResTransform(rates, cryptoExchangeRatesDtoSchema);
+  }
+
+  @Post('get-dashboard-data')
+  async getDashboardData(@Req() req: AuthenticatedRequest) {
+    const data = await this.cryptoLendingService.getDashboardData(req.user.id);
+    return zodResTransform(data, cryptoLendingDashboardDataDtoSchema);
   }
 }

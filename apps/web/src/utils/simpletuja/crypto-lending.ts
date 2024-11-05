@@ -1,5 +1,6 @@
 import {
   CryptoExchangeRatesDto,
+  CryptoLendingDashboardDataDto,
   CryptoLendingUserStateDto,
   CryptoToken,
   LoanEligibleNftCollectionsDto,
@@ -61,3 +62,12 @@ export const getTokenBalance = async (token: CryptoToken): Promise<string> => {
   );
   return response;
 };
+
+export const getDashboardData =
+  async (): Promise<CryptoLendingDashboardDataDto> => {
+    const response = await apiRequest<CryptoLendingDashboardDataDto>(
+      `${BaseUrl}/get-dashboard-data`,
+      {}
+    );
+    return response;
+  };

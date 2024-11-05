@@ -1,6 +1,7 @@
+import { useRouter } from "next/router";
 import React from "react";
 import AppLayout from "../../common/app-layout/AppLayout";
-import CryptoLendingDescription from "./CryptoLendingDescription";
+import { TabHeader } from "../../common/TabHeader";
 import { CryptoLendingProvider } from "./crypto-lending.context";
 
 type CryptoLendingLayoutProps = {
@@ -10,14 +11,33 @@ type CryptoLendingLayoutProps = {
 export const CryptoLendingLayout: React.FC<CryptoLendingLayoutProps> = ({
   children,
 }) => {
+  const router = useRouter();
+
+  const tabs = [
+    {
+      name: "Dashboard",
+      href: "/app/crypto-lending",
+      current: router.pathname === "/app/crypto-lending",
+    },
+    {
+      name: "About",
+      href: "/app/crypto-lending/about",
+      current: router.pathname === "/app/crypto-lending/about",
+    },
+    {
+      name: "Settings",
+      href: "/app/crypto-lending/settings",
+      current: router.pathname === "/app/crypto-lending/settings",
+    },
+  ];
+
   return (
     <AppLayout>
       <div className="container mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Crypto P2P Lending</h1>
-        <div className="mb-10">
-          <CryptoLendingDescription />
+        <TabHeader title="Crypto P2P Lending" tabs={tabs} />
+        <div className="mt-6">
+          <CryptoLendingProvider>{children}</CryptoLendingProvider>
         </div>
-        <CryptoLendingProvider>{children}</CryptoLendingProvider>
       </div>
     </AppLayout>
   );

@@ -1,14 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
 import {
+  CryptoLendingDashboardDataDto,
   LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
 } from '@simpletuja/shared';
-import { OnboardingService } from './onboarding.service';
+import { Repository } from 'typeorm';
 import { CustomException } from '~/commons/errors/custom-exception';
+import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-dashboard-snapshot.entity';
 import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
+import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
+import { OnboardingService } from './onboarding.service';
 
 @Injectable()
 export class CryptoLendingService {
@@ -19,6 +21,8 @@ export class CryptoLendingService {
     private readonly nftCollectionRepo: Repository<NftCollectionEntity>,
     @InjectRepository(CryptoLendingUserStateEntity)
     private readonly cryptoLendingUserStateRepo: Repository<CryptoLendingUserStateEntity>,
+    @InjectRepository(CryptoDashboardSnapshotEntity)
+    private readonly cryptoDashboardSnapshotRepo: Repository<CryptoDashboardSnapshotEntity>,
     private readonly onboardingService: OnboardingService,
   ) {}
 
@@ -67,5 +71,39 @@ export class CryptoLendingService {
 
   async updateActiveStatus(userId: string, active: boolean) {
     await this.cryptoLendingUserStateRepo.update(userId, { active });
+  }
+
+  async getDashboardData(
+    userId: string,
+  ): Promise<CryptoLendingDashboardDataDto | null> {
+    const userState = await this.cryptoLendingUserStateRepo.findOneOrFail({
+      where: { userId },
+    });
+
+    const snapshot = await this.cryptoDashboardSnapshotRepo.findOne({
+      where: { userStateId: userState.id },
+    });
+
+    if (!snapshot) {
+      return null;
+    }
+
+    return {
+      walletAddress: userState.walletAddress,
+      ethBalance: snapshot.ethBalance.toString(),
+      wethBalance: snapshot.wethBalance.toString(),
+      daiBalance: snapshot.daiBalance.toString(),
+      usdcBalance: snapshot.usdcBalance.toString(),
+      activeOffers: snapshot.activeOffers,
+      activeLoans: snapshot.activeLoans,
+      repaidLoans: snapshot.repaidLoans,
+      liquidatedLoans: snapshot.liquidatedLoans,
+      wethActiveLoansPrincipal: snapshot.wethActiveLoansPrincipal.toString(),
+      daiActiveLoansPrincipal: snapshot.daiActiveLoansPrincipal.toString(),
+      usdcActiveLoansPrincipal: snapshot.usdcActiveLoansPrincipal.toString(),
+      wethActiveLoansRepayment: snapshot.wethActiveLoansRepayment.toString(),
+      daiActiveLoansRepayment: snapshot.daiActiveLoansRepayment.toString(),
+      usdcActiveLoansRepayment: snapshot.usdcActiveLoansRepayment.toString(),
+    };
   }
 }

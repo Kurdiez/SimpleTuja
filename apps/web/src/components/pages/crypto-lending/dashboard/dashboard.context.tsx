@@ -1,140 +1,180 @@
 import {
   getCryptoExchangeRates,
-  getTokenBalance,
+  getDashboardData,
 } from "@/utils/simpletuja/crypto-lending";
-import { CryptoExchangeRatesDto, CryptoToken } from "@simpletuja/shared";
+import {
+  CryptoExchangeRatesDto,
+  CryptoLendingDashboardDataDto,
+} from "@simpletuja/shared";
 import React, {
   createContext,
-  useContext,
   ReactNode,
-  useState,
+  useContext,
   useEffect,
+  useState,
 } from "react";
 import toast from "react-hot-toast";
 
-export interface TokenBalance {
-  id: number;
-  name: string;
-  balance: string;
-  token: CryptoToken;
-}
+export type ComputedBalances = {
+  // Portfolio balances
+  portfolioUsdValue: number;
+  portfolioEthValue: number;
+
+  // Cash balances
+  totalUsdBalance: number;
+
+  // Loan stats
+  activeOffers: number;
+  activeLoans: number;
+  repaidLoans: number;
+  liquidatedLoans: number;
+
+  // Token balances
+  ethBalance: string;
+  wethBalance: string;
+  daiBalance: string;
+  usdcBalance: string;
+
+  // Active loan principals
+  wethActiveLoansPrincipal: string;
+  daiActiveLoansPrincipal: string;
+  usdcActiveLoansPrincipal: string;
+  totalActiveLoanPrincipalUsd: number;
+
+  // Active loan repayments
+  wethActiveLoansRepayment: string;
+  daiActiveLoansRepayment: string;
+  usdcActiveLoansRepayment: string;
+  totalActiveLoansRepaymentUsd: number;
+};
 
 type DashboardContextType = {
   isLoading: boolean;
-  tokenBalances: TokenBalance[];
-  exchangeRates: CryptoExchangeRatesDto | null;
-  walletAddress: string;
+  walletAddress: string | null;
+  computedBalances: ComputedBalances | null;
   copyToClipboard: () => Promise<void>;
-  calculateTotalUsdBalance: () => number;
 };
 
 const DashboardContext = createContext<DashboardContextType | undefined>(
   undefined
 );
 
-type DashboardProviderProps = {
-  children: ReactNode;
+const computeBalances = (
+  data: CryptoLendingDashboardDataDto | null,
+  exchangeRates: CryptoExchangeRatesDto | null
+): ComputedBalances | null => {
+  if (!data || !exchangeRates) return null;
+
+  // Calculate loan principals in USD
+  const wethPrincipalUsd =
+    parseFloat(data.wethActiveLoansPrincipal) * exchangeRates.USDC;
+  const daiPrincipalUsd = parseFloat(data.daiActiveLoansPrincipal);
+  const usdcPrincipalUsd = parseFloat(data.usdcActiveLoansPrincipal);
+  const totalActiveLoanPrincipalUsd =
+    wethPrincipalUsd + daiPrincipalUsd + usdcPrincipalUsd;
+
+  // Calculate loan repayments in USD
+  const wethRepaymentUsd =
+    parseFloat(data.wethActiveLoansRepayment) * exchangeRates.USDC;
+  const daiRepaymentUsd = parseFloat(data.daiActiveLoansRepayment);
+  const usdcRepaymentUsd = parseFloat(data.usdcActiveLoansRepayment);
+  const totalActiveLoansRepaymentUsd =
+    wethRepaymentUsd + daiRepaymentUsd + usdcRepaymentUsd;
+
+  // Calculate Portfolio USD Value (using principals, not repayments)
+  const ethBalanceUsd = parseFloat(data.ethBalance) * exchangeRates.USDC;
+  const wethBalanceUsd = parseFloat(data.wethBalance) * exchangeRates.USDC;
+  const daiBalanceUsd = parseFloat(data.daiBalance);
+  const usdcBalanceUsd = parseFloat(data.usdcBalance);
+
+  const portfolioUsdValue =
+    ethBalanceUsd +
+    wethBalanceUsd +
+    daiBalanceUsd +
+    usdcBalanceUsd +
+    totalActiveLoanPrincipalUsd;
+
+  // Calculate Portfolio ETH Value
+  const ethBalance = parseFloat(data.ethBalance);
+  const wethBalance = parseFloat(data.wethBalance);
+  const daiBalance = parseFloat(data.daiBalance) / exchangeRates.USDC;
+  const usdcBalance = parseFloat(data.usdcBalance) / exchangeRates.USDC;
+  const wethLoan = parseFloat(data.wethActiveLoansPrincipal);
+  const daiLoan = parseFloat(data.daiActiveLoansPrincipal) / exchangeRates.USDC;
+  const usdcLoan =
+    parseFloat(data.usdcActiveLoansPrincipal) / exchangeRates.USDC;
+
+  const portfolioEthValue =
+    ethBalance +
+    wethBalance +
+    daiBalance +
+    usdcBalance +
+    wethLoan +
+    daiLoan +
+    usdcLoan;
+
+  // Calculate Total USD Balance (cash only, no loans)
+  const totalUsdBalance =
+    ethBalanceUsd + wethBalanceUsd + daiBalanceUsd + usdcBalanceUsd;
+
+  return {
+    portfolioUsdValue,
+    portfolioEthValue,
+    totalUsdBalance,
+
+    // Loan stats
+    activeOffers: data.activeOffers,
+    activeLoans: data.activeLoans,
+    repaidLoans: data.repaidLoans,
+    liquidatedLoans: data.liquidatedLoans,
+
+    // Token balances
+    ethBalance: data.ethBalance,
+    wethBalance: data.wethBalance,
+    daiBalance: data.daiBalance,
+    usdcBalance: data.usdcBalance,
+
+    // Active loan principals
+    wethActiveLoansPrincipal: data.wethActiveLoansPrincipal,
+    daiActiveLoansPrincipal: data.daiActiveLoansPrincipal,
+    usdcActiveLoansPrincipal: data.usdcActiveLoansPrincipal,
+    totalActiveLoanPrincipalUsd,
+
+    // Active loan repayments
+    wethActiveLoansRepayment: data.wethActiveLoansRepayment,
+    daiActiveLoansRepayment: data.daiActiveLoansRepayment,
+    usdcActiveLoansRepayment: data.usdcActiveLoansRepayment,
+    totalActiveLoansRepaymentUsd,
+  };
 };
 
-export const DashboardProvider: React.FC<DashboardProviderProps> = ({
+export const DashboardProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [exchangeRates, setExchangeRates] =
     useState<CryptoExchangeRatesDto | null>(null);
-  const [tokenBalances, setTokenBalances] = useState<TokenBalance[]>([
-    {
-      id: 1,
-      name: "ETH Balance",
-      balance: "0",
-      token: CryptoToken.ETH,
-    },
-    {
-      id: 2,
-      name: "wETH Balance",
-      balance: "0",
-      token: CryptoToken.WETH,
-    },
-    {
-      id: 3,
-      name: "DAI Balance",
-      balance: "0",
-      token: CryptoToken.DAI,
-    },
-    {
-      id: 4,
-      name: "USDC Balance",
-      balance: "0",
-      token: CryptoToken.USDC,
-    },
-  ]);
-
-  const walletAddress: string = "0x1234567890abcdef1234567890abcdef12345678";
+  const [dashboardData, setDashboardData] =
+    useState<CryptoLendingDashboardDataDto | null>(null);
+  const computedBalances = computeBalances(dashboardData, exchangeRates);
 
   const copyToClipboard = async (): Promise<void> => {
-    await navigator.clipboard.writeText(walletAddress);
+    if (!dashboardData?.walletAddress) return;
+    await navigator.clipboard.writeText(dashboardData.walletAddress);
     toast.success("Address copied to clipboard");
-  };
-
-  const calculateTotalUsdBalance = (): number => {
-    if (!exchangeRates || isLoading) return 0;
-
-    const total = tokenBalances.reduce((total, token) => {
-      const balance = parseFloat(token.balance.replace(/,/g, ""));
-      switch (token.token) {
-        case CryptoToken.ETH:
-          return total + balance * exchangeRates.USDC;
-        case CryptoToken.WETH:
-          return total + balance * exchangeRates.USDC;
-        case CryptoToken.DAI:
-          return total + balance;
-        case CryptoToken.USDC:
-          return total + balance;
-        default:
-          return total;
-      }
-    }, 0);
-
-    return parseFloat(
-      total
-        .toLocaleString(undefined, {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        })
-        .replace(/,/g, "")
-    );
   };
 
   useEffect(() => {
     const initialize = async () => {
       try {
         setIsLoading(true);
-        const rates = await getCryptoExchangeRates();
+        const [rates, data] = await Promise.all([
+          getCryptoExchangeRates(),
+          getDashboardData(),
+        ]);
+
         setExchangeRates(rates);
-
-        await Promise.all(
-          tokenBalances.map(async (token, index) => {
-            const balance = await getTokenBalance(token.token);
-            const parsedBalance = parseFloat(balance);
-            const maxDecimals =
-              token.token === CryptoToken.DAI ||
-              token.token === CryptoToken.USDC
-                ? 2
-                : 8;
-
-            setTokenBalances((prev) => {
-              const updated = [...prev];
-              updated[index] = {
-                ...updated[index],
-                balance: parsedBalance.toLocaleString(undefined, {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: maxDecimals,
-                }),
-              };
-              return updated;
-            });
-          })
-        );
+        setDashboardData(data);
       } catch (error) {
         console.error("Error initializing dashboard:", error);
       } finally {
@@ -149,11 +189,9 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({
     <DashboardContext.Provider
       value={{
         isLoading,
-        tokenBalances,
-        exchangeRates,
-        walletAddress,
+        walletAddress: dashboardData?.walletAddress ?? null,
+        computedBalances,
         copyToClipboard,
-        calculateTotalUsdBalance,
       }}
     >
       {children}

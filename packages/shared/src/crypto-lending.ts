@@ -13,12 +13,12 @@ const LTVFieldsSchema = z.object({
   threeMonthsLTV: LTVSchema,
 });
 
-const WalletAddressSchema = z
+const walletAddressSchema = z
   .string()
   .regex(/^0x[a-fA-F0-9]{40}$/)
   .nullable();
 
-export const CryptoLendingUserStateDtoSchema = z
+export const cryptoLendingUserStateDtoSchema = z
   .object({
     id: z.string().uuid(),
     userId: z.string().uuid(),
@@ -27,23 +27,23 @@ export const CryptoLendingUserStateDtoSchema = z
     hasFundedTheAccount: z.boolean(),
     hasAllTokenAllowancesApproved: z.boolean(),
     ...LTVFieldsSchema.shape,
-    foreclosureWalletAddress: WalletAddressSchema,
-    walletAddress: WalletAddressSchema,
+    foreclosureWalletAddress: walletAddressSchema,
+    walletAddress: walletAddressSchema,
     active: z.boolean(),
   })
   .nullable();
 export type CryptoLendingUserStateDto = z.infer<
-  typeof CryptoLendingUserStateDtoSchema
+  typeof cryptoLendingUserStateDtoSchema
 >;
 
-export const LoanSettingsUpdateRequestSchema = LTVFieldsSchema.extend({
-  foreclosureWalletAddress: WalletAddressSchema,
+export const loanSettingsUpdateRequestSchema = LTVFieldsSchema.extend({
+  foreclosureWalletAddress: walletAddressSchema,
 });
 export type LoanSettingsUpdateDto = z.infer<
-  typeof LoanSettingsUpdateRequestSchema
+  typeof loanSettingsUpdateRequestSchema
 >;
 
-export const LoanEligibleNftCollectionsDtoSchema = z.array(
+export const loanEligibleNftCollectionsDtoSchema = z.array(
   z.object({
     name: z.string().min(1),
     loanCount: z.number().int(),
@@ -52,24 +52,48 @@ export const LoanEligibleNftCollectionsDtoSchema = z.array(
   })
 );
 export type LoanEligibleNftCollectionsDto = z.infer<
-  typeof LoanEligibleNftCollectionsDtoSchema
+  typeof loanEligibleNftCollectionsDtoSchema
 >;
 
-export const CryptoExchangeRatesDtoSchema = z.object({
+export const cryptoExchangeRatesDtoSchema = z.object({
   [CryptoToken.WETH]: z.number(),
   [CryptoToken.DAI]: z.number(),
   [CryptoToken.USDC]: z.number(),
 });
 export type CryptoExchangeRatesDto = z.infer<
-  typeof CryptoExchangeRatesDtoSchema
+  typeof cryptoExchangeRatesDtoSchema
 >;
 
-export const UpdateActiveStatusDtoSchema = z.object({
+export const updateActiveStatusDtoSchema = z.object({
   active: z.boolean(),
 });
-export type UpdateActiveStatusDto = z.infer<typeof UpdateActiveStatusDtoSchema>;
+export type UpdateActiveStatusDto = z.infer<typeof updateActiveStatusDtoSchema>;
 
 export const getTokenBalanceDtoSchema = z.object({
   token: z.nativeEnum(CryptoToken),
 });
 export type GetTokenBalanceDto = z.infer<typeof getTokenBalanceDtoSchema>;
+
+export const cryptoLendingDashboardDataDtoSchema = z
+  .object({
+    walletAddress: z.string(),
+    ethBalance: z.string(), // Big numbers are serialized as strings
+    wethBalance: z.string(),
+    daiBalance: z.string(),
+    usdcBalance: z.string(),
+    activeOffers: z.number(),
+    activeLoans: z.number(),
+    repaidLoans: z.number(),
+    liquidatedLoans: z.number(),
+    wethActiveLoansPrincipal: z.string(),
+    daiActiveLoansPrincipal: z.string(),
+    usdcActiveLoansPrincipal: z.string(),
+    wethActiveLoansRepayment: z.string(),
+    daiActiveLoansRepayment: z.string(),
+    usdcActiveLoansRepayment: z.string(),
+  })
+  .nullable();
+
+export type CryptoLendingDashboardDataDto = z.infer<
+  typeof cryptoLendingDashboardDataDtoSchema
+>;
