@@ -1,8 +1,10 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ZodValidationPipe } from '~/commons/validations';
 import { CoinlayerService } from '~/crypto-lending/services/coinlayer.service';
+import { InvestmentWalletService } from '~/crypto-lending/services/investment-wallet.service';
 import { LoanService } from '~/crypto-lending/services/loan.service';
 import { NftFiApiService } from '~/crypto-lending/services/nftfi-api.service';
+import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
 import {
   ApproveTokenMaxAllowanceDto,
   approveTokenMaxAllowanceDtoSchema,
@@ -19,8 +21,6 @@ import {
   UserIdDto,
   userIdDtoSchema,
 } from '../schema';
-import { InvestmentWalletService } from '~/crypto-lending/services/investment-wallet.service';
-import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
 
 @Controller('admin/nft-loans')
 export class NftLoansController {
@@ -60,9 +60,9 @@ export class NftLoansController {
     await this.coinlayerService.updateCryptoExchangeRates();
   }
 
-  @Post('sync-loans')
-  async syncLoans() {
-    await this.loanService.syncLoans();
+  @Post('sync-and-make-loan-offers')
+  async syncAndMakeLoanOffers() {
+    await this.loanService.syncAndMakeLoanOffers();
   }
 
   @Post('get-token-balances')

@@ -1,33 +1,32 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
-import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
-import { NftFiApiService } from './nftfi-api.service';
-import { CustomException } from '~/commons/errors/custom-exception';
-import { captureException } from '~/commons/error-handlers/capture-exception';
-import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
-import Big from 'big.js';
-import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
-import { Not, In } from 'typeorm';
 import {
   CryptoToken,
   CryptoTokenAddress,
   CryptoTokenDecimals,
 } from '@simpletuja/shared';
-import { ConfigService } from '~/config';
-import { OpenSeaService } from './opensea.service';
+import Big from 'big.js';
 import { ethers } from 'ethers';
-import { CoinlayerService } from './coinlayer.service';
-import { actualToWei, weiToActual } from '../utils';
-import { InvestmentWalletService } from './investment-wallet.service';
+import { In, Not, Repository } from 'typeorm';
+import { captureException } from '~/commons/error-handlers/capture-exception';
+import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
+import { CustomException } from '~/commons/errors/custom-exception';
+import { ConfigService } from '~/config';
+import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-dashboard-snapshot.entity';
+import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
+import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
+import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
+import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
 import {
   NftFiLoanSortBy,
   NftFiLoanSortDirection,
   NftFiLoanStatus,
 } from '../types/nftfi-types';
-import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
-import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-dashboard-snapshot.entity';
+import { actualToWei, weiToActual } from '../utils';
+import { CoinlayerService } from './coinlayer.service';
+import { InvestmentWalletService } from './investment-wallet.service';
+import { NftFiApiService } from './nftfi-api.service';
+import { OpenSeaService } from './opensea.service';
 
 @Injectable()
 export class LoanService {
@@ -52,16 +51,42 @@ export class LoanService {
   ) {}
 
   @CronWithErrorHandling({
-    cronTime: '0 0 * * *',
-    taskName: 'Sync NFT collections',
+    cronTime: '0 6,18 * * *',
+    taskName: 'Sync and make loan offers',
   })
+  async syncAndMakeLoanOffers() {
+    await this.syncNftCollections();
+
+    this.logger.log('Updating loan status');
+
+    const activeUsers = await this.userStateRepo.find({
+      where: {
+        active: true,
+      },
+    });
+    this.logger.log(`Found ${activeUsers.length} active users`);
+
+    const loanEligibleCollections = await this.getLoanEligibleCollections();
+    this.logger.log(
+      `Found ${loanEligibleCollections.length} loan eligible collections`,
+    );
+
+    await Promise.all(
+      activeUsers.map(async (userState) => {
+        await this.makeLoanOffersForUser(userState, loanEligibleCollections);
+        await this.syncCurrentlyActiveLoans(userState);
+        await this.takeDashboardSnapshot(userState);
+      }),
+    );
+  }
+
   async syncNftCollections() {
+    this.logger.log('Updating bid offers for all collections');
+
     const numLendingEligibleCollections = this.configService.get(
       'NUM_LENDING_ELIGIBLE_NFT_COLLECTIONS',
     );
     const numCollectionsToUpdate = numLendingEligibleCollections * 3;
-
-    this.logger.log('Updating bid offers for all collections');
 
     const collections = await this.nftCollectionRepo.find({
       where: {
@@ -127,34 +152,6 @@ export class LoanService {
       );
     }
     this.logger.log('Updated bid offers for all collections');
-  }
-
-  @CronWithErrorHandling({
-    cronTime: '0 6,18 * * *',
-    taskName: 'Sync loans',
-  })
-  async syncLoans() {
-    this.logger.log('Updating loan status');
-
-    const activeUsers = await this.userStateRepo.find({
-      where: {
-        active: true,
-      },
-    });
-    this.logger.log(`Found ${activeUsers.length} active users`);
-
-    const loanEligibleCollections = await this.getLoanEligibleCollections();
-    this.logger.log(
-      `Found ${loanEligibleCollections.length} loan eligible collections`,
-    );
-
-    await Promise.all(
-      activeUsers.map(async (userState) => {
-        await this.makeLoanOffersForUser(userState, loanEligibleCollections);
-        await this.syncCurrentlyActiveLoans(userState);
-        await this.takeDashboardSnapshot(userState);
-      }),
-    );
   }
 
   async makeLoanOffersForUser(
