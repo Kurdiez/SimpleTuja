@@ -6,7 +6,7 @@ import { WalletAddressSection } from "@/components/pages/crypto-lending/dashboar
 import { WalletBalanceSummary } from "@/components/pages/crypto-lending/dashboard/WalletBalanceSummary";
 import React from "react";
 
-const CryptoLending: React.FC = () => {
+const CryptoLendingDashboard: React.FC = () => {
   return (
     <CryptoLendingLayout>
       <DashboardProvider>
@@ -24,4 +24,4 @@ const CryptoLending: React.FC = () => {
   );
 };
 
-export default CryptoLending;
+export default CryptoLendingDashboard;

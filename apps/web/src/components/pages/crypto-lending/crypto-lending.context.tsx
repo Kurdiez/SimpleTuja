@@ -12,6 +12,7 @@ import React, {
 
 type CryptoLendingContextType = {
   userState: CryptoLendingUserStateDto | null;
+  isOnboardingComplete: boolean;
   isLoading: boolean;
 };
 
@@ -29,8 +30,13 @@ export const CryptoLendingProvider: React.FC<CryptoLendingProviderProps> = ({
   const [userState, setUserState] = useState<CryptoLendingUserStateDto | null>(
     null
   );
+  const [isOnboardingComplete, setIsOnboardingComplete] =
+    useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
+
+  // Add pathname to track actual route changes
+  const { pathname } = router;
 
   useEffect(() => {
     const fetchUserState = async () => {
@@ -45,16 +51,18 @@ export const CryptoLendingProvider: React.FC<CryptoLendingProviderProps> = ({
           state.hasCompletedLoanSettings &&
           state.hasFundedTheAccount &&
           state.hasAllTokenAllowancesApproved;
+        setIsOnboardingComplete(isOnboardingComplete);
 
         // redirect only if the pathname isn't already the onboarding page
         if (
           !isOnboardingComplete &&
-          router.pathname !== AppRoute.CryptoLendingOnboarding
+          pathname !== AppRoute.CryptoLendingOnboarding &&
+          pathname !== AppRoute.CryptoLendingAbout
         ) {
           router.push(AppRoute.CryptoLendingOnboarding);
         } else if (
           isOnboardingComplete &&
-          router.pathname === AppRoute.CryptoLendingOnboarding
+          pathname === AppRoute.CryptoLendingOnboarding
         ) {
           router.push(AppRoute.CryptoLending);
         }
@@ -66,17 +74,17 @@ export const CryptoLendingProvider: React.FC<CryptoLendingProviderProps> = ({
     };
 
     fetchUserState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pathname, router]);
 
   return (
     <CryptoLendingContext.Provider
       value={{
         userState,
+        isOnboardingComplete,
         isLoading,
       }}
     >
-      {isLoading ? null : children}
+      {children}
     </CryptoLendingContext.Provider>
   );
 };

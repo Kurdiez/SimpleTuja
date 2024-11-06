@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { useRouter } from "next/router";
 import { FC } from "react";
 import { Typography } from "./Typography";
 
@@ -17,6 +19,15 @@ function classNames(...classes: string[]) {
 }
 
 export const TabHeader: FC<TabHeaderProps> = ({ title, tabs }) => {
+  const router = useRouter();
+
+  const handleTabChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedTab = tabs.find((tab) => tab.name === event.target.value);
+    if (selectedTab) {
+      router.push(selectedTab.href);
+    }
+  };
+
   return (
     <div className="border-b border-gray-700 pb-5 sm:pb-0 mb-10">
       <Typography.DisplayXL className="mt-2 mb-8">{title}</Typography.DisplayXL>
@@ -28,11 +39,14 @@ export const TabHeader: FC<TabHeaderProps> = ({ title, tabs }) => {
           <select
             id="current-tab"
             name="current-tab"
-            defaultValue={tabs.find((tab) => tab.current)?.name}
+            value={tabs.find((tab) => tab.current)?.name}
+            onChange={handleTabChange}
             className="block w-full rounded-md border-gray-700 bg-gray-800 py-2 pl-3 pr-8 text-gray-200 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm appearance-none"
           >
             {tabs.map((tab) => (
-              <option key={tab.name}>{tab.name}</option>
+              <option key={tab.name} value={tab.name}>
+                {tab.name}
+              </option>
             ))}
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -53,7 +67,7 @@ export const TabHeader: FC<TabHeaderProps> = ({ title, tabs }) => {
         <div className="hidden sm:block">
           <nav className="-mb-px flex space-x-8">
             {tabs.map((tab) => (
-              <a
+              <Link
                 key={tab.name}
                 href={tab.href}
                 aria-current={tab.current ? "page" : undefined}
@@ -65,7 +79,7 @@ export const TabHeader: FC<TabHeaderProps> = ({ title, tabs }) => {
                 )}
               >
                 {tab.name}
-              </a>
+              </Link>
             ))}
           </nav>
         </div>
