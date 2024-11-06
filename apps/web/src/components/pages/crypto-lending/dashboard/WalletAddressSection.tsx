@@ -14,11 +14,11 @@ export const WalletAddressSection: React.FC = () => {
   return (
     <div className="space-y-2">
       <Typography.DisplayLG tag="h1">Wallet Address</Typography.DisplayLG>
-      <div className="flex items-center">
-        <span className="text-base text-primary font-medium">
+      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
+        <span className="text-base text-primary font-medium break-all">
           {walletAddress}
         </span>
-        <div className="flex items-center space-x-1 ml-2">
+        <div className="flex items-center space-x-1 sm:ml-2">
           <button
             onClick={copyToClipboard}
             className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
