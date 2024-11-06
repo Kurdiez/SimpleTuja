@@ -1,14 +1,14 @@
+import { AppRoute } from "@/utils/app-route";
+import { getCryptoUserState } from "@/utils/simpletuja/crypto-lending";
+import { CryptoLendingUserStateDto } from "@simpletuja/shared";
+import { useRouter } from "next/router";
 import React, {
   createContext,
-  useContext,
   ReactNode,
-  useState,
+  useContext,
   useEffect,
+  useState,
 } from "react";
-import { CryptoLendingUserStateDto } from "@simpletuja/shared";
-import { getCryptoUserState } from "@/utils/simpletuja/crypto-lending";
-import { useRouter } from "next/router";
-import { AppRoute } from "@/utils/app-route";
 
 type CryptoLendingContextType = {
   userState: CryptoLendingUserStateDto | null;
@@ -76,7 +76,7 @@ export const CryptoLendingProvider: React.FC<CryptoLendingProviderProps> = ({
         isLoading,
       }}
     >
-      {isLoading ? <div></div> : children}
+      {isLoading ? null : children}
     </CryptoLendingContext.Provider>
   );
 };
