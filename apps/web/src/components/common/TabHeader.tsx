@@ -75,7 +75,7 @@ export const TabHeader: FC<TabHeaderProps> = ({ title, tabs }) => {
                   tab.current
                     ? "border-primary text-primary"
                     : "border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300",
-                  "whitespace-nowrap border-b-2 px-1 pb-4 text-sm font-medium"
+                  "whitespace-nowrap border-b-2 px-1 pb-4 text-sm font-medium cursor-pointer"
                 )}
               >
                 {tab.name}

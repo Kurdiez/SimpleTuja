@@ -8,7 +8,10 @@ import {
   useCryptoLending,
 } from "./crypto-lending.context";
 
-const StaticPages = new Set<string>([AppRoute.CryptoLendingAbout]);
+const StaticPages = new Set<string>([
+  AppRoute.CryptoLendingAbout,
+  AppRoute.CryptoLendingWallet,
+]);
 
 const CryptoLendingLayoutContent: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -43,6 +46,11 @@ const CryptoLendingLayoutContent: React.FC<{ children: React.ReactNode }> = ({
         name: "About",
         href: AppRoute.CryptoLendingAbout,
         current: router.pathname === AppRoute.CryptoLendingAbout,
+      },
+      {
+        name: "Wallet",
+        href: AppRoute.CryptoLendingWallet,
+        current: router.pathname === AppRoute.CryptoLendingWallet,
       },
       {
         name: "Settings",

@@ -42,6 +42,7 @@ export const CryptoLendingProvider: React.FC<CryptoLendingProviderProps> = ({
     const fetchUserState = async () => {
       try {
         setIsLoading(true);
+
         const state = await getCryptoUserState();
         setUserState(state);
 
