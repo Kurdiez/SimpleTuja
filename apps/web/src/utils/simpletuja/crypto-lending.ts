@@ -5,6 +5,7 @@ import {
   CryptoToken,
   LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
+  WithdrawTokenResponseDto,
 } from "@simpletuja/shared";
 import { apiRequest } from "./api";
 
@@ -71,3 +72,15 @@ export const getDashboardData =
     );
     return response;
   };
+
+export const withdrawToken = async (
+  token: CryptoToken,
+  amount: string,
+  destinationAddress: string
+): Promise<WithdrawTokenResponseDto> => {
+  const response = await apiRequest<WithdrawTokenResponseDto>(
+    `${BaseUrl}/investment-wallet/withdraw`,
+    { token, amount, destinationAddress }
+  );
+  return response;
+};

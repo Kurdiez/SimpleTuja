@@ -1,11 +1,15 @@
 import { Body, Controller, Post, Req } from '@nestjs/common';
-import { AuthenticatedRequest } from '~/commons/types/auth';
-import { InvestmentWalletService } from '../services/investment-wallet.service';
-import { ZodValidationPipe } from '~/commons/validations';
 import {
   GetTokenBalanceDto,
   getTokenBalanceDtoSchema,
+  WithdrawTokenRequestDto,
+  withdrawTokenRequestDtoSchema,
+  WithdrawTokenResponseDto,
+  WithdrawTokenStatus,
 } from '@simpletuja/shared';
+import { AuthenticatedRequest } from '~/commons/types/auth';
+import { ZodValidationPipe } from '~/commons/validations';
+import { InvestmentWalletService } from '../services/investment-wallet.service';
 
 @Controller('crypto-lending/investment-wallet')
 export class InvestmentWalletController {
@@ -24,5 +28,23 @@ export class InvestmentWalletController {
       token,
     );
     return balance.toString();
+  }
+
+  @Post('withdraw')
+  async withdrawToken(
+    @Req() { user }: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(withdrawTokenRequestDtoSchema))
+    { token, amount, destinationAddress }: WithdrawTokenRequestDto,
+  ): Promise<WithdrawTokenResponseDto> {
+    const result = await this.investmentWalletService.withdrawToken(
+      user.id,
+      token,
+      amount,
+      destinationAddress,
+    );
+
+    return {
+      status: result === true ? WithdrawTokenStatus.Success : result,
+    };
   }
 }

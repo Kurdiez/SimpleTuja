@@ -1,18 +1,20 @@
 import Button from "@/components/common/Button";
 import { useInvestmentWallet } from "@/components/common/investment-wallet.context";
-import LoadSpinner from "@/components/common/LoadSpinner";
+import { Typography } from "@/components/common/Typography";
 import { CheckCircleIcon } from "@heroicons/react/20/solid";
 import { CryptoToken } from "@simpletuja/shared";
 import classNames from "classnames";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-export const WalletInfo: React.FC = () => {
+export const InvestmentWalletActions: React.FC = () => {
   const {
     isWalletConnected,
-    connectSenderWallet,
+    isTransactionPending,
+    connectFundingWallet,
+    disconnectFundingWallet,
     depositErc20Token,
     depositEth,
-    getTokenBalance,
+    withdrawToken,
   } = useInvestmentWallet();
 
   const [selectedDepositToken, setSelectedDepositToken] = useState<CryptoToken>(
@@ -24,72 +26,6 @@ export const WalletInfo: React.FC = () => {
   const [withdrawAmount, setWithdrawAmount] = useState<string>("");
   const [isDepositing, setIsDepositing] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-
-  const [ethBalance, setEthBalance] = useState("0.00");
-  const [wethBalance, setWethBalance] = useState("0.00");
-  const [daiBalance, setDaiBalance] = useState("0.00");
-  const [usdcBalance, setUsdcBalance] = useState("0.00");
-
-  const [ethLoading, setEthLoading] = useState(false);
-  const [wethLoading, setWethLoading] = useState(false);
-  const [daiLoading, setDaiLoading] = useState(false);
-  const [usdcLoading, setUsdcLoading] = useState(false);
-
-  useEffect(() => {
-    const loadBalance = async (
-      token: CryptoToken,
-      setBalance: (value: string) => void,
-      setLoading: (value: boolean) => void
-    ) => {
-      setLoading(true);
-      try {
-        const balance = await getTokenBalance(token);
-        setBalance(balance);
-      } catch (error) {
-        console.error(`Error loading ${token} balance:`, error);
-        setBalance("0.00");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadBalance(CryptoToken.ETH, setEthBalance, setEthLoading);
-    loadBalance(CryptoToken.WETH, setWethBalance, setWethLoading);
-    loadBalance(CryptoToken.DAI, setDaiBalance, setDaiLoading);
-    loadBalance(CryptoToken.USDC, setUsdcBalance, setUsdcLoading);
-  }, []);
-
-  const BalanceDisplay: React.FC<{ token: CryptoToken }> = ({ token }) => {
-    const getBalanceAndLoading = (token: CryptoToken): [string, boolean] => {
-      switch (token) {
-        case CryptoToken.ETH:
-          return [ethBalance, ethLoading];
-        case CryptoToken.WETH:
-          return [wethBalance, wethLoading];
-        case CryptoToken.DAI:
-          return [daiBalance, daiLoading];
-        case CryptoToken.USDC:
-          return [usdcBalance, usdcLoading];
-      }
-    };
-
-    const [balance, loading] = getBalanceAndLoading(token);
-
-    return (
-      <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-        <dt className="text-sm/6 font-medium text-white">{token} Balance</dt>
-        <dd className="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">
-          {loading ? (
-            <div className="flex justify-start">
-              <LoadSpinner className="h-4 w-4" />
-            </div>
-          ) : (
-            `${balance} ${token}`
-          )}
-        </dd>
-      </div>
-    );
-  };
 
   const handleDeposit = async () => {
     if (!depositAmount) return;
@@ -110,11 +46,11 @@ export const WalletInfo: React.FC = () => {
   };
 
   const handleWithdraw = async () => {
-    if (!withdrawAmount) return;
+    if (!withdrawAmount || !isWalletConnected) return;
 
     try {
       setIsWithdrawing(true);
-      // TODO: Implement withdraw functionality
+      await withdrawToken(selectedWithdrawToken, withdrawAmount);
       setWithdrawAmount("");
     } catch (error) {
       console.error("Withdrawal failed:", error);
@@ -126,39 +62,55 @@ export const WalletInfo: React.FC = () => {
   return (
     <div>
       <div className="px-4 sm:px-0">
-        <h3 className="text-base/7 font-semibold text-white">Wallet</h3>
-        <p className="mt-1 max-w-2xl text-sm/6 text-gray-400">
-          Please ensure you have enough ETH in your wallet to cover GAS fees for
-          withdrawals.
-        </p>
+        <Typography.DisplayMD className="text-white">
+          Investment Wallet Actions
+        </Typography.DisplayMD>
+        <Typography.TextSM className="mt-1 max-w-2xl text-gray-400">
+          Deposit or withdraw funds from your investment wallet. Please ensure
+          you have enough ETH to cover GAS fees.
+        </Typography.TextSM>
       </div>
 
       <div className="mt-6 border-t border-white/10">
         <dl className="divide-y divide-white/10">
-          {/* Token Balances */}
-          <BalanceDisplay token={CryptoToken.ETH} />
-          <BalanceDisplay token={CryptoToken.WETH} />
-          <BalanceDisplay token={CryptoToken.DAI} />
-          <BalanceDisplay token={CryptoToken.USDC} />
-
           {/* Connect Wallet */}
           <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-            <dt className="text-sm/6 font-medium text-white">Connect Wallet</dt>
+            <Typography.TextMD weight="medium" className="text-white">
+              Connect Your Funding Wallet
+            </Typography.TextMD>
             <dd className="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">
               {isWalletConnected ? (
-                <div className="w-32 rounded-md px-3.5 py-2.5 text-sm font-semibold text-white bg-green-600 flex items-center justify-center">
-                  <CheckCircleIcon className="h-5 w-5 mr-2" />
-                  Connected
+                <div className="flex items-center gap-4">
+                  <div className="rounded-md px-3.5 py-2.5 text-sm font-semibold text-white bg-green-600 flex items-center justify-center">
+                    <CheckCircleIcon className="h-5 w-5 mr-2" />
+                    <Typography.TextSM weight="medium">
+                      Funding Wallet Connected
+                    </Typography.TextSM>
+                  </div>
+                  <button
+                    onClick={disconnectFundingWallet}
+                    className="link text-sm"
+                  >
+                    <Typography.TextSM>Disconnect</Typography.TextSM>
+                  </button>
                 </div>
               ) : (
-                <Button onClick={connectSenderWallet}>Connect Wallet</Button>
+                <Button onClick={connectFundingWallet}>
+                  Connect Funding Wallet
+                </Button>
               )}
+              <Typography.TextSM className="mt-1 text-gray-400">
+                Connect the wallet you&apos;ll use to send deposits and receive
+                withdrawals
+              </Typography.TextSM>
             </dd>
           </div>
 
           {/* Deposit Funds */}
           <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-            <dt className="text-sm/6 font-medium text-white">Deposit Funds</dt>
+            <Typography.TextMD weight="medium" className="text-white">
+              Deposit Funds
+            </Typography.TextMD>
             <dd className="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">
               <div className="space-y-4">
                 <div className="flex gap-4">
@@ -186,7 +138,7 @@ export const WalletInfo: React.FC = () => {
                         disabled={!isWalletConnected}
                         className="mr-2"
                       />
-                      {token}
+                      <Typography.TextSM>{token}</Typography.TextSM>
                     </label>
                   ))}
                 </div>
@@ -206,7 +158,11 @@ export const WalletInfo: React.FC = () => {
                   />
                   <Button
                     onClick={handleDeposit}
-                    disabled={!isWalletConnected || !depositAmount}
+                    disabled={
+                      !isWalletConnected ||
+                      !depositAmount ||
+                      isTransactionPending
+                    }
                     loading={isDepositing}
                   >
                     Deposit
@@ -218,7 +174,9 @@ export const WalletInfo: React.FC = () => {
 
           {/* Withdraw Funds */}
           <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-            <dt className="text-sm/6 font-medium text-white">Withdraw Funds</dt>
+            <Typography.TextMD weight="medium" className="text-white">
+              Withdraw Funds
+            </Typography.TextMD>
             <dd className="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">
               <div className="space-y-4">
                 <div className="flex gap-4">
@@ -248,7 +206,7 @@ export const WalletInfo: React.FC = () => {
                         disabled={!isWalletConnected}
                         className="mr-2"
                       />
-                      {token}
+                      <Typography.TextSM>{token}</Typography.TextSM>
                     </label>
                   ))}
                 </div>
@@ -268,7 +226,11 @@ export const WalletInfo: React.FC = () => {
                   />
                   <Button
                     onClick={handleWithdraw}
-                    disabled={!isWalletConnected || !withdrawAmount}
+                    disabled={
+                      !isWalletConnected ||
+                      !withdrawAmount ||
+                      isTransactionPending
+                    }
                     loading={isWithdrawing}
                   >
                     Withdraw

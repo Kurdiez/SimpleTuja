@@ -97,3 +97,25 @@ export const cryptoLendingDashboardDataDtoSchema = z
 export type CryptoLendingDashboardDataDto = z.infer<
   typeof cryptoLendingDashboardDataDtoSchema
 >;
+
+export const withdrawTokenRequestDtoSchema = z.object({
+  token: z.nativeEnum(CryptoToken),
+  amount: z.string(), // Amount in decimal string format (e.g., "1.5")
+  destinationAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/), // Ethereum address format
+});
+export type WithdrawTokenRequestDto = z.infer<
+  typeof withdrawTokenRequestDtoSchema
+>;
+
+export enum WithdrawTokenStatus {
+  Success = "Success",
+  InsufficientTokenBalance = "InsufficientTokenBalance",
+  InsufficientEthForGasFee = "InsufficientEthForGasFee",
+}
+
+export const withdrawTokenResponseDtoSchema = z.object({
+  status: z.nativeEnum(WithdrawTokenStatus),
+});
+export type WithdrawTokenResponseDto = z.infer<
+  typeof withdrawTokenResponseDtoSchema
+>;

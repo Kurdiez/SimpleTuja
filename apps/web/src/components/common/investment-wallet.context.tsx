@@ -1,4 +1,8 @@
-import { getTokenBalance as getTokenBalanceFromApi } from "@/utils/simpletuja/crypto-lending";
+import {
+  getTokenBalance as getTokenBalanceFromApi,
+  withdrawToken as withdrawTokenFromApi,
+} from "@/utils/simpletuja/crypto-lending";
+import { formatCamelCase } from "@/utils/utils";
 import {
   useAppKit,
   useAppKitAccount,
@@ -8,6 +12,8 @@ import {
   CryptoToken,
   CryptoTokenAddress,
   CryptoTokenDecimals,
+  WithdrawTokenResponseDto,
+  WithdrawTokenStatus,
 } from "@simpletuja/shared";
 import {
   createConfig,
@@ -39,10 +45,18 @@ const config = createConfig({
 type InvestmentWalletContextType = {
   depositEth: (amount: string) => Promise<void>;
   depositErc20Token: (token: CryptoToken, amount: string) => Promise<void>;
-  connectSenderWallet: () => void;
+  connectFundingWallet: () => void;
+  disconnectFundingWallet: () => void;
   isWalletConnected: boolean;
   isConnectWalletInitiated: boolean;
   getTokenBalance: (token: CryptoToken) => Promise<string>;
+  withdrawToken: (
+    token: CryptoToken,
+    amount: string
+  ) => Promise<WithdrawTokenResponseDto>;
+  isTransactionPending: boolean;
+  tokenBalances: Record<CryptoToken, string>;
+  updateTokenBalance: (token: CryptoToken) => Promise<void>;
 };
 
 const InvestmentWalletContext = createContext<
@@ -54,7 +68,22 @@ type InvestmentWalletProviderProps = {
   destinationAddress: string;
 };
 
-const Toast_TransferringToastId = "onboardingFundingTransferring";
+const ToastMessage = {
+  TransactionPending: "Please wait for the current transaction to complete",
+  WalletNotConnected: "Please connect your funding wallet first",
+  SendingTransaction: "Sending transaction...",
+  TransactionSuccessful: "Transaction successful",
+  ProcessingWithdrawal: "Processing withdrawal...",
+  WithdrawalSuccessful: "Withdrawal successful",
+  InsufficientBalance: (token: string) => `Insufficient ${token} balance`,
+  TransferFailed: (message: string) => `Transfer failed: ${message}`,
+  WithdrawalFailed: (status: string) =>
+    `Withdrawal failed: ${formatCamelCase(status)}`,
+} as const;
+
+const ToastIds = {
+  TransferringToastId: "onboardingFundingTransferring",
+} as const;
 
 export const InvestmentWalletProvider: React.FC<
   InvestmentWalletProviderProps
@@ -77,10 +106,21 @@ export const InvestmentWalletProvider: React.FC<
     hash: transactionHash,
   });
 
+  const [isTransactionPending, setIsTransactionPending] = useState(false);
+
+  const [tokenBalances, setTokenBalances] = useState<
+    Record<CryptoToken, string>
+  >({} as Record<CryptoToken, string>);
+
+  const updateTokenBalance = useCallback(async (token: CryptoToken) => {
+    const balance = await getTokenBalanceFromApi(token);
+    setTokenBalances((prev) => ({ ...prev, [token]: balance }));
+  }, []);
+
   useEffect(() => {
     if (isTransferSuccess) {
-      toast.dismiss(Toast_TransferringToastId);
-      toast.success("Transaction successful");
+      toast.dismiss(ToastIds.TransferringToastId);
+      toast.success(ToastMessage.TransactionSuccessful);
     }
   }, [isTransferSuccess]);
 
@@ -93,14 +133,31 @@ export const InvestmentWalletProvider: React.FC<
     }
   }, [isConnected, isConnectWalletInitiated, disconnect]);
 
-  const connectSenderWallet = useCallback(() => {
+  const connectFundingWallet = useCallback(() => {
     setIsConnectWalletInitiated(true);
     open({ view: "Connect" });
   }, [open]);
 
+  const disconnectFundingWallet = useCallback(() => {
+    disconnect();
+    setIsWalletConnected(false);
+    setIsConnectWalletInitiated(false);
+  }, [disconnect]);
+
   const depositEth = useCallback(
     async (amount: string): Promise<void> => {
+      if (!isWalletConnected) {
+        toast.error(ToastMessage.WalletNotConnected);
+        return;
+      }
+
+      if (isTransactionPending) {
+        toast.error(ToastMessage.TransactionPending);
+        return;
+      }
+
       try {
+        setIsTransactionPending(true);
         const amountInSmallestUnit = parseUnits(
           amount,
           CryptoTokenDecimals.ETH
@@ -110,12 +167,12 @@ export const InvestmentWalletProvider: React.FC<
         });
 
         if (balance.value < amountInSmallestUnit) {
-          toast.error("Insufficient ETH balance");
+          toast.error(ToastMessage.InsufficientBalance("ETH"));
           return;
         }
 
-        toast.loading("Sending transaction...", {
-          id: Toast_TransferringToastId,
+        toast.loading(ToastMessage.SendingTransaction, {
+          id: ToastIds.TransferringToastId,
         });
 
         const result = await sendTransaction(config, {
@@ -124,18 +181,38 @@ export const InvestmentWalletProvider: React.FC<
         });
 
         setTransactionHash(result as `0x${string}`);
+        await updateTokenBalance(CryptoToken.ETH);
       } catch (error) {
-        toast.dismiss(Toast_TransferringToastId);
-        toast.error(`Transfer failed: ${(error as Error).message}`);
+        toast.dismiss(ToastIds.TransferringToastId);
+        toast.error(ToastMessage.TransferFailed((error as Error).message));
         throw error;
+      } finally {
+        setIsTransactionPending(false);
       }
     },
-    [address, destinationAddress]
+    [
+      address,
+      destinationAddress,
+      isTransactionPending,
+      isWalletConnected,
+      updateTokenBalance,
+    ]
   );
 
   const depositErc20Token = useCallback(
     async (token: CryptoToken, amount: string): Promise<void> => {
+      if (!isWalletConnected) {
+        toast.error(ToastMessage.WalletNotConnected);
+        return;
+      }
+
+      if (isTransactionPending) {
+        toast.error(ToastMessage.TransactionPending);
+        return;
+      }
+
       try {
+        setIsTransactionPending(true);
         const tokenAddress = CryptoTokenAddress[token];
         const decimals = CryptoTokenDecimals[token];
         const amountInSmallestUnit = parseUnits(amount, decimals);
@@ -146,12 +223,12 @@ export const InvestmentWalletProvider: React.FC<
         });
 
         if (balance.value < amountInSmallestUnit) {
-          toast.error(`Insufficient ${token} balance`);
+          toast.error(ToastMessage.InsufficientBalance(token));
           return;
         }
 
-        toast.loading("Sending transaction...", {
-          id: Toast_TransferringToastId,
+        toast.loading(ToastMessage.SendingTransaction, {
+          id: ToastIds.TransferringToastId,
         });
 
         const result = await writeContract(config, {
@@ -162,13 +239,22 @@ export const InvestmentWalletProvider: React.FC<
         });
 
         setTransactionHash(result);
+        await updateTokenBalance(token);
       } catch (error) {
-        toast.dismiss(Toast_TransferringToastId);
-        toast.error(`Transfer failed: ${(error as Error).message}`);
+        toast.dismiss(ToastIds.TransferringToastId);
+        toast.error(ToastMessage.TransferFailed((error as Error).message));
         throw error;
+      } finally {
+        setIsTransactionPending(false);
       }
     },
-    [address, destinationAddress]
+    [
+      address,
+      destinationAddress,
+      isTransactionPending,
+      isWalletConnected,
+      updateTokenBalance,
+    ]
   );
 
   const getTokenBalance = useCallback(
@@ -179,15 +265,69 @@ export const InvestmentWalletProvider: React.FC<
     []
   );
 
+  const withdrawToken = useCallback(
+    async (
+      token: CryptoToken,
+      amount: string
+    ): Promise<WithdrawTokenResponseDto> => {
+      if (!isWalletConnected) {
+        throw new Error(ToastMessage.WalletNotConnected);
+      }
+
+      if (isTransactionPending) {
+        throw new Error(ToastMessage.TransactionPending);
+      }
+
+      try {
+        setIsTransactionPending(true);
+        toast.loading(ToastMessage.ProcessingWithdrawal, {
+          id: ToastIds.TransferringToastId,
+        });
+
+        const response = await withdrawTokenFromApi(
+          token,
+          amount,
+          address as string
+        );
+
+        toast.dismiss(ToastIds.TransferringToastId);
+        if (response.status === WithdrawTokenStatus.Success) {
+          toast.success(ToastMessage.WithdrawalSuccessful);
+          await updateTokenBalance(token);
+        } else if (
+          response.status === WithdrawTokenStatus.InsufficientEthForGasFee
+        ) {
+          toast.error("Insufficient ETH balance for GAS fee");
+        } else {
+          toast.error(ToastMessage.WithdrawalFailed(response.status));
+        }
+
+        return response;
+      } catch (error) {
+        toast.dismiss(ToastIds.TransferringToastId);
+        toast.error(ToastMessage.TransferFailed((error as Error).message));
+        throw error;
+      } finally {
+        setIsTransactionPending(false);
+      }
+    },
+    [isTransactionPending, address, isWalletConnected, updateTokenBalance]
+  );
+
   return (
     <InvestmentWalletContext.Provider
       value={{
-        connectSenderWallet,
+        connectFundingWallet,
+        disconnectFundingWallet,
         depositEth,
         depositErc20Token,
         isWalletConnected,
         isConnectWalletInitiated,
         getTokenBalance,
+        withdrawToken,
+        isTransactionPending,
+        tokenBalances,
+        updateTokenBalance,
       }}
     >
       {children}

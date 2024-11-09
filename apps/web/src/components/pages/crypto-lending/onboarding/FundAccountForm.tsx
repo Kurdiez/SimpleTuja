@@ -1,19 +1,20 @@
-import React, { useState, useMemo, useEffect } from "react";
-import classNames from "classnames";
-import { useInvestmentWallet } from "../../../common/investment-wallet.context";
 import Button from "@/components/common/Button";
-import { CryptoToken } from "@simpletuja/shared";
+import { Typography } from "@/components/common/Typography";
+import { OnboardingFundAccountAmountModal } from "@/components/modal/content/OnboardingFundAccountAmount/OnboardingFundAccountAmountModal";
+import { WhatIsGasFeeModal } from "@/components/modal/content/WhatIsGasFeeModal";
+import { useModal } from "@/components/modal/modal.context";
+import { useOnboarding } from "@/components/pages/crypto-lending/onboarding/onboarding.context";
+import { getCryptoExchangeRates } from "@/utils/simpletuja/crypto-lending";
 import {
   CheckCircleIcon,
   InformationCircleIcon,
 } from "@heroicons/react/20/solid";
-import { useModal } from "@/components/modal/modal.context";
-import { OnboardingFundAccountAmountModal } from "@/components/modal/content/OnboardingFundAccountAmount/OnboardingFundAccountAmountModal";
-import { useOnboarding } from "@/components/pages/crypto-lending/onboarding/onboarding.context";
-import toast from "react-hot-toast";
+import { CryptoToken } from "@simpletuja/shared";
+import classNames from "classnames";
 import Image from "next/image";
-import { WhatIsGasFeeModal } from "@/components/modal/content/WhatIsGasFeeModal";
-import { getCryptoExchangeRates } from "@/utils/simpletuja/crypto-lending";
+import React, { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { useInvestmentWallet } from "../../../common/investment-wallet.context";
 
 interface FundAccountFormProps {
   classNames?: string;
@@ -44,7 +45,9 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
   const {
     isWalletConnected,
     isConnectWalletInitiated,
-    connectSenderWallet,
+    isTransactionPending,
+    connectFundingWallet,
+    disconnectFundingWallet,
     getTokenBalance,
     depositEth,
     depositErc20Token,
@@ -125,6 +128,10 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
       toast.error("Please enter an amount");
       return;
     }
+    if (isTransactionPending) {
+      toast.error("Please wait for the current transaction to complete");
+      return;
+    }
     setIsEthDepositing(true);
     try {
       await depositEth(ethInputAmount);
@@ -139,6 +146,10 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
     const numericAmount = parseFloat(amount);
     if (numericAmount <= 0) {
       toast.error("Please enter a valid amount greater than 0");
+      return;
+    }
+    if (isTransactionPending) {
+      toast.error("Please wait for the current transaction to complete");
       return;
     }
     setIsErc20TokenDepositing(true);
@@ -194,20 +205,30 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
           <div className="mt-8 space-y-12">
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">
-                1. Connect Sender Wallet
+                1. Connect Funding Wallet
               </h3>
               {isWalletConnected && isConnectWalletInitiated ? (
-                <div className="w-full rounded-md px-3.5 py-2.5 text-sm font-semibold text-white bg-green-600 flex items-center justify-center">
-                  <CheckCircleIcon className="h-5 w-5 mr-2" />
-                  Connected
+                <div className="flex items-center gap-4">
+                  <div className="rounded-md px-3.5 py-2.5 text-sm font-semibold text-white bg-green-600 flex items-center justify-center">
+                    <CheckCircleIcon className="h-5 w-5 mr-2" />
+                    <Typography.TextSM weight="medium">
+                      Funding Wallet Connected
+                    </Typography.TextSM>
+                  </div>
+                  <button
+                    onClick={disconnectFundingWallet}
+                    className="link text-sm"
+                  >
+                    <Typography.TextSM>Disconnect</Typography.TextSM>
+                  </button>
                 </div>
               ) : (
                 <Button
                   type="button"
                   className="w-full"
-                  onClick={connectSenderWallet}
+                  onClick={connectFundingWallet}
                 >
-                  Connect
+                  Connect Funding Wallet
                 </Button>
               )}
             </div>
@@ -247,7 +268,11 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
                 />
                 <Button
                   type="button"
-                  disabled={!isWalletConnected || !isConnectWalletInitiated}
+                  disabled={
+                    !isWalletConnected ||
+                    !isConnectWalletInitiated ||
+                    isTransactionPending
+                  }
                   onClick={handleEthDeposit}
                   loading={isEthDepositing}
                   className="w-full sm:w-auto"
@@ -317,11 +342,7 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
                   type="button"
                   className="w-full sm:w-48 justify-end"
                   onClick={handleAmountClick}
-                  disabled={
-                    !isWalletConnected ||
-                    !isConnectWalletInitiated ||
-                    !isEthDepositCompleted
-                  }
+                  disabled={!isWalletConnected || !isConnectWalletInitiated}
                 >
                   <span className="flex items-center space-x-2">
                     <span>{amount}</span>
@@ -336,8 +357,8 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
                   disabled={
                     !isWalletConnected ||
                     !isConnectWalletInitiated ||
-                    !isEthDepositCompleted ||
-                    parseFloat(amount) <= 0
+                    parseFloat(amount) <= 0 ||
+                    isTransactionPending
                   }
                 >
                   Deposit

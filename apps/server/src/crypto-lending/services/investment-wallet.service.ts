@@ -2,14 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   CryptoToken,
-  CryptoTokenDecimals,
   CryptoTokenAddress,
+  CryptoTokenDecimals,
+  WithdrawTokenStatus,
 } from '@simpletuja/shared';
-import { Repository } from 'typeorm';
-import { ethers } from 'ethers';
 import Big from 'big.js';
-import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
+import {
+  ContractTransactionResponse,
+  ethers,
+  TransactionResponse,
+} from 'ethers';
+import { Repository } from 'typeorm';
 import { ConfigService } from '~/config';
+import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
 
 @Injectable()
 export class InvestmentWalletService {
@@ -58,5 +63,72 @@ export class InvestmentWalletService {
     }
 
     return new Big(ethers.formatUnits(rawBalance, CryptoTokenDecimals[token]));
+  }
+
+  async withdrawToken(
+    userId: string,
+    token: CryptoToken,
+    amount: string,
+    destinationAddress: string,
+  ): Promise<true | WithdrawTokenStatus> {
+    const userState = await this.userStateRepo.findOneOrFail({
+      where: { userId },
+    });
+
+    const wallet = new ethers.Wallet(userState.walletPrivateKey);
+    const providerUrl = this.configService.get('PROVIDER_URL');
+    const provider = new ethers.JsonRpcProvider(providerUrl);
+    const connectedWallet = wallet.connect(provider);
+
+    // Check token balance
+    const currentBalance = await this.getTokenBalance(userId, token);
+    if (currentBalance.lt(amount)) {
+      return WithdrawTokenStatus.InsufficientTokenBalance;
+    }
+
+    try {
+      let transactionResponse:
+        | TransactionResponse
+        | ContractTransactionResponse;
+      const amountInWei = ethers.parseUnits(amount, CryptoTokenDecimals[token]);
+
+      if (token === CryptoToken.ETH) {
+        transactionResponse = await connectedWallet.sendTransaction({
+          to: destinationAddress,
+          value: amountInWei,
+        });
+      } else {
+        // Define the interface for ERC20 token
+        const tokenInterface = new ethers.Interface([
+          'function transfer(address to, uint256 amount) returns (bool)',
+          'function balanceOf(address) view returns (uint256)',
+        ]);
+
+        const tokenContract = new ethers.Contract(
+          CryptoTokenAddress[token],
+          tokenInterface,
+          connectedWallet,
+        );
+
+        // Call transfer function with properly ordered parameters
+        transactionResponse = await tokenContract.transfer(
+          destinationAddress,
+          amountInWei,
+        );
+      }
+
+      await transactionResponse.wait();
+      return true;
+    } catch (error) {
+      // Check if error is due to insufficient gas
+      if (
+        error.code === 'INSUFFICIENT_FUNDS' ||
+        error.message?.includes('insufficient funds')
+      ) {
+        return WithdrawTokenStatus.InsufficientEthForGasFee;
+      }
+      // For any other unexpected errors, throw them up
+      throw error;
+    }
   }
 }

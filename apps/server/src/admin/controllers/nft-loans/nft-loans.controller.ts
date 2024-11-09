@@ -1,4 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
+import { WithdrawTokenStatus } from '@simpletuja/shared';
 import { ZodValidationPipe } from '~/commons/validations';
 import { CoinlayerService } from '~/crypto-lending/services/coinlayer.service';
 import { InvestmentWalletService } from '~/crypto-lending/services/investment-wallet.service';
@@ -6,6 +7,9 @@ import { LoanService } from '~/crypto-lending/services/loan.service';
 import { NftFiApiService } from '~/crypto-lending/services/nftfi-api.service';
 import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
 import {
+  AdminWithdrawTokenDto,
+  adminWithdrawTokenDtoSchema,
+  AdminWithdrawTokenResponseDto,
   ApproveTokenMaxAllowanceDto,
   approveTokenMaxAllowanceDtoSchema,
   CollectionAddressDto,
@@ -126,5 +130,22 @@ export class NftLoansController {
     { userId, status }: GetLentLoansDto,
   ) {
     return await this.nftFiApiService.getLentLoansForUser(userId, status);
+  }
+
+  @Post('withdraw-token')
+  async withdrawToken(
+    @Body(new ZodValidationPipe(adminWithdrawTokenDtoSchema))
+    { userId, token, amount, destinationAddress }: AdminWithdrawTokenDto,
+  ): Promise<AdminWithdrawTokenResponseDto> {
+    const result = await this.investmentWalletService.withdrawToken(
+      userId,
+      token,
+      amount,
+      destinationAddress,
+    );
+
+    return {
+      status: result === true ? WithdrawTokenStatus.Success : result,
+    };
   }
 }
