@@ -1,21 +1,15 @@
-import React from "react";
-import Link from "next/link";
-import { useRouter } from "next/router";
+import { AppRoute } from "@/utils/app-route";
 import {
   Dialog,
   DialogBackdrop,
   DialogPanel,
   TransitionChild,
 } from "@headlessui/react";
-import {
-  XMarkIcon,
-  Cog6ToothIcon,
-  PresentationChartBarIcon,
-  CircleStackIcon,
-  ChartPieIcon,
-} from "@heroicons/react/24/outline";
+import { CircleStackIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import React, { useCallback } from "react";
 import Logo from "../Logo";
-import { AppRoute } from "@/utils/app-route";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -27,23 +21,36 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
   const navigation = [
     {
-      name: "Dashboard",
-      href: AppRoute.Dashboard,
-      icon: PresentationChartBarIcon,
-    },
-    {
       name: "Crypto Lending",
       href: AppRoute.CryptoLending,
       icon: CircleStackIcon,
     },
-    {
-      name: "Stock Pies",
-      href: AppRoute.StockPies,
-      icon: ChartPieIcon,
-    },
   ];
 
-  const isCurrentRoute = (href: string): boolean => router.pathname === href;
+  const isCurrentRoute = useCallback(
+    (href: string): boolean => router.pathname === href,
+    [router]
+  );
+
+  const handleNavClick = useCallback(
+    (href: string, e: React.MouseEvent) => {
+      if (isCurrentRoute(href)) {
+        e.preventDefault();
+        return;
+      }
+    },
+    [isCurrentRoute]
+  );
+
+  const handleLogoClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (isCurrentRoute(AppRoute.CryptoLending)) {
+        e.preventDefault();
+        return;
+      }
+    },
+    [isCurrentRoute]
+  );
 
   return (
     <>
@@ -73,7 +80,8 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
             <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 py-4 ring-1 ring-white/10">
               <div className="flex h-16 shrink-0 items-center justify-center">
                 <Link
-                  href={AppRoute.Dashboard}
+                  href={AppRoute.CryptoLending}
+                  onClick={handleLogoClick}
                   className="cursor-pointer select-none"
                 >
                   <Logo />
@@ -87,6 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                         <li key={item.name}>
                           <Link
                             href={item.href}
+                            onClick={(e) => handleNavClick(item.href, e)}
                             className={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                               isCurrentRoute(item.href)
                                 ? "bg-gray-800 text-white"
@@ -103,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                       ))}
                     </ul>
                   </li>
-                  <li className="mt-auto">
+                  {/* <li className="mt-auto">
                     <Link
                       href={AppRoute.Settings}
                       className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
@@ -114,7 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                       />
                       Settings
                     </Link>
-                  </li>
+                  </li> */}
                 </ul>
               </nav>
             </div>
@@ -125,7 +134,8 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 py-4">
           <div className="flex h-16 shrink-0 items-center justify-center">
             <Link
-              href={AppRoute.Dashboard}
+              href={AppRoute.CryptoLending}
+              onClick={handleLogoClick}
               className="cursor-pointer select-none"
             >
               <Logo />
@@ -139,6 +149,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                     <li key={item.name}>
                       <Link
                         href={item.href}
+                        onClick={(e) => handleNavClick(item.href, e)}
                         className={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
                           isCurrentRoute(item.href)
                             ? "bg-gray-800 text-white"
@@ -155,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                   ))}
                 </ul>
               </li>
-              <li className="mt-auto">
+              {/* <li className="mt-auto">
                 <Link
                   href={AppRoute.Settings}
                   className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
@@ -166,7 +177,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                   />
                   Settings
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </nav>
         </div>

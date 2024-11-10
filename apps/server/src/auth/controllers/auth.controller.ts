@@ -1,21 +1,22 @@
+import { Body, Controller, Post, Req, UseFilters } from '@nestjs/common';
 import {
-  RegisterDtoSchema,
+  AuthResponse,
+  ConfirmEmailDto,
   ConfirmEmailDtoSchema,
   RegisterDto,
-  ConfirmEmailDto,
-  SignInDtoSchema,
-  SignInDto,
-  SendResetPasswordEmailDtoSchema,
-  SendResetPasswordEmailDto,
-  ResetPasswordDtoSchema,
+  RegisterDtoSchema,
   ResetPasswordDto,
+  ResetPasswordDtoSchema,
+  SendResetPasswordEmailDto,
+  SendResetPasswordEmailDtoSchema,
+  SignInDto,
+  SignInDtoSchema,
 } from '@simpletuja/shared';
-import { Controller, Post, Body, UseFilters, Req } from '@nestjs/common';
-import { AuthService } from '../service/auth.service';
 import { Public } from '~/commons/decorators';
 import { HttpExceptionFilter } from '~/commons/filters/http-exception.filter';
 import { AuthenticatedRequest } from '~/commons/types/auth';
 import { ZodValidationPipe } from '~/commons/validations';
+import { AuthService } from '../service/auth.service';
 
 @Controller('auth')
 @UseFilters(HttpExceptionFilter)
@@ -43,7 +44,7 @@ export class AuthController {
   async confirmEmail(
     @Body(new ZodValidationPipe(ConfirmEmailDtoSchema))
     confirmEmailDto: ConfirmEmailDto,
-  ) {
+  ): Promise<AuthResponse> {
     return await this.authService.confirmEmail(confirmEmailDto.token);
   }
 

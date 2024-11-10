@@ -53,7 +53,7 @@ export const WalletBalanceSummary: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-4">
       <Typography.DisplayLG tag="h1">Cash Balance</Typography.DisplayLG>
 
       <div className="space-y-2">

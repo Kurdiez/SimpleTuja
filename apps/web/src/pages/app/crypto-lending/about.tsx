@@ -8,7 +8,7 @@ const CryptoLendingAbout: React.FC = () => {
     <CryptoLendingLayout>
       <HeroSection className="pt-4 pb-14" />
       <hr className="border-gray-200 dark:border-gray-700" />
-      <WhyUseSTJ className="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" />
+      <WhyUseSTJ className="pt-14 pb-2 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" />
     </CryptoLendingLayout>
   );
 };

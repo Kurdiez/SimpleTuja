@@ -1,15 +1,20 @@
 import { LocalStorageKey } from "@/utils/const";
+import { AuthResponse } from "@simpletuja/shared";
 import React, {
   ReactNode,
   createContext,
   useCallback,
   useContext,
+  useMemo,
   useState,
 } from "react";
 
 type GlobalStatesContextType = {
-  isLoggedIn: boolean;
-  setLoggedIn: (accessToken: string) => void;
+  isSignedIn: boolean;
+  user: AuthResponse["user"] | null;
+  userHandle: string | null;
+  setSignedIn: (authResponse: AuthResponse) => void;
+  setSignedOut: () => void;
 };
 
 const GlobalStatesContext = createContext<GlobalStatesContextType | undefined>(
@@ -23,18 +28,34 @@ type GlobalStatesProviderProps = {
 export const GlobalStatesProvider: React.FC<GlobalStatesProviderProps> = ({
   children,
 }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [user, setUser] = useState<AuthResponse["user"] | null>(null);
 
-  const setLoggedIn = useCallback((accessToken: string) => {
-    localStorage.setItem(LocalStorageKey.AccessToken, accessToken);
-    setIsLoggedIn(true);
+  const userHandle = useMemo(() => {
+    if (!user?.email) return null;
+    return user.email.split("@")[0];
+  }, [user?.email]);
+
+  const setSignedIn = useCallback((authResponse: AuthResponse) => {
+    localStorage.setItem(LocalStorageKey.AccessToken, authResponse.accessToken);
+    setIsSignedIn(true);
+    setUser(authResponse.user);
+  }, []);
+
+  const setSignedOut = useCallback(() => {
+    localStorage.removeItem(LocalStorageKey.AccessToken);
+    setIsSignedIn(false);
+    setUser(null);
   }, []);
 
   return (
     <GlobalStatesContext.Provider
       value={{
-        isLoggedIn,
-        setLoggedIn,
+        user,
+        isSignedIn,
+        userHandle,
+        setSignedIn,
+        setSignedOut,
       }}
     >
       {children}

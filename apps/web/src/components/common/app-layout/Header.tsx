@@ -1,26 +1,25 @@
-import React from "react";
+import { useGlobalStates } from "@/components/pages/app/global-states.context";
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import {
   Bars3Icon,
   BellIcon,
   ChevronDownIcon,
 } from "@heroicons/react/20/solid";
-import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
-import { LocalStorageKey } from "@/utils/const";
 import Image from "next/image";
+import React from "react";
 
 interface HeaderProps {
   setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const userNavigation = [
-  { name: "Your profile", href: "#" },
-  { name: "Sign out", href: "#" },
-];
+const userNavigation = [{ name: "Sign out", href: "#" }];
 
 const Header: React.FC<HeaderProps> = ({ setSidebarOpen }) => {
+  const { userHandle, setSignedOut } = useGlobalStates();
+
   const handleSignOut = (event: React.MouseEvent<HTMLAnchorElement>): void => {
     event.preventDefault();
-    localStorage.removeItem(LocalStorageKey.AccessToken);
+    setSignedOut();
     window.location.href = "/";
   };
 
@@ -64,7 +63,7 @@ const Header: React.FC<HeaderProps> = ({ setSidebarOpen }) => {
                   aria-hidden="true"
                   className="ml-4 text-sm font-semibold leading-6"
                 >
-                  User Menu
+                  {userHandle}
                 </span>
                 <ChevronDownIcon
                   aria-hidden="true"

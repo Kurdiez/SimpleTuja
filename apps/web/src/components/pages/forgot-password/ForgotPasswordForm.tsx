@@ -1,13 +1,16 @@
-import React, { useState } from "react";
-import { useRouter } from "next/router";
-import toast from "react-hot-toast";
-import { sendResetPasswordEmail } from "@/utils/simpletuja/auth";
+import Button from "@/components/common/Button";
 import Logo from "@/components/common/Logo";
+import { sendResetPasswordEmail } from "@/utils/simpletuja/auth";
+import { AxiosError } from "axios";
+import { useRouter } from "next/router";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
 
 const ForgotPasswordForm: React.FC = () => {
   const router = useRouter();
   const [email, setEmail] = useState<string>("");
   const [isEmailSent, setIsEmailSent] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleLogoClick = () => {
     router.push("/");
@@ -15,9 +18,18 @@ const ForgotPasswordForm: React.FC = () => {
 
   const handleResetPassword = async (event: React.FormEvent) => {
     event.preventDefault();
-    await sendResetPasswordEmail({ email });
-    toast.success("An email with reset link has been sent.");
-    setIsEmailSent(true);
+    setIsLoading(true);
+    try {
+      await sendResetPasswordEmail({ email });
+      toast.success("An email with reset link has been sent.");
+      setIsEmailSent(true);
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      const data = axiosError.response?.data as { message: string };
+      toast.error(data.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -65,12 +77,9 @@ const ForgotPasswordForm: React.FC = () => {
             </div>
 
             <div>
-              <button
-                type="submit"
-                className="mt-8 flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
+              <Button type="submit" className="w-full mt-8" loading={isLoading}>
                 Send Reset Link
-              </button>
+              </Button>
             </div>
           </form>
         </div>

@@ -182,13 +182,9 @@ export default function LoanSettingsForm({
           </p>
           <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-md">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              Please read the descriptions under each section carefully to set
-              your loan settings based on your risk tolerance. If you need help,
-              our Discord community is here to assist you.{" "}
-              <a href="#" className="underline decoration-dotted">
-                Join our Discord server
-              </a>
-              .
+              Please set your loan settings based on your risk tolerance. All
+              loan offers are expired and new ones recreated approximately every
+              30 hours.
             </p>
           </div>
 

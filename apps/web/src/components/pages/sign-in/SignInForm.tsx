@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import { useRouter } from "next/router";
+import Button from "@/components/common/Button";
+import Logo from "@/components/common/Logo";
+import { AppRoute } from "@/utils/app-route";
 import { signIn } from "@/utils/simpletuja/auth";
 import { SignInDto } from "@simpletuja/shared";
-import toast from "react-hot-toast";
 import { AxiosError } from "axios";
-import Logo from "@/components/common/Logo";
-import Button from "@/components/common/Button";
-import { AppRoute } from "@/utils/app-route";
+import { useRouter } from "next/router";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
 import { useGlobalStates } from "../app/global-states.context";
 
 const SignInForm: React.FC = () => {
@@ -14,7 +14,7 @@ const SignInForm: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { setLoggedIn } = useGlobalStates();
+  const { setSignedIn } = useGlobalStates();
 
   const handleLogoClick = () => {
     router.push("/");
@@ -26,13 +26,14 @@ const SignInForm: React.FC = () => {
 
     const signInDto: SignInDto = { email, password };
     try {
-      const accessToken = await signIn(signInDto);
-      setLoggedIn(accessToken);
+      const authResponse = await signIn(signInDto);
+      setSignedIn(authResponse);
       toast.success("Sign-in successful!");
-      router.push(AppRoute.Dashboard);
+      router.push(AppRoute.CryptoLending);
     } catch (error: unknown) {
       const axiosError = error as AxiosError;
       const data = axiosError.response?.data as { message: string };
+      console.log("axiosError", axiosError);
       toast.error(data.message);
     } finally {
       setIsLoading(false);

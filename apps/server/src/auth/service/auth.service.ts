@@ -1,15 +1,16 @@
 import {
+  BadRequestException,
   Injectable,
   UnauthorizedException,
-  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { AuthResponse } from '@simpletuja/shared';
 import * as bcrypt from 'bcryptjs';
+import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { UserEntity } from '../../database/entities/user.entity';
 import { BrevoService } from '~/notifications/services/brevo.service';
+import { UserEntity } from '../../database/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -29,7 +30,18 @@ export class AuthService {
     return null;
   }
 
-  async signIn(email: string, password: string) {
+  private async createAuthResponse(user: UserEntity): Promise<AuthResponse> {
+    const accessToken = await this.signJwtToken(user);
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+    };
+  }
+
+  async signIn(email: string, password: string): Promise<AuthResponse> {
     const user = await this.validateUser(email, password);
     if (!user) {
       throw new UnauthorizedException('Invalid login credentials');
@@ -42,9 +54,7 @@ export class AuthService {
       );
     }
 
-    return {
-      accessToken: this.signJwtToken(user),
-    };
+    return this.createAuthResponse(user);
   }
 
   async register(email: string, password: string) {
@@ -63,9 +73,7 @@ export class AuthService {
     await this.sendEmailConfirmation(newUser);
   }
 
-  async confirmEmail(
-    token: string,
-  ): Promise<{ success: boolean; accessToken?: string }> {
+  async confirmEmail(token: string): Promise<AuthResponse> {
     const user = await this.userRepo.findOne({
       where: { emailConfirmationToken: token },
     });
@@ -74,15 +82,13 @@ export class AuthService {
       user.emailConfirmationToken = null;
       await this.userRepo.save(user);
 
-      return { success: true, accessToken: this.signJwtToken(user) };
+      return this.createAuthResponse(user);
     }
     throw new UnauthorizedException('Invalid token');
   }
 
-  async refreshToken(user: UserEntity) {
-    return {
-      accessToken: this.signJwtToken(user),
-    };
+  async refreshToken(user: UserEntity): Promise<AuthResponse> {
+    return this.createAuthResponse(user);
   }
 
   async sendResetPasswordEmail(email: string): Promise<{ success: boolean }> {
@@ -100,7 +106,7 @@ export class AuthService {
   async resetPassword(
     token: string,
     newPassword: string,
-  ): Promise<{ success: boolean; accessToken?: string }> {
+  ): Promise<AuthResponse> {
     const user = await this.userRepo.findOne({
       where: { emailConfirmationToken: token },
     });
@@ -113,10 +119,7 @@ export class AuthService {
     user.emailConfirmationToken = null;
     await this.userRepo.save(user);
 
-    return {
-      success: true,
-      accessToken: this.signJwtToken(user),
-    };
+    return this.createAuthResponse(user);
   }
 
   private async sendEmailConfirmation(user: UserEntity): Promise<void> {

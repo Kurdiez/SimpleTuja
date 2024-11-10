@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { useRouter } from "next/router";
-import toast from "react-hot-toast";
-import { resetPassword } from "@/utils/simpletuja/auth"; // Import the resetPassword function
-import { AxiosError } from "axios";
+import Button from "@/components/common/Button";
 import Logo from "@/components/common/Logo";
 import { AppRoute } from "@/utils/app-route";
+import { resetPassword } from "@/utils/simpletuja/auth"; // Import the resetPassword function
+import { AxiosError } from "axios";
+import { useRouter } from "next/router";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
 import { useGlobalStates } from "../app/global-states.context";
 
 interface ResetPasswordFormProps {
@@ -15,7 +16,8 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ token }) => {
   const router = useRouter();
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const { setLoggedIn } = useGlobalStates();
+  const { setSignedIn } = useGlobalStates();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleLogoClick = () => {
     router.push("/");
@@ -28,15 +30,18 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ token }) => {
       return;
     }
 
+    setIsLoading(true);
     try {
-      const accessToken = await resetPassword({ token, newPassword });
-      setLoggedIn(accessToken);
+      const authResponse = await resetPassword({ token, newPassword });
+      setSignedIn(authResponse);
       toast.success("Password reset successful!");
-      router.push(AppRoute.Dashboard);
+      router.push(AppRoute.CryptoLending);
     } catch (error: unknown) {
       const axiosError = error as AxiosError;
       const data = axiosError.response?.data as { message: string };
       toast.error(data.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -99,12 +104,9 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ token }) => {
           </div>
 
           <div>
-            <button
-              type="submit"
-              className="mt-8 flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
+            <Button type="submit" className="w-full mt-8" loading={isLoading}>
               Reset
-            </button>
+            </Button>
           </div>
         </form>
       </div>

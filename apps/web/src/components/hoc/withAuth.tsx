@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LocalStorageKey } from "@/utils/const";
+import { confirmEmail, refreshToken } from "@/utils/simpletuja/auth";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { useGlobalStates } from "../pages/app/global-states.context";
-import { confirmEmail, refreshToken } from "@/utils/simpletuja/auth";
 
 type ComponentType = React.ComponentType<any>;
 
@@ -14,7 +14,7 @@ export const withAuth = (Component: ComponentType) => {
   const AuthenticatedComponent: React.FC<any> = (props) => {
     const router = useRouter();
     const [isAuthenticating, setIsAuthenticating] = useState(true);
-    const { isLoggedIn, setLoggedIn } = useGlobalStates();
+    const { isSignedIn, setSignedIn } = useGlobalStates();
 
     useEffect(() => {
       if (!router.isReady) return;
@@ -27,16 +27,16 @@ export const withAuth = (Component: ComponentType) => {
 
         if (pathname === "/email-confirmation" && token) {
           try {
-            const accessToken = await confirmEmail(token as string);
-            setLoggedIn(accessToken);
+            const authResponse = await confirmEmail(token as string);
+            setSignedIn(authResponse);
             router.push("/app");
           } catch {
             router.push("/");
           }
-        } else if (!isLoggedIn && pathname.startsWith("/app")) {
+        } else if (!isSignedIn && pathname.startsWith("/app")) {
           try {
-            const accessToken = await refreshToken();
-            setLoggedIn(accessToken);
+            const authResponse = await refreshToken();
+            setSignedIn(authResponse);
           } catch {
             if (pathname !== "/" && pathname !== "/sign-in") {
               localStorage.removeItem(LocalStorageKey.AccessToken);
@@ -49,11 +49,11 @@ export const withAuth = (Component: ComponentType) => {
 
       authenticateAndRedirect();
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [router, setLoggedIn]);
+    }, [router, setSignedIn]);
 
     if (
       isAuthenticating ||
-      (!isLoggedIn &&
+      (!isSignedIn &&
         router.pathname.startsWith("/app") &&
         router.pathname !== "/")
     ) {
