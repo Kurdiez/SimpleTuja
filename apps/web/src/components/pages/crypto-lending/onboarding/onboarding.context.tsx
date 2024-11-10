@@ -1,20 +1,16 @@
-import React, {
-  createContext,
-  useContext,
-  ReactNode,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
-import {
-  CryptoLendingUserStateDto,
-  LoanSettingsUpdateDto,
-} from "@simpletuja/shared";
 import {
   getCryptoUserState,
   openAccount,
-  updateLoanSettings as updateLoanSettingsApi,
 } from "@/utils/simpletuja/crypto-lending";
+import { CryptoLendingUserStateDto } from "@simpletuja/shared";
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { useCryptoLending } from "../crypto-lending.context";
 
 export enum OnboardingStep {
@@ -29,9 +25,6 @@ type OnboardingContextType = {
   currentStep: OnboardingStep;
   openCryptoInvestmentAccount: () => Promise<string>;
   jumpToStep: (step: OnboardingStep) => void;
-  updateLoanSettings: (
-    loanSettingsUpdateDto: LoanSettingsUpdateDto
-  ) => Promise<void>;
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(
@@ -118,15 +111,6 @@ export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({
     [currentStep, progress?.hasOpenedCryptoInvestmentAccount]
   );
 
-  const updateLoanSettings = useCallback(
-    async (loanSettingsUpdateDto: LoanSettingsUpdateDto) => {
-      await updateLoanSettingsApi(loanSettingsUpdateDto);
-      const newProgress = await getCryptoUserState();
-      setProgress(newProgress);
-    },
-    []
-  );
-
   return (
     <OnboardingContext.Provider
       value={{
@@ -134,7 +118,6 @@ export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({
         currentStep,
         openCryptoInvestmentAccount,
         jumpToStep,
-        updateLoanSettings,
       }}
     >
       {children}

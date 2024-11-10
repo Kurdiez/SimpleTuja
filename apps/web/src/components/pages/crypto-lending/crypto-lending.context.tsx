@@ -1,6 +1,12 @@
 import { AppRoute } from "@/utils/app-route";
-import { getCryptoUserState } from "@/utils/simpletuja/crypto-lending";
-import { CryptoLendingUserStateDto } from "@simpletuja/shared";
+import {
+  getCryptoUserState,
+  updateLoanSettings as updateLoanSettingsApi,
+} from "@/utils/simpletuja/crypto-lending";
+import {
+  CryptoLendingUserStateDto,
+  LoanSettingsUpdateDto,
+} from "@simpletuja/shared";
 import { useRouter } from "next/router";
 import React, {
   createContext,
@@ -14,6 +20,9 @@ type CryptoLendingContextType = {
   userState: CryptoLendingUserStateDto | null;
   isOnboardingComplete: boolean;
   isLoading: boolean;
+  updateLoanSettings: (
+    loanSettingsUpdateDto: LoanSettingsUpdateDto
+  ) => Promise<void>;
 };
 
 const CryptoLendingContext = createContext<
@@ -77,12 +86,21 @@ export const CryptoLendingProvider: React.FC<CryptoLendingProviderProps> = ({
     fetchUserState();
   }, [pathname, router]);
 
+  const updateLoanSettings = async (
+    loanSettingsUpdateDto: LoanSettingsUpdateDto
+  ) => {
+    await updateLoanSettingsApi(loanSettingsUpdateDto);
+    const state = await getCryptoUserState();
+    setUserState(state);
+  };
+
   return (
     <CryptoLendingContext.Provider
       value={{
         userState,
         isOnboardingComplete,
         isLoading,
+        updateLoanSettings,
       }}
     >
       {children}

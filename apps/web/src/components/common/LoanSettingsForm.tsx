@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
-import classNames from "classnames";
-import Toggle from "@/components/common/Toggle";
 import Button from "@/components/common/Button";
-import toast from "react-hot-toast";
+import Toggle from "@/components/common/Toggle";
 import { LoanSettingsUpdateDto } from "@simpletuja/shared";
+import classNames from "classnames";
+import { useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { Typography } from "./Typography";
 
 export type LoanSettingsSnapshot = LoanSettingsUpdateDto;
 
@@ -23,21 +24,21 @@ interface LoanSettingsFormData {
 }
 
 interface LoanSettingsFormProps {
-  onSubmit: (data: LoanSettingsSnapshot) => Promise<void>;
-  snapshot?: LoanSettingsSnapshot;
+  onSubmit: (data: LoanSettingsUpdateDto) => Promise<void>;
+  settings?: LoanSettingsUpdateDto;
 }
 
 const loanDurations = [
   { key: "oneWeek", label: "1 Week", recommendedLtv: 70 },
   { key: "twoWeeks", label: "2 Weeks", recommendedLtv: 65 },
   { key: "oneMonth", label: "1 Month", recommendedLtv: 60 },
-  { key: "twoMonths", label: "2 Months", recommendedLtv: 50 },
-  { key: "threeMonths", label: "3 Months", recommendedLtv: 40 },
+  { key: "twoMonths", label: "2 Months", recommendedLtv: 45 },
+  { key: "threeMonths", label: "3 Months", recommendedLtv: 30 },
 ] as const;
 
 export default function LoanSettingsForm({
   onSubmit,
-  snapshot,
+  settings,
 }: LoanSettingsFormProps) {
   const {
     register,
@@ -46,31 +47,33 @@ export default function LoanSettingsForm({
     setValue,
     formState: { errors },
   } = useForm<LoanSettingsFormData>({
-    defaultValues: snapshot
+    values: settings
       ? {
-          oneWeekEnabled: snapshot.oneWeekLTV !== null,
-          oneWeekLTV: snapshot.oneWeekLTV ?? 70,
-          twoWeeksEnabled: snapshot.twoWeeksLTV !== null,
-          twoWeeksLTV: snapshot.twoWeeksLTV ?? 65,
-          oneMonthEnabled: snapshot.oneMonthLTV !== null,
-          oneMonthLTV: snapshot.oneMonthLTV ?? 60,
-          twoMonthsEnabled: snapshot.twoMonthsLTV !== null,
-          twoMonthsLTV: snapshot.twoMonthsLTV ?? 50,
-          threeMonthsEnabled: snapshot.threeMonthsLTV !== null,
-          threeMonthsLTV: snapshot.threeMonthsLTV ?? 40,
-          foreclosureWalletAddress: snapshot.foreclosureWalletAddress ?? "",
+          oneWeekEnabled: settings.oneWeekLTV !== null,
+          oneWeekLTV: settings.oneWeekLTV ?? loanDurations[0].recommendedLtv,
+          twoWeeksEnabled: settings.twoWeeksLTV !== null,
+          twoWeeksLTV: settings.twoWeeksLTV ?? loanDurations[1].recommendedLtv,
+          oneMonthEnabled: settings.oneMonthLTV !== null,
+          oneMonthLTV: settings.oneMonthLTV ?? loanDurations[2].recommendedLtv,
+          twoMonthsEnabled: settings.twoMonthsLTV !== null,
+          twoMonthsLTV:
+            settings.twoMonthsLTV ?? loanDurations[3].recommendedLtv,
+          threeMonthsEnabled: settings.threeMonthsLTV !== null,
+          threeMonthsLTV:
+            settings.threeMonthsLTV ?? loanDurations[4].recommendedLtv,
+          foreclosureWalletAddress: settings.foreclosureWalletAddress ?? "",
         }
       : {
           oneWeekEnabled: false,
-          oneWeekLTV: 70,
+          oneWeekLTV: loanDurations[0].recommendedLtv,
           twoWeeksEnabled: false,
-          twoWeeksLTV: 65,
+          twoWeeksLTV: loanDurations[1].recommendedLtv,
           oneMonthEnabled: false,
-          oneMonthLTV: 60,
+          oneMonthLTV: loanDurations[2].recommendedLtv,
           twoMonthsEnabled: false,
-          twoMonthsLTV: 50,
+          twoMonthsLTV: loanDurations[3].recommendedLtv,
           threeMonthsEnabled: false,
-          threeMonthsLTV: 40,
+          threeMonthsLTV: loanDurations[4].recommendedLtv,
           foreclosureWalletAddress: "",
         },
     mode: "onSubmit",
@@ -115,6 +118,7 @@ export default function LoanSettingsForm({
 
     setIsSubmittingForm(true);
     await onSubmit(snapshotData);
+    setIsSubmittingForm(false);
   };
 
   const renderLtvInput = (key: string, recommendedLtv: number) => (
@@ -137,7 +141,7 @@ export default function LoanSettingsForm({
                 }
                 return "Value must be a number";
               }
-              return true;
+              return true; // Don't validate if the field is disabled
             },
           })}
           min="10"
@@ -167,12 +171,12 @@ export default function LoanSettingsForm({
   );
 
   return (
-    <form onSubmit={handleSubmit(onSubmitHandler)} className="mx-auto mt-14">
+    <form onSubmit={handleSubmit(onSubmitHandler)} className="mx-auto mt-10">
       <div className="space-y-12 sm:space-y-16">
         <div>
-          <h2 className="text-base font-semibold leading-7 text-gray-900 dark:text-gray-100">
+          <Typography.DisplayMD className="text-white">
             Loan Settings
-          </h2>
+          </Typography.DisplayMD>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">
             Configure your crypto lending preferences for NFT collateral loans.
           </p>

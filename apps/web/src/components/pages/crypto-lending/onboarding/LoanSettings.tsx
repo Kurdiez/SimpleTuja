@@ -1,29 +1,31 @@
-import React from "react";
-import LoanSettingsForm, {
-  LoanSettingsSnapshot,
-} from "@/components/common/LoanSettingsForm";
-import { useOnboarding } from "./onboarding.context";
+import LoanSettingsForm from "@/components/common/LoanSettingsForm";
+import { LoanSettingsUpdateDto } from "@simpletuja/shared";
+import { useCryptoLending } from "../crypto-lending.context";
 
-export default function LoanSettings() {
-  const { updateLoanSettings, onboardingProgress } = useOnboarding();
+interface LoanSettingsProps {
+  onLoanSettingsSaved?: () => void;
+}
 
-  const handleSubmit = async (data: LoanSettingsSnapshot) => {
+export default function LoanSettings({
+  onLoanSettingsSaved,
+}: LoanSettingsProps) {
+  const { updateLoanSettings, userState } = useCryptoLending();
+
+  const handleSubmit = async (data: LoanSettingsUpdateDto) => {
     await updateLoanSettings(data);
+    onLoanSettingsSaved?.();
   };
 
-  const currentSnapshot = !onboardingProgress?.hasCompletedLoanSettings
-    ? undefined
-    : {
-        oneWeekLTV: onboardingProgress?.oneWeekLTV ?? null,
-        twoWeeksLTV: onboardingProgress?.twoWeeksLTV ?? null,
-        oneMonthLTV: onboardingProgress?.oneMonthLTV ?? null,
-        twoMonthsLTV: onboardingProgress?.twoMonthsLTV ?? null,
-        threeMonthsLTV: onboardingProgress?.threeMonthsLTV ?? null,
-        foreclosureWalletAddress:
-          onboardingProgress?.foreclosureWalletAddress ?? "",
-      };
+  const settings = userState
+    ? {
+        oneWeekLTV: userState.oneWeekLTV,
+        twoWeeksLTV: userState.twoWeeksLTV,
+        oneMonthLTV: userState.oneMonthLTV,
+        twoMonthsLTV: userState.twoMonthsLTV,
+        threeMonthsLTV: userState.threeMonthsLTV,
+        foreclosureWalletAddress: userState.foreclosureWalletAddress ?? "",
+      }
+    : undefined;
 
-  return (
-    <LoanSettingsForm onSubmit={handleSubmit} snapshot={currentSnapshot} />
-  );
+  return <LoanSettingsForm onSubmit={handleSubmit} settings={settings} />;
 }

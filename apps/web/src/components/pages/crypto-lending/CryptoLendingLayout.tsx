@@ -11,6 +11,7 @@ import {
 const StaticPages = new Set<string>([
   AppRoute.CryptoLendingAbout,
   AppRoute.CryptoLendingWallet,
+  AppRoute.CryptoLendingSettings,
 ]);
 
 const CryptoLendingLayoutContent: React.FC<{ children: React.ReactNode }> = ({
