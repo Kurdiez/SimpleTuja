@@ -1,8 +1,10 @@
 import { CheckIcon } from "@heroicons/react/20/solid";
+import Link from "next/link";
 
 const includedFeatures = [
   "All investment assets now and in the future",
   "Full functionalities on all the features",
+  "Unlimited usage quotas on all features",
   "Priority support",
 ];
 
@@ -59,19 +61,22 @@ export default function PricingSection() {
                   Subscribe monthly
                 </p>
                 <p className="mt-6 flex items-baseline justify-center gap-x-2">
-                  <span className="text-5xl font-bold tracking-tight text-gray-100">
+                  <span className="text-5xl font-bold tracking-tight text-gray-100 line-through opacity-50">
                     $10
                   </span>
-                  <span className="text-sm font-semibold leading-6 tracking-wide text-gray-300">
+                  <span className="text-sm font-semibold leading-6 tracking-wide text-gray-300 line-through opacity-50">
                     USD / month
                   </span>
                 </p>
-                <a
-                  href="#"
-                  className="mt-10 block w-full rounded-md bg-primary px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
+                <p className="mt-2 text-sm font-semibold text-primary-light">
+                  Free during Beta
+                </p>
+                <Link
+                  href="/sign-in"
+                  className="mt-8 block w-full rounded-md bg-primary px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
                 >
-                  Free Trial
-                </a>
+                  Start Free Now
+                </Link>
                 <p className="mt-6 text-xs leading-5 text-gray-300">
                   Sign in to try the app for free first and upgrade later within
                   the app.

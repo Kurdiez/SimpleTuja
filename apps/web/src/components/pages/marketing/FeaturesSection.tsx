@@ -1,6 +1,6 @@
-import { Fragment } from "react";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import Image from "next/image";
+import { Fragment } from "react";
 
 const tabs = [
   {
@@ -28,28 +28,28 @@ const tabs = [
     ],
     imageUrl: "/nftfi.jpg",
   },
-  {
-    name: "Stocks Balancing Pies",
-    features: [
-      {
-        name: "Create Your Own Pie",
-        description: "Build a pie with only the stocks you choose.",
-      },
-      {
-        name: "Set the Size of Each Slice",
-        description: "Decide how much to allocate to each slice.",
-      },
-      {
-        name: "Set the Rebalance Trigger",
-        description: "Choose when rebalancing should occur.",
-      },
-      {
-        name: "Automated Rebalancing",
-        description: "Our system automatically rebalances your portfolio.",
-      },
-    ],
-    imageUrl: "/construction.jpg",
-  },
+  // {
+  //   name: "Stocks Balancing Pies",
+  //   features: [
+  //     {
+  //       name: "Create Your Own Pie",
+  //       description: "Build a pie with only the stocks you choose.",
+  //     },
+  //     {
+  //       name: "Set the Size of Each Slice",
+  //       description: "Decide how much to allocate to each slice.",
+  //     },
+  //     {
+  //       name: "Set the Rebalance Trigger",
+  //       description: "Choose when rebalancing should occur.",
+  //     },
+  //     {
+  //       name: "Automated Rebalancing",
+  //       description: "Our system automatically rebalances your portfolio.",
+  //     },
+  //   ],
+  //   imageUrl: "/construction.jpg",
+  // },
 ];
 
 export default function FeaturesSection() {

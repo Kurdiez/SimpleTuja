@@ -65,7 +65,7 @@ export default function HowItWorksSection() {
           <div className="flex items-start justify-end lg:order-first">
             <Image
               alt="Product screenshot"
-              src="/img/app-placeholder.png"
+              src="/img/app-crypto-dashboard.png"
               width={2432}
               height={1442}
               className="w-[48rem] max-w-none rounded-xl shadow-xl ring-1 ring-gray-400/10 sm:w-[57rem]"
