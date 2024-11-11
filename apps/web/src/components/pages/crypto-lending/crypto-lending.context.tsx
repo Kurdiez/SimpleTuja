@@ -61,18 +61,20 @@ export const CryptoLendingProvider: React.FC<CryptoLendingProviderProps> = ({
           state.hasCompletedLoanSettings &&
           state.hasFundedTheAccount &&
           state.hasAllTokenAllowancesApproved;
+
         setIsOnboardingComplete(isOnboardingComplete);
 
         // redirect only if the pathname isn't already the onboarding page
         if (
           !isOnboardingComplete &&
           pathname !== AppRoute.CryptoLendingOnboarding &&
-          pathname !== AppRoute.CryptoLendingAbout
+          pathname !== AppRoute.CryptoLendingOnboardingAbout
         ) {
           router.push(AppRoute.CryptoLendingOnboarding);
         } else if (
           isOnboardingComplete &&
-          pathname === AppRoute.CryptoLendingOnboarding
+          (pathname === AppRoute.CryptoLendingOnboarding ||
+            pathname === AppRoute.CryptoLendingOnboardingAbout)
         ) {
           router.push(AppRoute.CryptoLending);
         }

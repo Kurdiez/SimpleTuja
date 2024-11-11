@@ -4,10 +4,12 @@ import { useCryptoLending } from "../crypto-lending.context";
 
 interface LoanSettingsProps {
   onLoanSettingsSaved?: () => void;
+  showTitle?: boolean;
 }
 
 export default function LoanSettings({
   onLoanSettingsSaved,
+  showTitle = true,
 }: LoanSettingsProps) {
   const { updateLoanSettings, userState } = useCryptoLending();
 
@@ -27,5 +29,11 @@ export default function LoanSettings({
       }
     : undefined;
 
-  return <LoanSettingsForm onSubmit={handleSubmit} settings={settings} />;
+  return (
+    <LoanSettingsForm
+      onSubmit={handleSubmit}
+      settings={settings}
+      showTitle={showTitle}
+    />
+  );
 }

@@ -1,11 +1,11 @@
-import { CryptoLendingLayout } from "@/components/pages/crypto-lending/CryptoLendingLayout";
+import AppLayout from "@/components/common/app-layout/AppLayout";
 import Onboarding from "@/components/pages/crypto-lending/onboarding/onboarding";
 
 const OnboardingPage: React.FC = () => {
   return (
-    <CryptoLendingLayout>
+    <AppLayout pageTitle="Crypto Lending - Onboarding">
       <Onboarding />
-    </CryptoLendingLayout>
+    </AppLayout>
   );
 };
 

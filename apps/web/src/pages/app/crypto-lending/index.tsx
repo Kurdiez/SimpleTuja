@@ -1,4 +1,4 @@
-import { CryptoLendingLayout } from "@/components/pages/crypto-lending/CryptoLendingLayout";
+import AppLayout from "@/components/common/app-layout/AppLayout";
 import { DashboardProvider } from "@/components/pages/crypto-lending/dashboard/dashboard.context";
 import { LoanSummary } from "@/components/pages/crypto-lending/dashboard/LoanSummary";
 import { PortfolioBalanceSection } from "@/components/pages/crypto-lending/dashboard/PortfolioBalanceSection";
@@ -9,7 +9,7 @@ import React from "react";
 
 const CryptoLendingDashboard: React.FC = () => {
   return (
-    <CryptoLendingLayout>
+    <AppLayout pageTitle="Crypto Lending - Dashboard">
       <DashboardProvider>
         <div className="space-y-8">
           <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded-md">
@@ -28,7 +28,7 @@ const CryptoLendingDashboard: React.FC = () => {
           <WalletBalanceSummary />
         </div>
       </DashboardProvider>
-    </CryptoLendingLayout>
+    </AppLayout>
   );
 };
 

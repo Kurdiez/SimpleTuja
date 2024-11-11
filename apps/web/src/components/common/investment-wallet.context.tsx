@@ -185,7 +185,6 @@ export const InvestmentWalletProvider: React.FC<
       } catch (error) {
         toast.dismiss(ToastIds.TransferringToastId);
         toast.error(ToastMessage.TransferFailed((error as Error).message));
-        throw error;
       } finally {
         setIsTransactionPending(false);
       }

@@ -33,7 +33,6 @@ const SignInForm: React.FC = () => {
     } catch (error: unknown) {
       const axiosError = error as AxiosError;
       const data = axiosError.response?.data as { message: string };
-      console.log("axiosError", axiosError);
       toast.error(data.message);
     } finally {
       setIsLoading(false);

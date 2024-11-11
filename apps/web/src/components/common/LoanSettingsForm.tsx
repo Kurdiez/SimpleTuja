@@ -26,6 +26,7 @@ interface LoanSettingsFormData {
 interface LoanSettingsFormProps {
   onSubmit: (data: LoanSettingsUpdateDto) => Promise<void>;
   settings?: LoanSettingsUpdateDto;
+  showTitle?: boolean;
 }
 
 const loanDurations = [
@@ -39,6 +40,7 @@ const loanDurations = [
 export default function LoanSettingsForm({
   onSubmit,
   settings,
+  showTitle = false,
 }: LoanSettingsFormProps) {
   const {
     register,
@@ -174,9 +176,11 @@ export default function LoanSettingsForm({
     <form onSubmit={handleSubmit(onSubmitHandler)} className="mx-auto mt-10">
       <div className="space-y-12 sm:space-y-16">
         <div>
-          <Typography.DisplayMD className="text-white">
-            Loan Settings
-          </Typography.DisplayMD>
+          {showTitle && (
+            <Typography.DisplayMD className="text-white">
+              Loan Settings
+            </Typography.DisplayMD>
+          )}
           <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">
             Configure your crypto lending preferences for NFT collateral loans.
           </p>

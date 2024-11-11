@@ -1,34 +1,67 @@
+import { useCryptoLending } from "@/components/pages/crypto-lending/crypto-lending.context";
 import { AppRoute } from "@/utils/app-route";
 import {
   Dialog,
   DialogBackdrop,
   DialogPanel,
+  Disclosure,
+  DisclosureButton,
+  DisclosurePanel,
   TransitionChild,
 } from "@headlessui/react";
+import { ChevronRightIcon } from "@heroicons/react/20/solid";
 import { CircleStackIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import Logo from "../Logo";
 
 interface SidebarProps {
   sidebarOpen: boolean;
   setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  openSections: string[];
+  setOpenSections: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
-  const router = useRouter();
+const getNavigation = (isOnboardingComplete: boolean) => [
+  {
+    name: "Crypto Lending",
+    href: AppRoute.CryptoLending,
+    icon: CircleStackIcon,
+    children: isOnboardingComplete
+      ? [
+          { name: "Dashboard", href: AppRoute.CryptoLending },
+          { name: "About", href: AppRoute.CryptoLendingAbout },
+          { name: "Wallet", href: AppRoute.CryptoLendingWallet },
+          { name: "Settings", href: AppRoute.CryptoLendingSettings },
+        ]
+      : [
+          { name: "Onboarding", href: AppRoute.CryptoLendingOnboarding },
+          { name: "About", href: AppRoute.CryptoLendingOnboardingAbout },
+        ],
+  },
+];
 
-  const navigation = [
-    {
-      name: "Crypto Lending",
-      href: AppRoute.CryptoLending,
-      icon: CircleStackIcon,
-    },
-  ];
+const Sidebar: React.FC<SidebarProps> = ({
+  sidebarOpen,
+  setSidebarOpen,
+  openSections,
+  setOpenSections,
+}) => {
+  const router = useRouter();
+  const { isOnboardingComplete } = useCryptoLending();
+  const navigation = useMemo(
+    () => getNavigation(isOnboardingComplete),
+    [isOnboardingComplete]
+  );
 
   const isCurrentRoute = useCallback(
-    (href: string): boolean => router.pathname === href,
+    (href: string, isParent?: boolean): boolean => {
+      if (isParent) {
+        return router.pathname === href && href !== AppRoute.CryptoLending;
+      }
+      return router.pathname === href;
+    },
     [router]
   );
 
@@ -38,8 +71,12 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         e.preventDefault();
         return;
       }
+
+      if (sidebarOpen) {
+        setSidebarOpen(false);
+      }
     },
-    [isCurrentRoute]
+    [isCurrentRoute, sidebarOpen, setSidebarOpen]
   );
 
   const handleLogoClick = useCallback(
@@ -50,6 +87,17 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       }
     },
     [isCurrentRoute]
+  );
+
+  const toggleSection = useCallback(
+    (sectionName: string) => {
+      setOpenSections((prev) =>
+        prev.includes(sectionName)
+          ? prev.filter((name) => name !== sectionName)
+          : [...prev, sectionName]
+      );
+    },
+    [setOpenSections]
   );
 
   return (
@@ -93,21 +141,50 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                     <ul role="list" className="-mx-2 space-y-1">
                       {navigation.map((item) => (
                         <li key={item.name}>
-                          <Link
-                            href={item.href}
-                            onClick={(e) => handleNavClick(item.href, e)}
-                            className={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                              isCurrentRoute(item.href)
-                                ? "bg-gray-800 text-white"
-                                : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                            } cursor-pointer`}
+                          <Disclosure
+                            as="div"
+                            defaultOpen={openSections.includes(item.name)}
+                            onChange={() => toggleSection(item.name)}
                           >
-                            <item.icon
-                              aria-hidden="true"
-                              className="h-6 w-6 shrink-0"
-                            />
-                            {item.name}
-                          </Link>
+                            <DisclosureButton
+                              className={`group flex w-full items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
+                                isCurrentRoute(item.href, true)
+                                  ? "bg-gray-800 text-white"
+                                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                              } cursor-pointer`}
+                            >
+                              <item.icon
+                                aria-hidden="true"
+                                className="h-6 w-6 shrink-0"
+                              />
+                              <span className="flex-1 text-left">
+                                {item.name}
+                              </span>
+                              <ChevronRightIcon
+                                aria-hidden="true"
+                                className="h-5 w-5 shrink-0 text-gray-400 group-data-[open]:rotate-90"
+                              />
+                            </DisclosureButton>
+                            <DisclosurePanel as="ul" className="mt-1 space-y-1">
+                              {item.children.map((subItem) => (
+                                <li key={subItem.name}>
+                                  <Link
+                                    href={subItem.href}
+                                    onClick={(e) =>
+                                      handleNavClick(subItem.href, e)
+                                    }
+                                    className={`block rounded-md py-2 pl-11 pr-2 text-sm ${
+                                      isCurrentRoute(subItem.href)
+                                        ? "bg-gray-800 text-white"
+                                        : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                                    }`}
+                                  >
+                                    {subItem.name}
+                                  </Link>
+                                </li>
+                              ))}
+                            </DisclosurePanel>
+                          </Disclosure>
                         </li>
                       ))}
                     </ul>
@@ -147,21 +224,46 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
                 <ul role="list" className="-mx-2 space-y-1">
                   {navigation.map((item) => (
                     <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        onClick={(e) => handleNavClick(item.href, e)}
-                        className={`group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
-                          isCurrentRoute(item.href)
-                            ? "bg-gray-800 text-white"
-                            : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                        } cursor-pointer`}
+                      <Disclosure
+                        as="div"
+                        defaultOpen={openSections.includes(item.name)}
+                        onChange={() => toggleSection(item.name)}
                       >
-                        <item.icon
-                          aria-hidden="true"
-                          className="h-6 w-6 shrink-0"
-                        />
-                        {item.name}
-                      </Link>
+                        <DisclosureButton
+                          className={`group flex w-full items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 ${
+                            isCurrentRoute(item.href, true)
+                              ? "bg-gray-800 text-white"
+                              : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                          } cursor-pointer`}
+                        >
+                          <item.icon
+                            aria-hidden="true"
+                            className="h-6 w-6 shrink-0"
+                          />
+                          <span className="flex-1 text-left">{item.name}</span>
+                          <ChevronRightIcon
+                            aria-hidden="true"
+                            className="h-5 w-5 shrink-0 text-gray-400 group-data-[open]:rotate-90"
+                          />
+                        </DisclosureButton>
+                        <DisclosurePanel as="ul" className="mt-1 space-y-1">
+                          {item.children.map((subItem) => (
+                            <li key={subItem.name}>
+                              <Link
+                                href={subItem.href}
+                                onClick={(e) => handleNavClick(subItem.href, e)}
+                                className={`block rounded-md py-2 pl-11 pr-2 text-sm ${
+                                  isCurrentRoute(subItem.href)
+                                    ? "bg-gray-800 text-white"
+                                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                                }`}
+                              >
+                                {subItem.name}
+                              </Link>
+                            </li>
+                          ))}
+                        </DisclosurePanel>
+                      </Disclosure>
                     </li>
                   ))}
                 </ul>
