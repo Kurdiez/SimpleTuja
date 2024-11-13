@@ -5,11 +5,13 @@ import {
   LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
 } from '@simpletuja/shared';
-import { Repository } from 'typeorm';
+import { FindOptionsOrder, FindOptionsWhere, Repository } from 'typeorm';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-dashboard-snapshot.entity';
 import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
+import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
 import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
+import { PaginatedRequest, PaginatedResponse } from '~/database/types';
 import { OnboardingService } from './onboarding.service';
 
 @Injectable()
@@ -23,6 +25,8 @@ export class CryptoLendingService {
     private readonly cryptoLendingUserStateRepo: Repository<CryptoLendingUserStateEntity>,
     @InjectRepository(CryptoDashboardSnapshotEntity)
     private readonly cryptoDashboardSnapshotRepo: Repository<CryptoDashboardSnapshotEntity>,
+    @InjectRepository(CryptoLoanOfferEntity)
+    private readonly cryptoLoanOfferRepo: Repository<CryptoLoanOfferEntity>,
     private readonly onboardingService: OnboardingService,
   ) {}
 
@@ -104,6 +108,45 @@ export class CryptoLendingService {
       wethActiveLoansRepayment: snapshot.wethActiveLoansRepayment.toString(),
       daiActiveLoansRepayment: snapshot.daiActiveLoansRepayment.toString(),
       usdcActiveLoansRepayment: snapshot.usdcActiveLoansRepayment.toString(),
+    };
+  }
+
+  async getLoanOffers(
+    userId: string,
+    params: PaginatedRequest<CryptoLoanOfferEntity, { isActive?: boolean }>,
+  ): Promise<PaginatedResponse<CryptoLoanOfferEntity>> {
+    const {
+      isActive,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+      page = 1,
+      pageSize = 100,
+    } = params;
+
+    const where: FindOptionsWhere<CryptoLoanOfferEntity> = {
+      userState: { userId },
+    };
+
+    if (typeof isActive === 'boolean') {
+      where.isActive = isActive;
+    }
+
+    const [offers, total] = await this.cryptoLoanOfferRepo.findAndCount({
+      where,
+      order: { [sortBy]: sortOrder } as FindOptionsOrder<CryptoLoanOfferEntity>,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      relations: ['nftCollection', 'userState'],
+    });
+
+    return {
+      items: offers,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
     };
   }
 }

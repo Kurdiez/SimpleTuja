@@ -3,6 +3,8 @@ import {
   CryptoLendingDashboardDataDto,
   CryptoLendingUserStateDto,
   CryptoToken,
+  GetLoanOffersRequest,
+  GetLoanOffersResponse,
   LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
   WithdrawTokenResponseDto,
@@ -81,6 +83,16 @@ export const withdrawToken = async (
   const response = await apiRequest<WithdrawTokenResponseDto>(
     `${BaseUrl}/investment-wallet/withdraw`,
     { token, amount, destinationAddress }
+  );
+  return response;
+};
+
+export const getLoanOffers = async (
+  params: GetLoanOffersRequest
+): Promise<GetLoanOffersResponse> => {
+  const response = await apiRequest<GetLoanOffersResponse>(
+    `${BaseUrl}/get-loan-offers`,
+    params
   );
   return response;
 };

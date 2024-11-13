@@ -1,18 +1,18 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  Index,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
-import { NftCollectionEntity } from './nft-collection.entity';
-import { CryptoLendingUserStateEntity } from './crypto-lending-user-state.entity';
 import { CryptoToken } from '@simpletuja/shared';
-import { bigTransformer } from '../utils/big-transformer';
 import Big from 'big.js';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { bigTransformer } from '../utils/big-transformer';
+import { CryptoLendingUserStateEntity } from './crypto-lending-user-state.entity';
+import { NftCollectionEntity } from './nft-collection.entity';
 
 @Entity('crypto_loan_offer')
 @Index(['userStateId', 'isActive', 'createdAt'])

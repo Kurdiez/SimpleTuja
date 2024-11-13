@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  createPaginatedRequestSchema,
+  createPaginatedResponseSchema,
+} from "./commons";
 import { CryptoToken } from "./const";
 
 // Base schema for LTV fields
@@ -119,3 +123,42 @@ export const withdrawTokenResponseDtoSchema = z.object({
 export type WithdrawTokenResponseDto = z.infer<
   typeof withdrawTokenResponseDtoSchema
 >;
+
+export const cryptoLoanOfferSchema = z.object({
+  id: z.string().uuid(),
+  nftfiOfferId: z.string().uuid(),
+  dateOffered: z.date(),
+  loanCurrency: z.nativeEnum(CryptoToken),
+  loanDuration: z.string(),
+  loanRepayment: z.string(),
+  loanPrincipal: z.string(),
+  loanApr: z.string(),
+  loanExpiry: z.date(),
+  loanInterestProrated: z.boolean(),
+  loanOrigination: z.string(),
+  loanEffectiveApr: z.string(),
+  isActive: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  nftCollection: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+  }),
+});
+
+// Keep the shared types entity-agnostic
+const getLoanOffersSpecificSchema = z.object({
+  isActive: z.boolean().optional(),
+});
+
+export const getLoanOffersRequestSchema = createPaginatedRequestSchema(
+  getLoanOffersSpecificSchema
+);
+
+export type GetLoanOffersRequest = z.infer<typeof getLoanOffersRequestSchema>;
+
+export const getLoanOffersResponseSchema = createPaginatedResponseSchema(
+  cryptoLoanOfferSchema
+);
+export type CryptoLoanOffer = z.infer<typeof cryptoLoanOfferSchema>;
+export type GetLoanOffersResponse = z.infer<typeof getLoanOffersResponseSchema>;

@@ -3,6 +3,10 @@ import {
   cryptoExchangeRatesDtoSchema,
   cryptoLendingDashboardDataDtoSchema,
   cryptoLendingUserStateDtoSchema,
+  GetLoanOffersRequest,
+  getLoanOffersRequestSchema,
+  GetLoanOffersResponse,
+  getLoanOffersResponseSchema,
   loanEligibleNftCollectionsDtoSchema,
   LoanSettingsUpdateDto,
   loanSettingsUpdateRequestSchema,
@@ -12,6 +16,8 @@ import {
 import { Response } from 'express';
 import { AuthenticatedRequest } from '~/commons/types/auth';
 import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
+import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
+import { PaginatedRequest } from '~/database/types';
 import { CoinlayerService } from '../services/coinlayer.service';
 import { CryptoLendingService } from '../services/crypto-lending.service';
 import { OnboardingService } from '../services/onboarding.service';
@@ -82,5 +88,35 @@ export class CryptoLendingController {
   async getDashboardData(@Req() req: AuthenticatedRequest) {
     const data = await this.cryptoLendingService.getDashboardData(req.user.id);
     return zodResTransform(data, cryptoLendingDashboardDataDtoSchema);
+  }
+
+  @Post('get-loan-offers')
+  async getLoanOffers(
+    @Req() { user }: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(getLoanOffersRequestSchema))
+    params: GetLoanOffersRequest,
+  ): Promise<GetLoanOffersResponse> {
+    const offers = await this.cryptoLendingService.getLoanOffers(
+      user.id,
+      params as unknown as PaginatedRequest<
+        CryptoLoanOfferEntity,
+        { isActive?: boolean }
+      >,
+    );
+
+    const transformedOffers = {
+      ...offers,
+      items: offers.items.map((offer) => ({
+        ...offer,
+        loanDuration: offer.loanDuration.toString(),
+        loanRepayment: offer.loanRepayment.toString(),
+        loanPrincipal: offer.loanPrincipal.toString(),
+        loanApr: offer.loanApr.toString(),
+        loanOrigination: offer.loanOrigination.toString(),
+        loanEffectiveApr: offer.loanEffectiveApr.toString(),
+      })),
+    };
+
+    return zodResTransform(transformedOffers, getLoanOffersResponseSchema);
   }
 }

@@ -1,20 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '~/config';
+import { InjectRepository } from '@nestjs/typeorm';
 import NFTfi from '@nftfi/js';
+import { CryptoToken, CryptoTokenAddress } from '@simpletuja/shared';
+import Big from 'big.js';
+import { Repository } from 'typeorm';
+import { CustomException } from '~/commons/errors/custom-exception';
+import { ConfigService } from '~/config';
+import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
 import {
   NftFiActiveLoan,
   NftFiLoanOffer,
+  NftFiLoanSort,
   NftFiLoanStatus,
   NftFiPaginatedResponse,
-  NftFiLoanSortDirection,
-  NftFiLoanSort,
 } from '../types/nftfi-types';
-import { CustomException } from '~/commons/errors/custom-exception';
-import { InjectRepository } from '@nestjs/typeorm';
-import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
-import { Repository } from 'typeorm';
-import { CryptoToken, CryptoTokenAddress } from '@simpletuja/shared';
-import Big from 'big.js';
 
 interface QueueItem {
   execute: () => Promise<any>;

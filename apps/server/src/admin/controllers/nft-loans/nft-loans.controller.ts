@@ -1,11 +1,21 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { WithdrawTokenStatus } from '@simpletuja/shared';
-import { ZodValidationPipe } from '~/commons/validations';
+import {
+  GetLoanOffersRequest,
+  getLoanOffersRequestSchema,
+  GetLoanOffersResponse,
+  getLoanOffersResponseSchema,
+  WithdrawTokenStatus,
+} from '@simpletuja/shared';
+import { z } from 'zod';
+import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
 import { CoinlayerService } from '~/crypto-lending/services/coinlayer.service';
+import { CryptoLendingService } from '~/crypto-lending/services/crypto-lending.service';
 import { InvestmentWalletService } from '~/crypto-lending/services/investment-wallet.service';
 import { LoanService } from '~/crypto-lending/services/loan.service';
 import { NftFiApiService } from '~/crypto-lending/services/nftfi-api.service';
 import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
+import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
+import { PaginatedRequest } from '~/database/types';
 import {
   AdminWithdrawTokenDto,
   adminWithdrawTokenDtoSchema,
@@ -34,6 +44,7 @@ export class NftLoansController {
     private readonly nftFiApiService: NftFiApiService,
     private readonly investmentWalletService: InvestmentWalletService,
     private readonly openSeaService: OpenSeaService,
+    private readonly cryptoLendingService: CryptoLendingService,
   ) {}
 
   @Post('get-active-offers')
@@ -147,5 +158,40 @@ export class NftLoansController {
     return {
       status: result === true ? WithdrawTokenStatus.Success : result,
     };
+  }
+
+  @Post('get-loan-offers')
+  async getLoanOffers(
+    @Body(
+      new ZodValidationPipe(
+        getLoanOffersRequestSchema.extend({
+          userId: z.string().uuid(),
+        }),
+      ),
+    )
+    params: GetLoanOffersRequest & { userId: string },
+  ): Promise<GetLoanOffersResponse> {
+    const offers = await this.cryptoLendingService.getLoanOffers(
+      params.userId,
+      params as unknown as PaginatedRequest<
+        CryptoLoanOfferEntity,
+        { isActive?: boolean; userId: string }
+      >,
+    );
+
+    const transformedOffers = {
+      ...offers,
+      items: offers.items.map((offer) => ({
+        ...offer,
+        loanDuration: offer.loanDuration.toString(),
+        loanRepayment: offer.loanRepayment.toString(),
+        loanPrincipal: offer.loanPrincipal.toString(),
+        loanApr: offer.loanApr.toString(),
+        loanOrigination: offer.loanOrigination.toString(),
+        loanEffectiveApr: offer.loanEffectiveApr.toString(),
+      })),
+    };
+
+    return zodResTransform(transformedOffers, getLoanOffersResponseSchema);
   }
 }
