@@ -108,7 +108,7 @@ export class CryptoLendingController {
       ...offers,
       items: offers.items.map((offer) => ({
         ...offer,
-        loanDuration: offer.loanDuration.toString(),
+        loanDuration: offer.loanDuration.toNumber(),
         loanRepayment: offer.loanRepayment.toString(),
         loanPrincipal: offer.loanPrincipal.toString(),
         loanApr: offer.loanApr.toString(),

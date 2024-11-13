@@ -1,12 +1,12 @@
+import Big from 'big.js';
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
-  OneToMany,
+  Entity,
   Index,
+  OneToMany,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { bigTransformer } from '../utils/big-transformer';
-import Big from 'big.js';
 import { CryptoLoanOfferEntity } from './crypto-loan-offer.entity';
 
 @Entity('nft_collection')
@@ -16,6 +16,9 @@ export class NftCollectionEntity {
 
   @Column({ type: 'varchar', unique: true })
   name!: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  imageUrl!: string | null;
 
   @Index()
   @Column({ type: 'varchar', nullable: true })

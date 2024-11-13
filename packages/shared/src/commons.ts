@@ -27,7 +27,6 @@ export const createPaginatedResponseSchema = <T extends z.ZodType>(
       page: z.number(),
       pageSize: z.number(),
       total: z.number(),
-      totalPages: z.number(),
     }),
   });
 

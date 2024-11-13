@@ -129,7 +129,7 @@ export const cryptoLoanOfferSchema = z.object({
   nftfiOfferId: z.string().uuid(),
   dateOffered: z.date(),
   loanCurrency: z.nativeEnum(CryptoToken),
-  loanDuration: z.string(),
+  loanDuration: z.number(),
   loanRepayment: z.string(),
   loanPrincipal: z.string(),
   loanApr: z.string(),
@@ -143,6 +143,8 @@ export const cryptoLoanOfferSchema = z.object({
   nftCollection: z.object({
     id: z.string().uuid(),
     name: z.string(),
+    imageUrl: z.string().nullable(),
+    openSeaSlug: z.string(),
   }),
 });
 

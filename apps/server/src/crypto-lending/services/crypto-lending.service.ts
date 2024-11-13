@@ -5,7 +5,7 @@ import {
   LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
 } from '@simpletuja/shared';
-import { FindOptionsOrder, FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-dashboard-snapshot.entity';
 import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
@@ -115,13 +115,7 @@ export class CryptoLendingService {
     userId: string,
     params: PaginatedRequest<CryptoLoanOfferEntity, { isActive?: boolean }>,
   ): Promise<PaginatedResponse<CryptoLoanOfferEntity>> {
-    const {
-      isActive,
-      sortBy = 'createdAt',
-      sortOrder = 'DESC',
-      page = 1,
-      pageSize = 100,
-    } = params;
+    const { isActive, page = 1, pageSize = 100 } = params;
 
     const where: FindOptionsWhere<CryptoLoanOfferEntity> = {
       userState: { userId },
@@ -131,13 +125,16 @@ export class CryptoLendingService {
       where.isActive = isActive;
     }
 
-    const [offers, total] = await this.cryptoLoanOfferRepo.findAndCount({
-      where,
-      order: { [sortBy]: sortOrder } as FindOptionsOrder<CryptoLoanOfferEntity>,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      relations: ['nftCollection', 'userState'],
-    });
+    const [offers, total] = await this.cryptoLoanOfferRepo
+      .createQueryBuilder('offer')
+      .leftJoinAndSelect('offer.nftCollection', 'nftCollection')
+      .leftJoinAndSelect('offer.userState', 'userState')
+      .where(where)
+      .orderBy('nftCollection.name', 'ASC')
+      .addOrderBy('offer.loanDuration', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
 
     return {
       items: offers,
@@ -145,7 +142,6 @@ export class CryptoLendingService {
         page,
         pageSize,
         total,
-        totalPages: Math.ceil(total / pageSize),
       },
     };
   }

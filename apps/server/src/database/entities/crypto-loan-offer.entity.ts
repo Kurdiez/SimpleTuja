@@ -15,7 +15,7 @@ import { CryptoLendingUserStateEntity } from './crypto-lending-user-state.entity
 import { NftCollectionEntity } from './nft-collection.entity';
 
 @Entity('crypto_loan_offer')
-@Index(['userStateId', 'isActive', 'createdAt'])
+@Index(['userStateId', 'isActive'])
 export class CryptoLoanOfferEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -43,6 +43,7 @@ export class CryptoLoanOfferEntity {
   @Column({ type: 'text', enum: CryptoToken })
   loanCurrency!: CryptoToken;
 
+  @Index()
   @Column({
     type: 'decimal',
     precision: 10,

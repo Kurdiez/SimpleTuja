@@ -1,19 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Not, Repository } from 'typeorm';
-import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
-import { OpenSeaAPIService } from './opensea-api.service';
+import axios from 'axios';
+import Big from 'big.js';
 import {
   CollectionOffer,
   ListCollectionOffersResponse,
   OpenSeaSDK,
 } from 'opensea-js';
-import Big from 'big.js';
-import { CustomException } from '~/commons/errors/custom-exception';
+import { IsNull, Not, Repository } from 'typeorm';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { retry } from '~/commons/error-handlers/retry';
+import { CustomException } from '~/commons/errors/custom-exception';
 import { ConfigService } from '~/config';
-import axios from 'axios';
+import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
+import { OpenSeaAPIService } from './opensea-api.service';
 
 @Injectable()
 export class OpenSeaService {
@@ -26,7 +26,7 @@ export class OpenSeaService {
     private readonly configService: ConfigService,
   ) {}
 
-  async updateCollectionContractAddresses(): Promise<void> {
+  async updateCollectionInfo(): Promise<void> {
     this.logger.log('Updating contract address for all collections');
 
     // Set all collections without an openSeaSlug to blacklisted
@@ -44,7 +44,6 @@ export class OpenSeaService {
     const collections = await this.nftCollectionRepo.find({
       where: {
         openSeaSlug: Not(IsNull()),
-        contractAddress: IsNull(),
         blackListed: IsNull(),
       },
       order: { loanCount: 'DESC' },
@@ -60,11 +59,16 @@ export class OpenSeaService {
       if (collectionInfo.contracts.length === 1) {
         collection.blackListed = false;
         collection.contractAddress = collectionInfo.contracts[0].address;
+        collection.imageUrl = collectionInfo.imageUrl;
         updatedCollections.push(collection);
       } else {
         collection.blackListed = true;
         updatedCollections.push(collection);
       }
+
+      this.logger.log(
+        `Progress: ${updatedCollections.length}/${collections.length} collections processed`,
+      );
     });
 
     await Promise.all(updatePromises);

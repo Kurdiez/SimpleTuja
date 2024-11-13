@@ -33,6 +33,10 @@ const getNavigation = (isOnboardingComplete: boolean) => [
           { name: "Dashboard", href: AppRoute.CryptoLending },
           { name: "About", href: AppRoute.CryptoLendingAbout },
           { name: "Wallet", href: AppRoute.CryptoLendingWallet },
+          {
+            name: "Active Loan Offers",
+            href: AppRoute.CryptoLendingActiveLoanOffers,
+          },
           { name: "Settings", href: AppRoute.CryptoLendingSettings },
         ]
       : [

@@ -1,18 +1,18 @@
 import {
-  Controller,
-  Post,
   BadRequestException,
-  UseInterceptors,
-  UploadedFile,
   Body,
+  Controller,
   HttpCode,
+  Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { DataSeedService } from '../../../services/data-seed.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { parseNftfiLoanInfoFile } from '../../../utils/nftfi-loan-info-file-parser';
-import { GetContractAddressDto, getContractAddressDtoSchema } from './schemas';
 import { ZodValidationPipe } from '~/commons/validations';
 import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
+import { DataSeedService } from '../../../services/data-seed.service';
+import { parseNftfiLoanInfoFile } from '../../../utils/nftfi-loan-info-file-parser';
+import { GetContractAddressDto, getContractAddressDtoSchema } from './schemas';
 
 @Controller('admin/nft-loans/data-seed')
 export class DataSeedController {
@@ -62,9 +62,9 @@ export class DataSeedController {
     return { contractAddress };
   }
 
-  @Post('update-collection-contract-addresses')
+  @Post('update-collection-info')
   @HttpCode(200)
-  async updateCollectionContractAddress() {
-    await this.openSeaService.updateCollectionContractAddresses();
+  async updateCollectionInfo() {
+    await this.openSeaService.updateCollectionInfo();
   }
 }

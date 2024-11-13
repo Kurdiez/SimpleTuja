@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { NftCollectionInfo } from '../utils/nftfi-loan-info-file-parser';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import Big from 'big.js';
 import { OpenSeaAPIService } from '~/crypto-lending/services/opensea-api.service';
 import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
+import { NftCollectionInfo } from '../utils/nftfi-loan-info-file-parser';
 
 @Injectable()
 export class DataSeedService {
