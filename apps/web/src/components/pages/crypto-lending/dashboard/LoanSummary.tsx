@@ -16,21 +16,25 @@ const loanStatusConfigs = [
     id: 1,
     name: "Active Offers",
     getValue: (balances: ComputedBalances) => balances.activeOffers,
+    link: AppRoute.CryptoLendingActiveLoanOffers,
   },
   {
     id: 2,
     name: "Active Loans",
     getValue: (balances: ComputedBalances) => balances.activeLoans,
+    link: AppRoute.CryptoLendingActiveLoans,
   },
   {
     id: 3,
     name: "Repaid Loans",
     getValue: (balances: ComputedBalances) => balances.repaidLoans,
+    link: AppRoute.CryptoLendingRepaidLoans,
   },
   {
     id: 4,
     name: "Liquidated Loans",
     getValue: (balances: ComputedBalances) => balances.liquidatedLoans,
+    link: AppRoute.CryptoLendingLiquidatedLoans,
   },
 ];
 
@@ -98,9 +102,9 @@ export const LoanSummary: React.FC = () => {
                 <span className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">
                   {config.name}
                 </span>
-                {config.name === "Active Offers" && (
+                {config.link && (
                   <Link
-                    href={AppRoute.CryptoLendingActiveLoanOffers}
+                    href={config.link}
                     className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
                   >
                     <ArrowTopRightOnSquareIcon className="h-5 w-5" />

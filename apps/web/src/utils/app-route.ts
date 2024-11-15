@@ -8,6 +8,8 @@ export enum AppRoute {
   CryptoLendingWallet = "/app/crypto-lending/wallet",
   CryptoLendingActiveLoanOffers = "/app/crypto-lending/active-loan-offers",
   CryptoLendingActiveLoans = "/app/crypto-lending/active-loans",
+  CryptoLendingRepaidLoans = "/app/crypto-lending/repaid-loans",
+  CryptoLendingLiquidatedLoans = "/app/crypto-lending/liquidated-loans",
   StockPies = "/app/stock-pies",
   Settings = "/app/settings",
 }

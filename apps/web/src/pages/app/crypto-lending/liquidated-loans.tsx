@@ -2,13 +2,13 @@ import { LoansByStatus } from "@/components/common/crypto-lending/LoansByStatus"
 import { NftFiLoanStatus } from "@simpletuja/shared";
 import React from "react";
 
-const ActiveLoans: React.FC = () => {
+const LiquidatedLoans: React.FC = () => {
   return (
     <LoansByStatus
-      status={NftFiLoanStatus.Active}
-      pageTitle="Crypto Lending - Active Loans"
+      status={NftFiLoanStatus.Liquidated}
+      pageTitle="Crypto Lending - Liquidated Loans"
     />
   );
 };
 
-export default ActiveLoans;
+export default LiquidatedLoans;
