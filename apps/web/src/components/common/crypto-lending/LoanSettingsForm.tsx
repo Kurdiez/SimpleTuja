@@ -5,7 +5,7 @@ import classNames from "classnames";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { Typography } from "./Typography";
+import { Typography } from "../Typography";
 
 export type LoanSettingsSnapshot = LoanSettingsUpdateDto;
 

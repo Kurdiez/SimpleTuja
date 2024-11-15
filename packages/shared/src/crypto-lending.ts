@@ -164,3 +164,48 @@ export const getLoanOffersResponseSchema = createPaginatedResponseSchema(
 );
 export type CryptoLoanOffer = z.infer<typeof cryptoLoanOfferSchema>;
 export type GetLoanOffersResponse = z.infer<typeof getLoanOffersResponseSchema>;
+
+export enum NftFiLoanStatus {
+  Active = "active",
+  Repaid = "repaid",
+  Defaulted = "defaulted",
+  Liquidated = "liquidated",
+}
+
+export const cryptoLoanSchema = z.object({
+  id: z.string().uuid(),
+  nftfiLoanId: z.string(),
+  status: z.nativeEnum(NftFiLoanStatus),
+  startedAt: z.date(),
+  repaidAt: z.date().nullable(),
+  dueAt: z.date(),
+  nftTokenId: z.string(),
+  nftImageUrl: z.string(),
+  borrowerWalletAddress: z.string(),
+  loanDuration: z.number(),
+  loanRepayment: z.string(),
+  loanPrincipal: z.string(),
+  loanApr: z.string(),
+  token: z.nativeEnum(CryptoToken),
+  nftCollection: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    contractAddress: z.string(),
+  }),
+});
+
+const getLoansSpecificSchema = z.object({
+  status: z.nativeEnum(NftFiLoanStatus).optional(),
+});
+
+export const getLoansRequestSchema = createPaginatedRequestSchema(
+  getLoansSpecificSchema
+);
+
+export type GetLoansRequest = z.infer<typeof getLoansRequestSchema>;
+
+export const getLoansResponseSchema =
+  createPaginatedResponseSchema(cryptoLoanSchema);
+
+export type CryptoLoan = z.infer<typeof cryptoLoanSchema>;
+export type GetLoansResponse = z.infer<typeof getLoansResponseSchema>;

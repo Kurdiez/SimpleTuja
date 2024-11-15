@@ -1,4 +1,4 @@
-import { useInvestmentWallet } from "@/components/common/investment-wallet.context";
+import { useInvestmentWallet } from "@/components/common/crypto-lending/investment-wallet.context";
 import LoadSpinner from "@/components/common/LoadSpinner";
 import { Typography } from "@/components/common/Typography";
 import { CryptoToken } from "@simpletuja/shared";

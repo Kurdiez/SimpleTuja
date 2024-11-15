@@ -1,8 +1,8 @@
+import { InvestmentWalletProvider } from "@/components/common/crypto-lending/investment-wallet.context";
+import { completeOnboardingFundAccount } from "@/utils/simpletuja/crypto-lending";
 import React from "react";
 import FundAccountForm from "./FundAccountForm";
-import { InvestmentWalletProvider } from "@/components/common/investment-wallet.context";
 import { OnboardingStep, useOnboarding } from "./onboarding.context";
-import { completeOnboardingFundAccount } from "@/utils/simpletuja/crypto-lending";
 
 interface FundAccountProps {
   destinationAddress: string;

@@ -1,8 +1,8 @@
 import { TextMD, TextSM } from "@/components/common/Typography";
 import OpenseaIcon from "@/components/icons/OpenseaIcon";
-import { GroupedLoanOffer } from "@/components/pages/crypto-lending/active-loan-offers/active-loan-offers.context";
 import { CryptoLoanOffer } from "@simpletuja/shared";
 import React from "react";
+import { GroupedLoanOffer } from "./active-loan-offers.context";
 
 interface CollectionLoanOffersCardProps {
   offerGroup: GroupedLoanOffer;

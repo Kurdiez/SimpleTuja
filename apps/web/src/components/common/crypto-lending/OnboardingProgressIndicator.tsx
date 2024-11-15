@@ -1,8 +1,8 @@
-import React from "react";
 import {
-  useOnboarding,
   OnboardingStep,
+  useOnboarding,
 } from "@/components/pages/crypto-lending/onboarding/onboarding.context";
+import React from "react";
 
 export enum StepStatus {
   Complete = "complete",
@@ -16,7 +16,7 @@ export interface Step {
   onboardingStep: OnboardingStep;
 }
 
-const ProgressIndicator: React.FC = () => {
+const OnboardingProgressIndicator: React.FC = () => {
   const { currentStep, jumpToStep } = useOnboarding();
 
   const steps: Step[] = [
@@ -99,4 +99,4 @@ const ProgressIndicator: React.FC = () => {
   );
 };
 
-export default ProgressIndicator;
+export default OnboardingProgressIndicator;

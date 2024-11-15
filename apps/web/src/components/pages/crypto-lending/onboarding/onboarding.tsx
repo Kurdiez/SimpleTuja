@@ -1,21 +1,21 @@
 import React from "react";
-import ProgressIndicator from "../../../common/ProgressIndicator";
+import OnboardingProgressIndicator from "../../../common/crypto-lending/OnboardingProgressIndicator";
+import ActivateLending from "./ActivateLending";
+import FundAccount from "./FundAccount";
+import LoanSettings from "./LoanSettings";
 import {
   OnboardingProvider,
   OnboardingStep,
   useOnboarding,
 } from "./onboarding.context";
 import OpenAccountCTA from "./OpenAccountCTA";
-import LoanSettings from "./LoanSettings";
-import FundAccount from "./FundAccount";
-import ActivateLending from "./ActivateLending";
 
 const OnboardingContent: React.FC = () => {
   const { currentStep, onboardingProgress } = useOnboarding();
 
   return (
     <>
-      <ProgressIndicator />
+      <OnboardingProgressIndicator />
       {currentStep === OnboardingStep.OpenCryptoInvestmentAccount && (
         <OpenAccountCTA />
       )}

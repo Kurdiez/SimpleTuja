@@ -4,6 +4,7 @@ import {
   CryptoToken,
   CryptoTokenAddress,
   CryptoTokenDecimals,
+  NftFiLoanStatus,
 } from '@simpletuja/shared';
 import Big from 'big.js';
 import { ethers } from 'ethers';
@@ -17,11 +18,7 @@ import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending
 import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
 import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
 import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
-import {
-  NftFiLoanSortBy,
-  NftFiLoanSortDirection,
-  NftFiLoanStatus,
-} from '../types/nftfi-types';
+import { NftFiLoanSortBy, NftFiLoanSortDirection } from '../types/nftfi-types';
 import { actualToWei, weiToActual } from '../utils';
 import { CoinlayerService } from './coinlayer.service';
 import { InvestmentWalletService } from './investment-wallet.service';

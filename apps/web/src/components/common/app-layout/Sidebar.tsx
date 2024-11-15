@@ -1,4 +1,4 @@
-import { useCryptoLending } from "@/components/pages/crypto-lending/crypto-lending.context";
+import { useCryptoLending } from "@/components/common/crypto-lending/crypto-lending.context";
 import { AppRoute } from "@/utils/app-route";
 import {
   Dialog,
@@ -36,6 +36,10 @@ const getNavigation = (isOnboardingComplete: boolean) => [
           {
             name: "Active Loan Offers",
             href: AppRoute.CryptoLendingActiveLoanOffers,
+          },
+          {
+            name: "Active Loans",
+            href: AppRoute.CryptoLendingActiveLoans,
           },
           { name: "Settings", href: AppRoute.CryptoLendingSettings },
         ]

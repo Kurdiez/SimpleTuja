@@ -1,12 +1,12 @@
 import AppLayout from "@/components/common/app-layout/AppLayout";
-import CollectionLoanOffersCard from "@/components/common/CollectionLoanOffersCard";
-import CollectionLoanOffersCardSkeleton from "@/components/common/CollectionLoanOffersCardSkeleton";
-import EmptyState from "@/components/common/EmptyState";
-import SimplePagination from "@/components/common/SimplePagination";
 import {
   ActiveLoanOffersProvider,
   useActiveLoanOffers,
-} from "@/components/pages/crypto-lending/active-loan-offers/active-loan-offers.context";
+} from "@/components/common/crypto-lending/active-loan-offers.context";
+import CollectionLoanOffersCard from "@/components/common/crypto-lending/CollectionLoanOffersCard";
+import CollectionLoanOffersCardSkeleton from "@/components/common/crypto-lending/CollectionLoanOffersCardSkeleton";
+import EmptyState from "@/components/common/EmptyState";
+import SimplePagination from "@/components/common/SimplePagination";
 import { NoSymbolIcon } from "@heroicons/react/24/outline";
 import React from "react";
 

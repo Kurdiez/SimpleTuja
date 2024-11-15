@@ -1,6 +1,9 @@
-import { CryptoToken, WithdrawTokenStatus } from '@simpletuja/shared';
+import {
+  CryptoToken,
+  NftFiLoanStatus,
+  WithdrawTokenStatus,
+} from '@simpletuja/shared';
 import { z } from 'zod';
-import { NftFiLoanStatus } from '~/crypto-lending/types/nftfi-types';
 
 export const userIdDtoSchema = z.object({
   userId: z.string(),

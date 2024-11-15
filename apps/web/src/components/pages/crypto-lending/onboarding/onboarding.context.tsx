@@ -11,7 +11,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { useCryptoLending } from "../crypto-lending.context";
+import { useCryptoLending } from "../../../common/crypto-lending/crypto-lending.context";
 
 export enum OnboardingStep {
   OpenCryptoInvestmentAccount = "Open Crypto Investment Account",

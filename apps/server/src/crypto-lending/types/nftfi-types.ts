@@ -1,3 +1,5 @@
+import { NftFiLoanStatus } from '@simpletuja/shared';
+
 export interface NftFiLoanOffer {
   id: string;
   type: string;
@@ -95,13 +97,6 @@ export interface NftFiActiveLoan {
       name: string;
     };
   };
-}
-
-export enum NftFiLoanStatus {
-  Active = 'active',
-  Repaid = 'repaid',
-  Defaulted = 'defaulted',
-  Liquidated = 'liquidated',
 }
 
 export enum NftFiLoanSortBy {

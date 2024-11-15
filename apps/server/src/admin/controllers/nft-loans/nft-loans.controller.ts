@@ -4,6 +4,11 @@ import {
   getLoanOffersRequestSchema,
   GetLoanOffersResponse,
   getLoanOffersResponseSchema,
+  GetLoansRequest,
+  getLoansRequestSchema,
+  GetLoansResponse,
+  getLoansResponseSchema,
+  NftFiLoanStatus,
   WithdrawTokenStatus,
 } from '@simpletuja/shared';
 import { z } from 'zod';
@@ -15,6 +20,7 @@ import { LoanService } from '~/crypto-lending/services/loan.service';
 import { NftFiApiService } from '~/crypto-lending/services/nftfi-api.service';
 import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
 import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
+import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
 import { PaginatedRequest } from '~/database/types';
 import {
   AdminWithdrawTokenDto,
@@ -193,5 +199,38 @@ export class NftLoansController {
     };
 
     return zodResTransform(transformedOffers, getLoanOffersResponseSchema);
+  }
+
+  @Post('get-loans')
+  async getLoans(
+    @Body(
+      new ZodValidationPipe(
+        getLoansRequestSchema.extend({
+          userId: z.string().uuid(),
+        }),
+      ),
+    )
+    params: GetLoansRequest & { userId: string },
+  ): Promise<GetLoansResponse> {
+    const loans = await this.cryptoLendingService.getLoans(
+      params.userId,
+      params as unknown as PaginatedRequest<
+        CryptoLoanEntity,
+        { status?: NftFiLoanStatus; userId: string }
+      >,
+    );
+
+    const transformedLoans = {
+      ...loans,
+      items: loans.items.map((loan) => ({
+        ...loan,
+        loanDuration: loan.loanDuration,
+        loanRepayment: loan.loanRepayment.toString(),
+        loanPrincipal: loan.loanPrincipal.toString(),
+        loanApr: loan.loanApr.toString(),
+      })),
+    };
+
+    return zodResTransform(transformedLoans, getLoansResponseSchema);
   }
 }

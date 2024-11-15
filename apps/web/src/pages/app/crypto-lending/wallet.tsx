@@ -1,6 +1,6 @@
 import AppLayout from "@/components/common/app-layout/AppLayout";
-import { InvestmentWalletProvider } from "@/components/common/investment-wallet.context";
-import { useCryptoLending } from "@/components/pages/crypto-lending/crypto-lending.context";
+import { useCryptoLending } from "@/components/common/crypto-lending/crypto-lending.context";
+import { InvestmentWalletProvider } from "@/components/common/crypto-lending/investment-wallet.context";
 import { InvestmentWalletActions } from "@/components/pages/crypto-lending/wallet/InvestmentWalletActions";
 import { InvestmentWalletBalances } from "@/components/pages/crypto-lending/wallet/InvestmentWalletBalances";
 import React, { useMemo } from "react";

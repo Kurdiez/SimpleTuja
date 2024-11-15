@@ -1,5 +1,5 @@
 import Button from "@/components/common/Button";
-import { useInvestmentWallet } from "@/components/common/investment-wallet.context";
+import { useInvestmentWallet } from "@/components/common/crypto-lending/investment-wallet.context";
 import { Typography } from "@/components/common/Typography";
 import { CheckCircleIcon } from "@heroicons/react/20/solid";
 import { CryptoToken } from "@simpletuja/shared";

@@ -4,12 +4,14 @@ import {
   CryptoLendingDashboardDataDto,
   LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
+  NftFiLoanStatus,
 } from '@simpletuja/shared';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-dashboard-snapshot.entity';
 import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
 import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
+import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
 import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
 import { PaginatedRequest, PaginatedResponse } from '~/database/types';
 import { OnboardingService } from './onboarding.service';
@@ -28,6 +30,8 @@ export class CryptoLendingService {
     @InjectRepository(CryptoLoanOfferEntity)
     private readonly cryptoLoanOfferRepo: Repository<CryptoLoanOfferEntity>,
     private readonly onboardingService: OnboardingService,
+    @InjectRepository(CryptoLoanEntity)
+    private readonly cryptoLoanRepo: Repository<CryptoLoanEntity>,
   ) {}
 
   async updateLoanSettings(
@@ -138,6 +142,40 @@ export class CryptoLendingService {
 
     return {
       items: offers,
+      pagination: {
+        page,
+        pageSize,
+        total,
+      },
+    };
+  }
+
+  async getLoans(
+    userId: string,
+    params: PaginatedRequest<CryptoLoanEntity, { status?: NftFiLoanStatus }>,
+  ): Promise<PaginatedResponse<CryptoLoanEntity>> {
+    const { status, page = 1, pageSize = 100 } = params;
+
+    const where: FindOptionsWhere<CryptoLoanEntity> = {
+      userState: { userId },
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    const [loans, total] = await this.cryptoLoanRepo
+      .createQueryBuilder('loan')
+      .leftJoinAndSelect('loan.nftCollection', 'nftCollection')
+      .leftJoinAndSelect('loan.userState', 'userState')
+      .where(where)
+      .orderBy('loan.startedAt', 'DESC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    return {
+      items: loans,
       pagination: {
         page,
         pageSize,

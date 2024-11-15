@@ -1,6 +1,6 @@
-import LoanSettingsForm from "@/components/common/LoanSettingsForm";
+import LoanSettingsForm from "@/components/common/crypto-lending/LoanSettingsForm";
 import { LoanSettingsUpdateDto } from "@simpletuja/shared";
-import { useCryptoLending } from "../crypto-lending.context";
+import { useCryptoLending } from "../../../common/crypto-lending/crypto-lending.context";
 
 interface LoanSettingsProps {
   onLoanSettingsSaved?: () => void;

@@ -1,8 +1,8 @@
+import { CryptoLendingProvider } from "@/components/common/crypto-lending/crypto-lending.context";
 import { withAuth } from "@/components/hoc/withAuth";
 import Modal from "@/components/modal/Modal";
 import { ModalProvider } from "@/components/modal/modal.context";
 import { GlobalStatesProvider } from "@/components/pages/app/global-states.context";
-import { CryptoLendingProvider } from "@/components/pages/crypto-lending/crypto-lending.context";
 import "@/styles/globals.css";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { AppKitNetwork, mainnet } from "@reown/appkit/networks";

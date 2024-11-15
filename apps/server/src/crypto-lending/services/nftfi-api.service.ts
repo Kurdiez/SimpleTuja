@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import NFTfi from '@nftfi/js';
-import { CryptoToken, CryptoTokenAddress } from '@simpletuja/shared';
+import {
+  CryptoToken,
+  CryptoTokenAddress,
+  NftFiLoanStatus,
+} from '@simpletuja/shared';
 import Big from 'big.js';
 import { Repository } from 'typeorm';
 import { CustomException } from '~/commons/errors/custom-exception';
@@ -11,7 +15,6 @@ import {
   NftFiActiveLoan,
   NftFiLoanOffer,
   NftFiLoanSort,
-  NftFiLoanStatus,
   NftFiPaginatedResponse,
 } from '../types/nftfi-types';
 

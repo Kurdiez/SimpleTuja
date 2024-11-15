@@ -5,6 +5,8 @@ import {
   CryptoToken,
   GetLoanOffersRequest,
   GetLoanOffersResponse,
+  GetLoansRequest,
+  GetLoansResponse,
   LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
   WithdrawTokenResponseDto,
@@ -92,6 +94,16 @@ export const getLoanOffers = async (
 ): Promise<GetLoanOffersResponse> => {
   const response = await apiRequest<GetLoanOffersResponse>(
     `${BaseUrl}/get-loan-offers`,
+    params
+  );
+  return response;
+};
+
+export const getLoans = async (
+  params: GetLoansRequest
+): Promise<GetLoansResponse> => {
+  const response = await apiRequest<GetLoansResponse>(
+    `${BaseUrl}/get-loans`,
     params
   );
   return response;

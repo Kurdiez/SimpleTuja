@@ -7,9 +7,14 @@ import {
   getLoanOffersRequestSchema,
   GetLoanOffersResponse,
   getLoanOffersResponseSchema,
+  GetLoansRequest,
+  getLoansRequestSchema,
+  GetLoansResponse,
+  getLoansResponseSchema,
   loanEligibleNftCollectionsDtoSchema,
   LoanSettingsUpdateDto,
   loanSettingsUpdateRequestSchema,
+  NftFiLoanStatus,
   UpdateActiveStatusDto,
   updateActiveStatusDtoSchema,
 } from '@simpletuja/shared';
@@ -17,6 +22,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '~/commons/types/auth';
 import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
 import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
+import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
 import { PaginatedRequest } from '~/database/types';
 import { CoinlayerService } from '../services/coinlayer.service';
 import { CryptoLendingService } from '../services/crypto-lending.service';
@@ -118,5 +124,33 @@ export class CryptoLendingController {
     };
 
     return zodResTransform(transformedOffers, getLoanOffersResponseSchema);
+  }
+
+  @Post('get-loans')
+  async getLoans(
+    @Req() { user }: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(getLoansRequestSchema))
+    params: GetLoansRequest,
+  ): Promise<GetLoansResponse> {
+    const loans = await this.cryptoLendingService.getLoans(
+      user.id,
+      params as unknown as PaginatedRequest<
+        CryptoLoanEntity,
+        { status?: NftFiLoanStatus }
+      >,
+    );
+
+    const transformedLoans = {
+      ...loans,
+      items: loans.items.map((loan) => ({
+        ...loan,
+        loanDuration: loan.loanDuration,
+        loanRepayment: loan.loanRepayment.toString(),
+        loanPrincipal: loan.loanPrincipal.toString(),
+        loanApr: loan.loanApr.toString(),
+      })),
+    };
+
+    return zodResTransform(transformedLoans, getLoansResponseSchema);
   }
 }

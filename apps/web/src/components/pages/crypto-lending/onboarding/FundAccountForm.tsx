@@ -14,7 +14,7 @@ import classNames from "classnames";
 import Image from "next/image";
 import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { useInvestmentWallet } from "../../../common/investment-wallet.context";
+import { useInvestmentWallet } from "../../../common/crypto-lending/investment-wallet.context";
 
 interface FundAccountFormProps {
   classNames?: string;

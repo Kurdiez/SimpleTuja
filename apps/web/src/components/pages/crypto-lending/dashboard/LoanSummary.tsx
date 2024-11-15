@@ -4,6 +4,9 @@ import DaiIcon from "@/components/icons/DaiIcon";
 import UsdcIcon from "@/components/icons/UsdcIcon";
 import UsdIcon from "@/components/icons/UsdIcon";
 import WethIcon from "@/components/icons/WethIcon";
+import { AppRoute } from "@/utils/app-route";
+import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
 import React from "react";
 import { ComputedBalances, useDashboard } from "./dashboard.context";
 import { formatCryptoValue, formatUsdValue } from "./utils";
@@ -89,10 +92,20 @@ export const LoanSummary: React.FC = () => {
           {loanStatusConfigs.map((config) => (
             <div
               key={config.id}
-              className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 border border-white/10 px-4 py-5 shadow sm:p-6"
+              className="relative overflow-hidden rounded-lg bg-white dark:bg-gray-800 border border-white/10 px-4 py-5 shadow sm:p-6"
             >
-              <dt className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">
-                {config.name}
+              <dt className="flex justify-between items-center">
+                <span className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {config.name}
+                </span>
+                {config.name === "Active Offers" && (
+                  <Link
+                    href={AppRoute.CryptoLendingActiveLoanOffers}
+                    className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                  >
+                    <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+                  </Link>
+                )}
               </dt>
               <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
                 {isLoading ? (
