@@ -15,8 +15,8 @@ const CryptoLendingDashboard: React.FC = () => {
           <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded-md">
             <p className="text-sm text-blue-800 dark:text-blue-200 flex items-center gap-2">
               <ExclamationCircleIcon className="h-5 w-5" />
-              Please note: Dashboard data is updated every 12 hours and may not
-              reflect real-time values.
+              Please note: All data is updated every 3 hours and may not reflect
+              real-time values.
             </p>
           </div>
           <WalletAddressSection />

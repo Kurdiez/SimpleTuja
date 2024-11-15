@@ -48,7 +48,7 @@ export class LoanService {
   ) {}
 
   @CronWithErrorHandling({
-    cronTime: '0 0,6,12,18 * * *',
+    cronTime: '0 */3 * * *',
     taskName: 'Sync and make loan offers',
   })
   async syncAndMakeLoanOffers() {
