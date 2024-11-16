@@ -170,6 +170,19 @@ export enum NftFiLoanStatus {
   Repaid = "repaid",
   Defaulted = "defaulted",
   Liquidated = "liquidated",
+  LiquidationFailed = "liquidation_failed",
+  NftTransferred = "nft_transferred",
+  NftTransferFailed = "nft_transfer_failed",
+}
+
+export enum NftTransferFailedReason {
+  InsufficientEthForGasFee = "insufficient_eth_for_gas_fee",
+  UnknownError = "unknown_error",
+}
+
+export enum LiquidationFailedReason {
+  InsufficientEthForGasFee = "insufficient_eth_for_gas_fee",
+  UnknownError = "unknown_error",
 }
 
 export const cryptoLoanSchema = z.object({
@@ -187,6 +200,8 @@ export const cryptoLoanSchema = z.object({
   loanPrincipal: z.string(),
   loanApr: z.string(),
   token: z.nativeEnum(CryptoToken),
+  nftTransferFailedReason: z.nativeEnum(NftTransferFailedReason).nullable(),
+  liquidationFailedReason: z.nativeEnum(LiquidationFailedReason).nullable(),
   nftCollection: z.object({
     id: z.string().uuid(),
     name: z.string(),
@@ -195,7 +210,7 @@ export const cryptoLoanSchema = z.object({
 });
 
 const getLoansSpecificSchema = z.object({
-  status: z.nativeEnum(NftFiLoanStatus).optional(),
+  statuses: z.array(z.nativeEnum(NftFiLoanStatus)).optional(),
 });
 
 export const getLoansRequestSchema = createPaginatedRequestSchema(

@@ -152,23 +152,24 @@ export class CryptoLendingService {
 
   async getLoans(
     userId: string,
-    params: PaginatedRequest<CryptoLoanEntity, { status?: NftFiLoanStatus }>,
+    params: PaginatedRequest<
+      CryptoLoanEntity,
+      { statuses?: NftFiLoanStatus[] }
+    >,
   ): Promise<PaginatedResponse<CryptoLoanEntity>> {
-    const { status, page = 1, pageSize = 100 } = params;
+    const { statuses, page = 1, pageSize = 100 } = params;
 
-    const where: FindOptionsWhere<CryptoLoanEntity> = {
-      userState: { userId },
-    };
-
-    if (status) {
-      where.status = status;
-    }
-
-    const [loans, total] = await this.cryptoLoanRepo
+    const query = this.cryptoLoanRepo
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.nftCollection', 'nftCollection')
       .leftJoinAndSelect('loan.userState', 'userState')
-      .where(where)
+      .where('userState.userId = :userId', { userId });
+
+    if (statuses?.length) {
+      query.andWhere('loan.status IN (:...statuses)', { statuses });
+    }
+
+    const [loans, total] = await query
       .orderBy('loan.startedAt', 'DESC')
       .skip((page - 1) * pageSize)
       .take(pageSize)

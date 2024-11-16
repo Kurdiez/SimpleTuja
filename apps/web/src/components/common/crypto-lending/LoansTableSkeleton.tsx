@@ -61,36 +61,30 @@ const LoansTableSkeleton: React.FC = () => {
             {[1, 2, 3].map((index) => (
               <tr key={index}>
                 <td className="py-4 pl-4 pr-3 text-sm sm:pl-0">
-                  <div className="flex items-center">
+                  <div className="flex items-start">
                     <div className="h-32 w-32 lg:h-10 lg:w-10 flex-shrink-0">
-                      <div className="h-full w-full rounded-full bg-gray-700" />
+                      <div className="h-full w-full rounded-full bg-gray-700 animate-pulse" />
                     </div>
-                    <div className="ml-4 lg:hidden">
-                      <dl className="font-normal">
-                        {[
-                          "Collection",
-                          "Token ID",
-                          "Currency",
-                          "Principal",
-                          "APR",
-                          "Repayment",
-                          "Due Date",
-                        ].map((label) => (
-                          <React.Fragment key={label}>
-                            <dt className="mt-2 text-gray-500">{label}</dt>
-                            <dd className="h-5 w-24 bg-gray-700 rounded" />
-                          </React.Fragment>
+                    <div className="ml-4 lg:hidden w-full">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-4">
+                        {[...Array(6)].map((_, i) => (
+                          <div key={i} className="space-y-1 min-w-0">
+                            <div className="h-5 w-20 bg-gray-700 rounded animate-pulse" />
+                            <div className="h-5 w-24 bg-gray-700 rounded animate-pulse" />
+                          </div>
                         ))}
-                      </dl>
+                      </div>
                     </div>
                   </div>
                 </td>
-                {[1, 2, 3, 4, 5, 6, 7].map((cell) => (
+
+                {/* Desktop view base columns */}
+                {[...Array(7)].map((_, i) => (
                   <td
-                    key={cell}
+                    key={i}
                     className="hidden px-3 py-4 text-sm text-gray-200 lg:table-cell"
                   >
-                    <div className="h-5 w-24 bg-gray-700 rounded" />
+                    <div className="h-5 w-24 bg-gray-700 rounded animate-pulse" />
                   </td>
                 ))}
               </tr>

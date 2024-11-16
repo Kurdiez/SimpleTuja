@@ -4,6 +4,7 @@ import {
   CryptoToken,
   CryptoTokenAddress,
   CryptoTokenDecimals,
+  LiquidationFailedReason,
   NftFiLoanStatus,
 } from '@simpletuja/shared';
 import Big from 'big.js';
@@ -72,6 +73,7 @@ export class LoanService {
       activeUsers.map(async (userState) => {
         await this.makeLoanOffersForUser(userState, loanEligibleCollections);
         await this.syncCurrentlyActiveLoans(userState);
+        await this.liquidateDefaultedLoans(userState);
         await this.takeDashboardSnapshot(userState);
       }),
     );
@@ -744,5 +746,52 @@ export class LoanService {
         usdcActiveLoansRepayment: new Big(0),
       },
     );
+  }
+
+  private async liquidateDefaultedLoans(
+    userState: CryptoLendingUserStateEntity,
+  ) {
+    this.logger.log(
+      `Liquidating defaulted loans for userState ${userState.id}`,
+    );
+    const defaultedLoans = await this.loanRepo.find({
+      where: { userStateId: userState.id, status: NftFiLoanStatus.Defaulted },
+    });
+
+    if (defaultedLoans.length === 0) {
+      this.logger.log(`No defaulted loans found for userState ${userState.id}`);
+      return;
+    }
+
+    const liquidatedLoans: CryptoLoanEntity[] = [];
+    const failedLoans: CryptoLoanEntity[] = [];
+    for (const loan of defaultedLoans) {
+      try {
+        await this.nftfiApiService.liquidateLoan(
+          userState.walletPrivateKey,
+          loan.nftfiLoanId,
+        );
+
+        loan.status = NftFiLoanStatus.Liquidated;
+        liquidatedLoans.push(loan);
+      } catch (error) {
+        const exception = new CustomException('Failed to liquidate loan', {
+          error,
+          userStateId: userState.id,
+          loan: JSON.stringify(loan),
+        });
+        captureException({ error: exception, logger: this.logger });
+
+        loan.status = NftFiLoanStatus.LiquidationFailed;
+        // TODO: Add more specific reason for liquidation transfer failure when things become more clear from the logs
+        loan.liquidationFailedReason = LiquidationFailedReason.UnknownError;
+        failedLoans.push(loan);
+      }
+    }
+
+    await Promise.all([
+      liquidatedLoans.length > 0 && this.loanRepo.save(liquidatedLoans),
+      failedLoans.length > 0 && this.loanRepo.save(failedLoans),
+    ]);
   }
 }

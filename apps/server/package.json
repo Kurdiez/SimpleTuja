@@ -21,8 +21,8 @@
     "tsn": "ts-node --project ./tsconfig.json --files -r tsconfig-paths/register",
     "type-check": "tsc --noEmit",
     "typeorm": "yarn tsn ./node_modules/typeorm/cli",
-    "typeorm:create": "wrap () { yarn typeorm migration:create ./src/migrations/db/\"$@\" | cat; }; wrap",
-    "typeorm:generate": "wrap () { yarn typeorm -d src/orm.config.ts migration:generate ./src/migrations/db/\"$@\" | cat; }; wrap",
+    "typeorm:create": "wrap () { yarn typeorm migration:create ./src/database/migrations/db/\"$@\" | cat; }; wrap",
+    "typeorm:generate": "wrap () { yarn typeorm -d src/orm.config.ts migration:generate ./src/database/migrations/db/\"$@\" | cat; }; wrap",
     "typeorm:revert": "yarn typeorm -d src/orm.config.ts migration:revert",
     "typeorm:run": "yarn typeorm migration:run -d src/orm.config.ts"
   },

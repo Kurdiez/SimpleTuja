@@ -259,6 +259,21 @@ export class NftFiApiService {
     );
   }
 
+  async liquidateLoan(walletPrivateKey: string, nftfiLoanId: string) {
+    const nftfiClient = await this.getNftFiClient(walletPrivateKey);
+    const result = await nftfiClient.loans.liquidate({
+      loan: { id: nftfiLoanId },
+    });
+
+    if (result.error || result.errors) {
+      throw new CustomException('Failed to liquidate loan with NFTfi', {
+        errorFromNftfi: result.error || result.errors,
+        walletPrivateKey,
+        nftfiLoanId,
+      });
+    }
+  }
+
   private async enqueueRequest<T>(execute: () => Promise<T>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       this.requestQueue.push({ execute, resolve, reject });

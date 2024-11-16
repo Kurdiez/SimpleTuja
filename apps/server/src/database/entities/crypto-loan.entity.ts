@@ -1,4 +1,9 @@
-import { CryptoToken, NftFiLoanStatus } from '@simpletuja/shared';
+import {
+  CryptoToken,
+  LiquidationFailedReason,
+  NftFiLoanStatus,
+  NftTransferFailedReason,
+} from '@simpletuja/shared';
 import Big from 'big.js';
 import {
   Column,
@@ -33,8 +38,25 @@ export class CryptoLoanEntity {
   @Column({ type: 'text' })
   nftfiLoanId!: string;
 
-  @Column({ type: 'text', enum: NftFiLoanStatus })
+  @Column({
+    type: 'enum',
+    enum: NftFiLoanStatus,
+  })
   status!: NftFiLoanStatus;
+
+  @Column({
+    type: 'enum',
+    enum: NftTransferFailedReason,
+    nullable: true,
+  })
+  nftTransferFailedReason!: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: LiquidationFailedReason,
+    nullable: true,
+  })
+  liquidationFailedReason!: string | null;
 
   @Column({ type: 'timestamp' })
   startedAt!: Date;
@@ -90,7 +112,10 @@ export class CryptoLoanEntity {
   })
   loanApr!: Big;
 
-  @Column({ type: 'text', enum: CryptoToken })
+  @Column({
+    type: 'enum',
+    enum: CryptoToken,
+  })
   token!: CryptoToken;
 
   @Column({ type: 'text' })

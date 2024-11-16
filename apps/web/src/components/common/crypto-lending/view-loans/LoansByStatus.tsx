@@ -1,10 +1,11 @@
 import AppLayout from "@/components/common/app-layout/AppLayout";
+import LoansTableSkeleton from "@/components/common/crypto-lending/LoansTableSkeleton";
+import { LoanCallouts } from "@/components/common/crypto-lending/view-loans/LoanCallouts";
+import { LoansTable } from "@/components/common/crypto-lending/view-loans/loans-table/LoansTable";
 import {
   LoansProvider,
   useLoans,
-} from "@/components/common/crypto-lending/loans.context";
-import { LoansTable } from "@/components/common/crypto-lending/LoansTable";
-import LoansTableSkeleton from "@/components/common/crypto-lending/LoansTableSkeleton";
+} from "@/components/common/crypto-lending/view-loans/loans.context";
 import EmptyState from "@/components/common/EmptyState";
 import SimplePagination from "@/components/common/SimplePagination";
 import { NoSymbolIcon } from "@heroicons/react/24/outline";
@@ -28,6 +29,8 @@ const LoansByStatusContent: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <LoanCallouts />
+
       <SimplePagination
         currentPage={pagination.page}
         totalPages={pagination.totalPages}

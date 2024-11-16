@@ -40,7 +40,10 @@ export class CryptoLoanOfferEntity {
   @JoinColumn({ name: 'userStateId' })
   userState!: CryptoLendingUserStateEntity;
 
-  @Column({ type: 'text', enum: CryptoToken })
+  @Column({
+    type: 'enum',
+    enum: CryptoToken,
+  })
   loanCurrency!: CryptoToken;
 
   @Index()

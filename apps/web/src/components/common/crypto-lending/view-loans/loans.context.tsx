@@ -23,6 +23,7 @@ type LoansContextType = {
   isLoading: boolean;
   loans: CryptoLoan[];
   pagination: PaginationState;
+  status: NftFiLoanStatus;
   toPage: (pageNumber: number) => Promise<void>;
 };
 
@@ -34,6 +35,27 @@ interface LoansProviderProps {
   children: ReactNode;
   status: NftFiLoanStatus;
 }
+
+const getStatusesFilter = (status: NftFiLoanStatus): NftFiLoanStatus[] => {
+  switch (status) {
+    case NftFiLoanStatus.Active:
+      return [
+        NftFiLoanStatus.Active,
+        NftFiLoanStatus.Defaulted,
+        NftFiLoanStatus.LiquidationFailed,
+      ];
+    case NftFiLoanStatus.Repaid:
+      return [NftFiLoanStatus.Repaid];
+    case NftFiLoanStatus.Liquidated:
+      return [
+        NftFiLoanStatus.Liquidated,
+        NftFiLoanStatus.NftTransferred,
+        NftFiLoanStatus.NftTransferFailed,
+      ];
+    default:
+      return [status];
+  }
+};
 
 export const LoansProvider: React.FC<LoansProviderProps> = ({
   children,
@@ -54,7 +76,7 @@ export const LoansProvider: React.FC<LoansProviderProps> = ({
     setIsLoading(true);
     try {
       const response = await getLoans({
-        status,
+        statuses: getStatusesFilter(status),
         page,
         pageSize: DEFAULT_PAGE_SIZE,
       });
@@ -102,6 +124,7 @@ export const LoansProvider: React.FC<LoansProviderProps> = ({
         isLoading,
         loans,
         pagination,
+        status,
         toPage,
       }}
     >

@@ -17,7 +17,7 @@ export const createDBConnectionImport = (name: string) =>
       password: configService.get('DB_PASSWORD'),
       database: configService.get('DB_DATABASE'),
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      migrations: [__dirname + '/migrations/db/**/*{.ts,.js}'],
+      migrations: [__dirname + '/database/migrations/db/**/*{.ts,.js}'],
       subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
       applicationName: name,
       synchronize: false,

@@ -136,7 +136,7 @@ export class CryptoLendingController {
       user.id,
       params as unknown as PaginatedRequest<
         CryptoLoanEntity,
-        { status?: NftFiLoanStatus }
+        { statuses?: NftFiLoanStatus[] }
       >,
     );
 

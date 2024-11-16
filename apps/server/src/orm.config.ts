@@ -15,7 +15,7 @@ const AppDataSource = new DataSource({
   database: db.DB_DATABASE,
 
   entities: [__dirname + '/**/*.entity.ts'],
-  migrations: [__dirname + '/migrations/db/**/*.ts'],
+  migrations: [__dirname + '/database/migrations/db/**/*.ts'],
 
   synchronize: false,
 });
