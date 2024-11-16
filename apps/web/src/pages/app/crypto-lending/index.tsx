@@ -13,7 +13,7 @@ const CryptoLendingDashboard: React.FC = () => {
       <DashboardProvider>
         <div className="space-y-8">
           <Callout type="info">
-            Please note: All data is updated every 3 hours and may not reflect
+            Please note: All data is updated every 3 hours and will not reflect
             real-time values.
           </Callout>
           <WalletAddressSection />

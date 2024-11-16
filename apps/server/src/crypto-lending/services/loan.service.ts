@@ -6,9 +6,10 @@ import {
   CryptoTokenDecimals,
   LiquidationFailedReason,
   NftFiLoanStatus,
+  NftTransferFailedReason,
 } from '@simpletuja/shared';
 import Big from 'big.js';
-import { ethers } from 'ethers';
+import { Contract, ethers } from 'ethers';
 import { In, Not, Repository } from 'typeorm';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
@@ -25,6 +26,11 @@ import { CoinlayerService } from './coinlayer.service';
 import { InvestmentWalletService } from './investment-wallet.service';
 import { NftFiApiService } from './nftfi-api.service';
 import { OpenSeaService } from './opensea.service';
+
+const ERC721_ABI = [
+  'function transferFrom(address from, address to, uint256 tokenId) external',
+  'function ownerOf(uint256 tokenId) external view returns (address)',
+];
 
 @Injectable()
 export class LoanService {
@@ -74,6 +80,7 @@ export class LoanService {
         await this.makeLoanOffersForUser(userState, loanEligibleCollections);
         await this.syncCurrentlyActiveLoans(userState);
         await this.liquidateDefaultedLoans(userState);
+        await this.transferNftsToForeclosureWallet(userState);
         await this.takeDashboardSnapshot(userState);
       }),
     );
@@ -752,21 +759,36 @@ export class LoanService {
     userState: CryptoLendingUserStateEntity,
   ) {
     this.logger.log(
-      `Liquidating defaulted loans for userState ${userState.id}`,
+      `[UserState: ${userState.id}] Starting liquidation process for defaulted loans`,
     );
+
     const defaultedLoans = await this.loanRepo.find({
       where: { userStateId: userState.id, status: NftFiLoanStatus.Defaulted },
     });
 
+    this.logger.log(
+      `[UserState: ${userState.id}] Found ${defaultedLoans.length} defaulted loans to process`,
+    );
+
     if (defaultedLoans.length === 0) {
-      this.logger.log(`No defaulted loans found for userState ${userState.id}`);
+      this.logger.log(
+        `[UserState: ${userState.id}] No defaulted loans found, skipping liquidation process`,
+      );
       return;
     }
 
     const liquidatedLoans: CryptoLoanEntity[] = [];
     const failedLoans: CryptoLoanEntity[] = [];
+
     for (const loan of defaultedLoans) {
+      this.logger.log(
+        `[UserState: ${userState.id}] Processing liquidation for loan ${loan.id} (NFT Token ID: ${loan.nftTokenId})`,
+      );
+
       try {
+        this.logger.log(
+          `[UserState: ${userState.id}] Calling NFTfi liquidation for loan ${loan.nftfiLoanId}`,
+        );
         await this.nftfiApiService.liquidateLoan(
           userState.walletPrivateKey,
           loan.nftfiLoanId,
@@ -774,6 +796,10 @@ export class LoanService {
 
         loan.status = NftFiLoanStatus.Liquidated;
         liquidatedLoans.push(loan);
+
+        this.logger.log(
+          `[UserState: ${userState.id}] Successfully liquidated loan ${loan.id}`,
+        );
       } catch (error) {
         const exception = new CustomException('Failed to liquidate loan', {
           error,
@@ -783,15 +809,185 @@ export class LoanService {
         captureException({ error: exception, logger: this.logger });
 
         loan.status = NftFiLoanStatus.LiquidationFailed;
-        // TODO: Add more specific reason for liquidation transfer failure when things become more clear from the logs
-        loan.liquidationFailedReason = LiquidationFailedReason.UnknownError;
+        if (error instanceof Error) {
+          const errorMessage = error.message.toLowerCase();
+          if (errorMessage.includes('insufficient funds')) {
+            loan.liquidationFailedReason =
+              LiquidationFailedReason.InsufficientEthForGasFee;
+          } else {
+            loan.liquidationFailedReason = LiquidationFailedReason.UnknownError;
+          }
+        } else {
+          loan.liquidationFailedReason = LiquidationFailedReason.UnknownError;
+        }
         failedLoans.push(loan);
       }
     }
 
-    await Promise.all([
-      liquidatedLoans.length > 0 && this.loanRepo.save(liquidatedLoans),
-      failedLoans.length > 0 && this.loanRepo.save(failedLoans),
-    ]);
+    this.logger.log(
+      `[UserState: ${userState.id}] Saving results: ${liquidatedLoans.length} successful liquidations, ${failedLoans.length} failed liquidations`,
+    );
+
+    await this.loanRepo.manager.transaction(
+      async (transactionalEntityManager) => {
+        if (liquidatedLoans.length > 0) {
+          await transactionalEntityManager.save(
+            CryptoLoanEntity,
+            liquidatedLoans,
+          );
+        }
+        if (failedLoans.length > 0) {
+          await transactionalEntityManager.save(CryptoLoanEntity, failedLoans);
+        }
+      },
+    );
+
+    this.logger.log(
+      `[UserState: ${userState.id}] Completed loan liquidation process`,
+    );
+  }
+
+  private async transferNftsToForeclosureWallet(
+    userState: CryptoLendingUserStateEntity,
+  ) {
+    this.logger.log(
+      `[UserState: ${userState.id}] Starting NFT transfer process to foreclosure wallet`,
+    );
+
+    const liquidatedLoans = await this.loanRepo.find({
+      where: {
+        userStateId: userState.id,
+        status: NftFiLoanStatus.Liquidated,
+      },
+      relations: ['nftCollection'],
+    });
+
+    this.logger.log(
+      `[UserState: ${userState.id}] Found ${liquidatedLoans.length} liquidated loans to process`,
+    );
+
+    if (liquidatedLoans.length === 0) {
+      this.logger.log(
+        `[UserState: ${userState.id}] No liquidated loans found, skipping transfer process`,
+      );
+      return;
+    }
+
+    const foreclosureWalletAddress = userState.foreclosureWalletAddress;
+    if (!foreclosureWalletAddress) {
+      const exception = new CustomException(
+        'Failed to transfer liquidated NFTs. Foreclosure wallet address not found',
+        {
+          userStateId: userState.id,
+        },
+      );
+      captureException({ error: exception, logger: this.logger });
+      return;
+    }
+
+    this.logger.log(
+      `[UserState: ${userState.id}] Initializing provider and wallet for transfers`,
+    );
+    const providerUrl = this.configService.get('PROVIDER_URL');
+    const provider = new ethers.JsonRpcProvider(providerUrl);
+    const wallet = new ethers.Wallet(userState.walletPrivateKey, provider);
+
+    const transferredLoans: CryptoLoanEntity[] = [];
+    const failedLoans: CryptoLoanEntity[] = [];
+
+    for (const loan of liquidatedLoans) {
+      this.logger.log(
+        `[UserState: ${userState.id}] Processing NFT transfer for loan ${loan.id} (Collection: ${loan.nftCollection.contractAddress}, TokenId: ${loan.nftTokenId})`,
+      );
+
+      try {
+        this.logger.log(
+          `[UserState: ${userState.id}] Creating contract instance for collection ${loan.nftCollection.contractAddress}`,
+        );
+        const nftContract = new Contract(
+          loan.nftCollection.contractAddress!,
+          ERC721_ABI,
+          wallet,
+        );
+
+        // Check ownership of the NFT
+        const ownerOf = await nftContract.ownerOf(loan.nftTokenId);
+        if (ownerOf.toLowerCase() !== userState.walletAddress.toLowerCase()) {
+          throw new Error('NFT not owned by wallet');
+        }
+
+        // Transfer NFT to foreclosure wallet
+        this.logger.log(
+          `[UserState: ${userState.id}] Initiating NFT transfer transaction`,
+        );
+        const transferTx = await nftContract.transferFrom(
+          userState.walletAddress,
+          foreclosureWalletAddress,
+          loan.nftTokenId,
+        );
+        this.logger.log(
+          `[UserState: ${userState.id}] Waiting for transfer transaction to be mined`,
+        );
+        await transferTx.wait();
+
+        // Update loan status to NftTransferred
+        loan.status = NftFiLoanStatus.NftTransferred;
+        transferredLoans.push(loan);
+
+        this.logger.log(
+          `[UserState: ${userState.id}] Successfully transferred NFT ${loan.nftTokenId} from collection ${loan.nftCollection.contractAddress} to foreclosure wallet`,
+        );
+      } catch (error) {
+        const exception = new CustomException(
+          'Failed to transfer NFT to foreclosure wallet',
+          {
+            error,
+            userStateId: userState.id,
+            loan: JSON.stringify(loan),
+            nftContractAddress: loan.nftCollection.contractAddress,
+            nftTokenId: loan.nftTokenId,
+          },
+        );
+        captureException({ error: exception, logger: this.logger });
+
+        // Update loan status to NftTransferFailed
+        loan.status = NftFiLoanStatus.NftTransferFailed;
+        if (error instanceof Error) {
+          const errorMessage = error.message.toLowerCase();
+          if (errorMessage.includes('insufficient funds')) {
+            loan.nftTransferFailedReason =
+              NftTransferFailedReason.InsufficientEthForGasFee;
+          } else {
+            loan.nftTransferFailedReason = NftTransferFailedReason.UnknownError;
+          }
+        } else {
+          loan.nftTransferFailedReason = NftTransferFailedReason.UnknownError;
+        }
+        failedLoans.push(loan);
+      }
+    }
+
+    this.logger.log(
+      `[UserState: ${userState.id}] Saving results: ${transferredLoans.length} successful transfers, ${failedLoans.length} failed transfers`,
+    );
+
+    // Save the results of the transfers
+    await this.loanRepo.manager.transaction(
+      async (transactionalEntityManager) => {
+        if (transferredLoans.length > 0) {
+          await transactionalEntityManager.save(
+            CryptoLoanEntity,
+            transferredLoans,
+          );
+        }
+        if (failedLoans.length > 0) {
+          await transactionalEntityManager.save(CryptoLoanEntity, failedLoans);
+        }
+      },
+    );
+
+    this.logger.log(
+      `[UserState: ${userState.id}] Completed NFT transfer process`,
+    );
   }
 }
