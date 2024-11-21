@@ -19,6 +19,7 @@ import { InvestmentWalletService } from '~/crypto-lending/services/investment-wa
 import { LoanService } from '~/crypto-lending/services/loan.service';
 import { NftFiApiService } from '~/crypto-lending/services/nftfi-api.service';
 import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
+import { NftFiApiLoanStatus } from '~/crypto-lending/types/nftfi-types';
 import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
 import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
 import { PaginatedRequest } from '~/database/types';
@@ -32,8 +33,6 @@ import {
   collectionAddressDtoSchema,
   CollectionIdDto,
   collectionIdDtoSchema,
-  GetLentLoansDto,
-  getLentLoansDtoSchema,
   GetTokenAllowanceDto,
   getTokenAllowanceDtoSchema,
   GetTokenBalanceDto,
@@ -143,8 +142,15 @@ export class NftLoansController {
 
   @Post('get-lent-loans')
   async getLentLoans(
-    @Body(new ZodValidationPipe(getLentLoansDtoSchema))
-    { userId, status }: GetLentLoansDto,
+    @Body(
+      new ZodValidationPipe(
+        z.object({
+          userId: z.string().uuid(),
+          status: z.nativeEnum(NftFiApiLoanStatus),
+        }),
+      ),
+    )
+    { userId, status }: { userId: string; status: NftFiApiLoanStatus },
   ) {
     return await this.nftFiApiService.getLentLoansForUser(userId, status);
   }

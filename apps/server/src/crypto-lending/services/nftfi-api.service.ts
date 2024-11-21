@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import NFTfi from '@nftfi/js';
-import {
-  CryptoToken,
-  CryptoTokenAddress,
-  NftFiLoanStatus,
-} from '@simpletuja/shared';
+import { CryptoToken, CryptoTokenAddress } from '@simpletuja/shared';
 import Big from 'big.js';
 import { Repository } from 'typeorm';
 import { CustomException } from '~/commons/errors/custom-exception';
@@ -13,6 +9,7 @@ import { ConfigService } from '~/config';
 import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
 import {
   NftFiActiveLoan,
+  NftFiApiLoanStatus,
   NftFiLoanOffer,
   NftFiLoanSort,
   NftFiPaginatedResponse,
@@ -194,7 +191,7 @@ export class NftFiApiService {
 
   async getLentLoansForWallet(
     walletPrivateKey: string,
-    status: NftFiLoanStatus,
+    status: NftFiApiLoanStatus,
   ): Promise<NftFiActiveLoan[]> {
     return this.enqueueRequest(async () => {
       const nftfiClient = await this.getNftFiClient(walletPrivateKey);
@@ -210,7 +207,7 @@ export class NftFiApiService {
     });
   }
 
-  async getLentLoansForUser(userId: string, status: NftFiLoanStatus) {
+  async getLentLoansForUser(userId: string, status: NftFiApiLoanStatus) {
     const userState = await this.cryptoLendingUserStateRepo.findOneOrFail({
       where: { userId },
     });
@@ -219,7 +216,7 @@ export class NftFiApiService {
 
   async getLentLoansForWalletPaginated(
     walletPrivateKey: string,
-    status: NftFiLoanStatus,
+    status: NftFiApiLoanStatus,
     page: number,
     limit: number = 10,
     sort?: NftFiLoanSort,
@@ -242,7 +239,7 @@ export class NftFiApiService {
 
   async getLentLoansForUserPaginated(
     userId: string,
-    status: NftFiLoanStatus,
+    status: NftFiApiLoanStatus,
     page: number,
     limit: number = 10,
     sort?: NftFiLoanSort,
@@ -266,12 +263,17 @@ export class NftFiApiService {
     });
 
     if (result.error || result.errors) {
-      throw new CustomException('Failed to liquidate loan with NFTfi', {
-        errorFromNftfi: result.error || result.errors,
-        walletPrivateKey,
-        nftfiLoanId,
-      });
+      throw new CustomException(
+        'Failed to liquidate loan with NFTfi due to an error',
+        {
+          errorFromNftfi: result.error || result.errors,
+          walletPrivateKey,
+          nftfiLoanId,
+        },
+      );
     }
+
+    return result.success;
   }
 
   private async enqueueRequest<T>(execute: () => Promise<T>): Promise<T> {

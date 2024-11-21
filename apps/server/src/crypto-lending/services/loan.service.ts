@@ -20,7 +20,11 @@ import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending
 import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
 import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
 import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
-import { NftFiLoanSortBy, NftFiLoanSortDirection } from '../types/nftfi-types';
+import {
+  NftFiApiLoanStatus,
+  NftFiLoanSortBy,
+  NftFiLoanSortDirection,
+} from '../types/nftfi-types';
 import { actualToWei, weiToActual } from '../utils';
 import { CoinlayerService } from './coinlayer.service';
 import { InvestmentWalletService } from './investment-wallet.service';
@@ -165,24 +169,36 @@ export class LoanService {
     loanEligibleCollections: NftCollectionEntity[],
   ) {
     try {
-      this.logger.log(`Syncing loan offers for userState ${userState.id}`);
+      this.logger.log(
+        `[UserState: ${userState.id}] Starting loan offer creation process`,
+      );
+
+      this.logger.log(
+        `[UserState: ${userState.id}] Syncing existing loan offers`,
+      );
       const numActiveOffers = await this.syncLoanOffers(userState);
       this.logger.log(
-        `Synced ${numActiveOffers} active loan offers for userState ${userState.id}`,
+        `[UserState: ${userState.id}] Found ${numActiveOffers} active loan offers`,
       );
 
       if (numActiveOffers >= 1 || !userState.active) {
         this.logger.log(
-          `Skipping making loan offers for userState ${userState.id}`,
+          `[UserState: ${userState.id}] Skipping new loan offers - ${numActiveOffers} active offers exist or user state inactive`,
         );
         return;
       }
 
+      this.logger.log(
+        `[UserState: ${userState.id}] Fetching token balances and exchange rates`,
+      );
       const tokenBalances = await this.investmentWalletService.getTokenBalances(
         userState.userId,
       );
       const exchangeRates = this.coinlayerService.getExchangeRates();
 
+      this.logger.log(
+        `[UserState: ${userState.id}] Processing ${loanEligibleCollections.length} eligible collections`,
+      );
       await Promise.all(
         loanEligibleCollections.map((collection) =>
           this.makeLoanOffersForCollection(
@@ -194,7 +210,7 @@ export class LoanService {
         ),
       );
       this.logger.log(
-        `Processed loan offers for ${loanEligibleCollections.length} collections for userState ${userState.id}`,
+        `[UserState: ${userState.id}] Completed loan offer creation process`,
       );
     } catch (error) {
       const exception = new CustomException('Failed to make loan offers', {
@@ -217,7 +233,14 @@ export class LoanService {
     tokenBalances: Record<CryptoToken, string>,
     exchangeRates: Record<CryptoToken, number>,
   ): Promise<void> {
+    this.logger.log(
+      `[UserState: ${userState.id}] Processing collection ${collection.id} for loan offers`,
+    );
+
     const collectionEthBidPrice = collection.avgTopFiveBids;
+    this.logger.log(
+      `[UserState: ${userState.id}] Collection ${collection.id} ETH bid price: ${collectionEthBidPrice}`,
+    );
 
     const ltvDurations: Array<{
       ltv: keyof CryptoLendingUserStateEntity;
@@ -233,8 +256,17 @@ export class LoanService {
     for (const token of Object.values(CryptoToken).filter(
       (t) => t !== CryptoToken.ETH,
     )) {
+      this.logger.log(
+        `[UserState: ${userState.id}] Processing token ${token} for collection ${collection.id}`,
+      );
+
       const balance = new Big(tokenBalances[token]);
-      if (balance.eq(0)) continue;
+      if (balance.eq(0)) {
+        this.logger.log(
+          `[UserState: ${userState.id}] Skipping token ${token} - zero balance`,
+        );
+        continue;
+      }
 
       const collectionBidPriceInToken = new Big(collectionEthBidPrice).mul(
         exchangeRates[token],
@@ -412,8 +444,13 @@ export class LoanService {
   private async syncCurrentlyActiveLoans(
     userState: CryptoLendingUserStateEntity,
   ) {
-    this.logger.log(`Syncing active loans for userState ${userState.id}`);
+    this.logger.log(
+      `[UserState: ${userState.id}] Starting active loans sync process`,
+    );
 
+    this.logger.log(
+      `[UserState: ${userState.id}] Fetching current active loans from DB`,
+    );
     const currentActiveLoans = await this.loanRepo.find({
       where: {
         userStateId: userState.id,
@@ -425,7 +462,7 @@ export class LoanService {
     });
 
     this.logger.log(
-      `Found ${currentActiveLoans.length} currently active loans in DB`,
+      `[UserState: ${userState.id}] Found ${currentActiveLoans.length} active loans in DB`,
     );
 
     const currentActiveLoansMap = new Map(
@@ -434,43 +471,49 @@ export class LoanService {
 
     const nftCollectionMap = new Map<string, NftCollectionEntity>();
 
-    // Sync Active Loans
+    this.logger.log(`[UserState: ${userState.id}] Processing Active loans`);
     await this.fetchAndProcessLoans(
       userState,
-      NftFiLoanStatus.Active,
+      NftFiApiLoanStatus.Active,
       currentActiveLoans,
       currentActiveLoansMap,
       nftCollectionMap,
     );
 
-    // Sync Defaulted Loans
+    this.logger.log(`[UserState: ${userState.id}] Processing Defaulted loans`);
     await this.fetchAndProcessLoans(
       userState,
-      NftFiLoanStatus.Defaulted,
+      NftFiApiLoanStatus.Defaulted,
       currentActiveLoans,
       currentActiveLoansMap,
       nftCollectionMap,
     );
 
-    // Sync Repaid Loans
+    this.logger.log(`[UserState: ${userState.id}] Processing Repaid loans`);
     await this.fetchAndProcessLoans(
       userState,
-      NftFiLoanStatus.Repaid,
+      NftFiApiLoanStatus.Repaid,
       currentActiveLoans,
       currentActiveLoansMap,
       nftCollectionMap,
     );
 
-    this.logger.log(`Finished syncing loans for userState ${userState.id}`);
+    this.logger.log(
+      `[UserState: ${userState.id}] Completed active loans sync process`,
+    );
   }
 
   private async fetchAndProcessLoans(
     userState: CryptoLendingUserStateEntity,
-    status: NftFiLoanStatus,
+    status: NftFiApiLoanStatus,
     currentActiveLoans: CryptoLoanEntity[],
     currentActiveLoansMap: Map<string, CryptoLoanEntity>,
     nftCollectionMap: Map<string, NftCollectionEntity>,
   ) {
+    this.logger.log(
+      `[UserState: ${userState.id}] Starting fetch and process for ${status} loans`,
+    );
+
     let page = 1;
     const pageSize = 10;
     const earliestActiveLoanDueDate =
@@ -480,7 +523,9 @@ export class LoanService {
       [];
 
     while (true) {
-      this.logger.log(`Fetching page ${page} of ${status} loans from NFTfi`);
+      this.logger.log(
+        `[UserState: ${userState.id}] Fetching page ${page} of ${status} loans from NFTfi`,
+      );
 
       const sortOption = {
         by: NftFiLoanSortBy.DueDate,
@@ -496,6 +541,10 @@ export class LoanService {
         );
 
       const fetchedLoans = response.data.results;
+      this.logger.log(
+        `[UserState: ${userState.id}] Retrieved ${fetchedLoans.length} ${status} loans`,
+      );
+
       if (fetchedLoans.length === 0) {
         this.logger.log('No more loans found from NFTfi');
         break;
@@ -508,17 +557,10 @@ export class LoanService {
 
       for (const loan of fetchedLoans) {
         const loanDueDate = new Date(loan.date.due);
-        if (loanDueDate < earliestActiveLoanDueDate) {
-          this.logger.log(
-            'Reached loans earlier than earliest active loan, breaking',
-          );
-          break;
-        }
-
         const existingLoan = currentActiveLoansMap.get(loan.id.toString());
         const nftAddress = loan.nft.address.toLowerCase();
 
-        if (status === NftFiLoanStatus.Active && !existingLoan) {
+        if (status === NftFiApiLoanStatus.Active && !existingLoan) {
           let nftCollection = nftCollectionMap.get(nftAddress);
           if (!nftCollection) {
             nftCollection = await this.nftCollectionRepo.findOne({
@@ -554,12 +596,12 @@ export class LoanService {
             nftfiContractName: loan.nftfi.contract.name,
           });
         } else if (existingLoan) {
-          if (status === NftFiLoanStatus.Defaulted) {
+          if (status === NftFiApiLoanStatus.Defaulted) {
             loansToUpdate.push({
               id: existingLoan.id,
               updates: { status: NftFiLoanStatus.Defaulted },
             });
-          } else if (status === NftFiLoanStatus.Repaid) {
+          } else if (status === NftFiApiLoanStatus.Repaid) {
             loansToUpdate.push({
               id: existingLoan.id,
               updates: {
@@ -585,7 +627,7 @@ export class LoanService {
     }
 
     this.logger.log(
-      `Found ${loansToCreate.length} loans to create and ${loansToUpdate.length} loans to update`,
+      `[UserState: ${userState.id}] Completed processing ${status} loans. Creating: ${loansToCreate.length}, Updating: ${loansToUpdate.length}`,
     );
 
     await Promise.all([
@@ -597,29 +639,27 @@ export class LoanService {
   }
 
   private async takeDashboardSnapshot(userState: CryptoLendingUserStateEntity) {
-    this.logger.log(`Taking dashboard snapshot for userState ${userState.id}`);
+    this.logger.log(
+      `[UserState: ${userState.id}] Starting dashboard snapshot process`,
+    );
 
+    this.logger.log(`[UserState: ${userState.id}] Fetching token balances`);
     const tokenBalances = await this.investmentWalletService.getTokenBalances(
       userState.userId,
     );
-    this.logger.log(`Retrieved token balances for userState ${userState.id}`);
 
+    this.logger.log(`[UserState: ${userState.id}] Counting active loan offers`);
     const activeLoanOffersCount = await this.loanOfferRepo.count({
       where: {
         userStateId: userState.id,
         isActive: true,
       },
     });
-    this.logger.log(
-      `Found ${activeLoanOffersCount} active loan offers for userState ${userState.id}`,
-    );
 
+    this.logger.log(`[UserState: ${userState.id}] Aggregating loan metrics`);
     const loanMetrics = await this.aggregateLoanMetrics(userState.id);
-    this.logger.log(
-      `Aggregated loan metrics for userState ${userState.id}: ` +
-        `${loanMetrics.activeLoans} active, ${loanMetrics.repaidLoans} repaid, ${loanMetrics.liquidatedLoans} liquidated`,
-    );
 
+    this.logger.log(`[UserState: ${userState.id}] Updating dashboard snapshot`);
     await this.snapshotRepo.upsert(
       {
         userStateId: userState.id,
@@ -644,7 +684,9 @@ export class LoanService {
       },
     );
 
-    this.logger.log(`Updated dashboard snapshot for userState ${userState.id}`);
+    this.logger.log(
+      `[UserState: ${userState.id}] Completed dashboard snapshot process`,
+    );
   }
 
   private async aggregateLoanMetrics(userStateId: string): Promise<{
@@ -673,7 +715,21 @@ export class LoanService {
 
         return loans.reduce(
           (metrics, loan) => {
-            if (loan.status === NftFiLoanStatus.Active) {
+            // Check if loan status is considered "active"
+            const isActiveLoan = [
+              NftFiLoanStatus.Active,
+              NftFiLoanStatus.Defaulted,
+              NftFiLoanStatus.LiquidationFailed,
+            ].includes(loan.status);
+
+            // Check if loan status is considered "liquidated"
+            const isLiquidatedLoan = [
+              NftFiLoanStatus.Liquidated,
+              NftFiLoanStatus.NftTransferred,
+              NftFiLoanStatus.NftTransferFailed,
+            ].includes(loan.status);
+
+            if (isActiveLoan) {
               metrics.activeLoans++;
               switch (loan.token) {
                 case CryptoToken.WETH:
@@ -697,7 +753,7 @@ export class LoanService {
               }
             } else if (loan.status === NftFiLoanStatus.Repaid) {
               metrics.repaidLoans++;
-            } else if (loan.status === NftFiLoanStatus.Liquidated) {
+            } else if (isLiquidatedLoan) {
               metrics.liquidatedLoans++;
             }
             return metrics;
@@ -762,15 +818,23 @@ export class LoanService {
       `[UserState: ${userState.id}] Starting liquidation process for defaulted loans`,
     );
 
-    const defaultedLoans = await this.loanRepo.find({
-      where: { userStateId: userState.id, status: NftFiLoanStatus.Defaulted },
+    const loansToProcess = await this.loanRepo.find({
+      where: [
+        { userStateId: userState.id, status: NftFiLoanStatus.Defaulted },
+        {
+          userStateId: userState.id,
+          status: NftFiLoanStatus.LiquidationFailed,
+          liquidationFailedReason:
+            LiquidationFailedReason.InsufficientEthForGasFee,
+        },
+      ],
     });
 
     this.logger.log(
-      `[UserState: ${userState.id}] Found ${defaultedLoans.length} defaulted loans to process`,
+      `[UserState: ${userState.id}] Found ${loansToProcess.length} defaulted loans to process`,
     );
 
-    if (defaultedLoans.length === 0) {
+    if (loansToProcess.length === 0) {
       this.logger.log(
         `[UserState: ${userState.id}] No defaulted loans found, skipping liquidation process`,
       );
@@ -780,7 +844,7 @@ export class LoanService {
     const liquidatedLoans: CryptoLoanEntity[] = [];
     const failedLoans: CryptoLoanEntity[] = [];
 
-    for (const loan of defaultedLoans) {
+    for (const loan of loansToProcess) {
       this.logger.log(
         `[UserState: ${userState.id}] Processing liquidation for loan ${loan.id} (NFT Token ID: ${loan.nftTokenId})`,
       );
@@ -789,17 +853,24 @@ export class LoanService {
         this.logger.log(
           `[UserState: ${userState.id}] Calling NFTfi liquidation for loan ${loan.nftfiLoanId}`,
         );
-        await this.nftfiApiService.liquidateLoan(
+        const success = await this.nftfiApiService.liquidateLoan(
           userState.walletPrivateKey,
           loan.nftfiLoanId,
         );
 
-        loan.status = NftFiLoanStatus.Liquidated;
-        liquidatedLoans.push(loan);
+        if (success) {
+          loan.status = NftFiLoanStatus.Liquidated;
+          liquidatedLoans.push(loan);
 
-        this.logger.log(
-          `[UserState: ${userState.id}] Successfully liquidated loan ${loan.id}`,
-        );
+          this.logger.log(
+            `[UserState: ${userState.id}] Successfully liquidated loan ${loan.id}`,
+          );
+        } else {
+          loan.status = NftFiLoanStatus.LiquidationFailed;
+          loan.liquidationFailedReason =
+            LiquidationFailedReason.InsufficientEthForGasFee;
+          failedLoans.push(loan);
+        }
       } catch (error) {
         const exception = new CustomException('Failed to liquidate loan', {
           error,
@@ -809,17 +880,7 @@ export class LoanService {
         captureException({ error: exception, logger: this.logger });
 
         loan.status = NftFiLoanStatus.LiquidationFailed;
-        if (error instanceof Error) {
-          const errorMessage = error.message.toLowerCase();
-          if (errorMessage.includes('insufficient funds')) {
-            loan.liquidationFailedReason =
-              LiquidationFailedReason.InsufficientEthForGasFee;
-          } else {
-            loan.liquidationFailedReason = LiquidationFailedReason.UnknownError;
-          }
-        } else {
-          loan.liquidationFailedReason = LiquidationFailedReason.UnknownError;
-        }
+        loan.liquidationFailedReason = LiquidationFailedReason.UnknownError;
         failedLoans.push(loan);
       }
     }

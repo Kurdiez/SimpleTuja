@@ -117,3 +117,10 @@ export interface NftFiLoanSort {
   by: NftFiLoanSortBy;
   direction: NftFiLoanSortDirection;
 }
+
+export enum NftFiApiLoanStatus {
+  Active = 'active',
+  Repaid = 'repaid',
+  Defaulted = 'defaulted',
+  Liquidated = 'liquidated',
+}
