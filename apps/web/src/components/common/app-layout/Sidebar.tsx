@@ -32,7 +32,6 @@ const getNavigation = (isOnboardingComplete: boolean) => [
       ? [
           { name: "Dashboard", href: AppRoute.CryptoLending },
           { name: "About", href: AppRoute.CryptoLendingAbout },
-          { name: "Wallet", href: AppRoute.CryptoLendingWallet },
           {
             name: "Active Loan Offers",
             href: AppRoute.CryptoLendingActiveLoanOffers,
@@ -49,7 +48,8 @@ const getNavigation = (isOnboardingComplete: boolean) => [
             name: "Liquidated Loans",
             href: AppRoute.CryptoLendingLiquidatedLoans,
           },
-          { name: "Settings", href: AppRoute.CryptoLendingSettings },
+          { name: "Lending Wallet", href: AppRoute.CryptoLendingWallet },
+          { name: "Loan Settings", href: AppRoute.CryptoLendingSettings },
         ]
       : [
           { name: "Onboarding", href: AppRoute.CryptoLendingOnboarding },
