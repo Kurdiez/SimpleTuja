@@ -173,17 +173,10 @@ export class LoanService {
         `[UserState: ${userState.id}] Starting loan offer creation process`,
       );
 
-      this.logger.log(
-        `[UserState: ${userState.id}] Syncing existing loan offers`,
-      );
-      const numActiveOffers = await this.syncLoanOffers(userState);
-      this.logger.log(
-        `[UserState: ${userState.id}] Found ${numActiveOffers} active loan offers`,
-      );
-
-      if (numActiveOffers >= 1 || !userState.active) {
+      // First check if user is active
+      if (!userState.active) {
         this.logger.log(
-          `[UserState: ${userState.id}] Skipping new loan offers - ${numActiveOffers} active offers exist or user state inactive`,
+          `[UserState: ${userState.id}] Skipping - user state inactive`,
         );
         return;
       }
@@ -209,6 +202,14 @@ export class LoanService {
           ),
         ),
       );
+
+      // Sync after making new offers to ensure they're captured
+      this.logger.log(`[UserState: ${userState.id}] Syncing all loan offers`);
+      const numActiveOffers = await this.syncLoanOffers(userState);
+      this.logger.log(
+        `[UserState: ${userState.id}] Found ${numActiveOffers} active loan offers after sync`,
+      );
+
       this.logger.log(
         `[UserState: ${userState.id}] Completed loan offer creation process`,
       );
@@ -291,7 +292,7 @@ export class LoanService {
           });
 
           this.logger.log(
-            `Made loan offer for collection ${collection.id} with token ${token} for userState ${userState.id} for ${days} days`,
+            `[UserState: ${userState.id}] Made loan offer for collection ${collection.id} with token ${token} for ${days} days`,
           );
         }),
       );
@@ -325,7 +326,7 @@ export class LoanService {
         interestProrated: true,
       });
       this.logger.log(
-        `Made loan offer for collection ${collection.id} with token ${token} for userState ${userState.id} for ${durationInDays} days`,
+        `[UserState: ${userState.id}] Made loan offer for collection ${collection.id} with token ${token} for ${durationInDays} days`,
       );
     } catch (error) {
       const exception = new CustomException(
