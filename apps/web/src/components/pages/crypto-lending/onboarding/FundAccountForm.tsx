@@ -1,7 +1,7 @@
 import Button from "@/components/common/Button";
 import { Typography } from "@/components/common/Typography";
 import { OnboardingFundAccountAmountModal } from "@/components/modal/content/OnboardingFundAccountAmount/OnboardingFundAccountAmountModal";
-import { WhatIsGasFeeModal } from "@/components/modal/content/WhatIsGasFeeModal";
+import { WhyDepositEthModal } from "@/components/modal/content/WhyDepositEthModal";
 import { useModal } from "@/components/modal/modal.context";
 import { useOnboarding } from "@/components/pages/crypto-lending/onboarding/onboarding.context";
 import { getCryptoExchangeRates } from "@/utils/simpletuja/crypto-lending";
@@ -166,7 +166,7 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
   };
 
   const handleGasInfoClick = () => {
-    openModal(<WhatIsGasFeeModal />);
+    openModal(<WhyDepositEthModal />);
   };
 
   const isStep3Completed = useMemo(() => {
@@ -243,7 +243,7 @@ export const FundAccountForm: React.FC<FundAccountFormProps> = ({
                 className="flex items-center text-sm text-primary hover:text-primary-light mb-2"
               >
                 <InformationCircleIcon className="h-4 w-4 mr-1" />
-                What is GAS fee?
+                Why do I need to deposit ETH?
               </button>
               <p className="text-gray-300 mb-2">
                 Minimum amount: {minimumAmount} ETH
