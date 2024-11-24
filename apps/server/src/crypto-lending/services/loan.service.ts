@@ -81,8 +81,9 @@ export class LoanService {
 
     await Promise.all(
       activeUsers.map(async (userState) => {
+        await this.syncCurrentlyActiveLoans(userState); // sync first to update expired loan offers
         await this.makeLoanOffersForUser(userState, loanEligibleCollections);
-        await this.syncCurrentlyActiveLoans(userState);
+        await this.syncCurrentlyActiveLoans(userState); // sync again to update new loan offers
         await this.liquidateDefaultedLoans(userState);
         await this.transferNftsToForeclosureWallet(userState);
         await this.takeDashboardSnapshot(userState);
@@ -177,6 +178,21 @@ export class LoanService {
       if (!userState.active) {
         this.logger.log(
           `[UserState: ${userState.id}] Skipping - user state inactive`,
+        );
+        return;
+      }
+
+      // Check for any active loan offers
+      const activeOffersCount = await this.loanOfferRepo.count({
+        where: {
+          userStateId: userState.id,
+          isActive: true,
+        },
+      });
+
+      if (activeOffersCount > 0) {
+        this.logger.log(
+          `[UserState: ${userState.id}] Skipping making new loan offers - ${activeOffersCount} active loan offers exist`,
         );
         return;
       }
