@@ -297,6 +297,8 @@ export const InvestmentWalletProvider: React.FC<
           response.status === WithdrawTokenStatus.InsufficientEthForGasFee
         ) {
           toast.error("Insufficient ETH balance for GAS fee");
+        } else if (response.status === WithdrawTokenStatus.NetworkOutage) {
+          toast.error("ETH network provider outage. Please try again later.");
         } else {
           toast.error(ToastMessage.WithdrawalFailed(response.status));
         }

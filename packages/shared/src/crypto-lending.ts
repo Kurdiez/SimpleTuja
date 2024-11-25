@@ -115,6 +115,7 @@ export enum WithdrawTokenStatus {
   Success = "Success",
   InsufficientTokenBalance = "InsufficientTokenBalance",
   InsufficientEthForGasFee = "InsufficientEthForGasFee",
+  NetworkOutage = "NetworkOutage",
 }
 
 export const withdrawTokenResponseDtoSchema = z.object({

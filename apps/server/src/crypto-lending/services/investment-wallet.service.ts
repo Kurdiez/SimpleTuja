@@ -77,7 +77,14 @@ export class InvestmentWalletService {
 
     const wallet = new ethers.Wallet(userState.walletPrivateKey);
     const providerUrl = this.configService.get('PROVIDER_URL');
-    const provider = new ethers.JsonRpcProvider(providerUrl);
+
+    let provider: ethers.JsonRpcProvider;
+    try {
+      provider = new ethers.JsonRpcProvider(providerUrl);
+    } catch {
+      return WithdrawTokenStatus.NetworkOutage;
+    }
+
     const connectedWallet = wallet.connect(provider);
 
     // Check token balance
