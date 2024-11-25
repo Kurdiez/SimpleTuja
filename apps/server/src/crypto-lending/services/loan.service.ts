@@ -81,9 +81,9 @@ export class LoanService {
 
     await Promise.all(
       activeUsers.map(async (userState) => {
-        await this.syncCurrentlyActiveLoans(userState); // sync first to update expired loan offers
+        await this.syncLoanOffers(userState); // sync first to update expired loan offers
         await this.makeLoanOffersForUser(userState, loanEligibleCollections);
-        await this.syncCurrentlyActiveLoans(userState); // sync again to update new loan offers
+        await this.syncCurrentlyActiveLoans(userState);
         await this.liquidateDefaultedLoans(userState);
         await this.transferNftsToForeclosureWallet(userState);
         await this.takeDashboardSnapshot(userState);
