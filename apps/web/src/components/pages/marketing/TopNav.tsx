@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { useRouter } from "next/router"; // Import useRouter
+import Logo from "@/components/common/Logo";
+import { AppRoute } from "@/utils/app-route";
+import { LocalStorageKey } from "@/utils/const";
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import Logo from "@/components/common/Logo";
+import { useRouter } from "next/router"; // Import useRouter
+import { useState } from "react";
 
 const navigation = [
   { name: "Features", href: "#features" },
@@ -15,7 +17,11 @@ export default function TopNav() {
   const router = useRouter();
 
   const handleSignInClick = () => {
-    router.push("/sign-in");
+    if (localStorage.getItem(LocalStorageKey.AccessToken) != null) {
+      router.push(AppRoute.CryptoLending);
+    } else {
+      router.push("/sign-in");
+    }
   };
 
   const handleLogoClick = () => {
