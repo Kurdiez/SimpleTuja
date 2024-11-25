@@ -1,6 +1,6 @@
+import { ExecutionContext, Logger } from '@nestjs/common';
 import * as Sentry from '@sentry/node';
 import { addRequestDataToEvent } from '@sentry/node';
-import { ExecutionContext, Logger } from '@nestjs/common';
 import { CustomException, getErrorMessages } from '../errors/custom-exception';
 
 function addCustomBreadcrumb(scope: Sentry.Scope, error: unknown) {
@@ -25,13 +25,27 @@ function addCustomBreadcrumb(scope: Sentry.Scope, error: unknown) {
   });
 }
 
+function hasBlockchainNetworkDetectionError(error: unknown): boolean {
+  if (!error) return false;
+
+  if (error instanceof Error) {
+    if (error.message.toLowerCase().includes('could not detect network')) {
+      return true;
+    }
+    if (error instanceof CustomException && error.cause) {
+      return hasBlockchainNetworkDetectionError(error.cause);
+    }
+  }
+  return false;
+}
+
 export function captureException({
   error,
   context,
   logger,
 }: {
   error: unknown;
-  context?: ExecutionContext; // Keep the original NestJS ExecutionContext
+  context?: ExecutionContext;
   logger?: Logger;
 }) {
   (logger ?? console).error(
@@ -40,11 +54,10 @@ export function captureException({
       .join('\n\n'),
   );
 
-  // Check if the environment is development
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const isNetworkError = hasBlockchainNetworkDetectionError(error);
 
-  // Only capture exception in Sentry if not in development
-  if (!isDevelopment) {
+  if (!isDevelopment && !isNetworkError) {
     Sentry.withScope((scope) => {
       if (error instanceof CustomException) {
         addCustomBreadcrumb(scope, error.cause);
