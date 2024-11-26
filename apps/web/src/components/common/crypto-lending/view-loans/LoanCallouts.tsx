@@ -12,6 +12,7 @@ export const LoanCallouts: React.FC = () => {
     hasDefaultedLoans,
     hasLiquidationFailedLoans,
     hasNftTransferFailedLoans,
+    hasNftTransferredLoans,
   } = loans.reduce(
     (acc, loan) => ({
       hasDefaultedLoans:
@@ -22,11 +23,15 @@ export const LoanCallouts: React.FC = () => {
       hasNftTransferFailedLoans:
         acc.hasNftTransferFailedLoans ||
         loan.status === NftFiLoanStatus.NftTransferFailed,
+      hasNftTransferredLoans:
+        acc.hasNftTransferredLoans ||
+        loan.status === NftFiLoanStatus.NftTransferred,
     }),
     {
       hasDefaultedLoans: false,
       hasLiquidationFailedLoans: false,
       hasNftTransferFailedLoans: false,
+      hasNftTransferredLoans: false,
     }
   );
 
@@ -65,6 +70,38 @@ export const LoanCallouts: React.FC = () => {
             add more ETH to your wallet
           </Link>{" "}
           to complete the transfer.
+        </Callout>
+      )}
+
+      {hasNftTransferredLoans && (
+        <Callout type="info">
+          <strong>NFTs Successfully Transferred:</strong> Some liquidated NFTs
+          have been transferred to your foreclosure wallet. You can sell these
+          NFTs on{" "}
+          <a
+            href="https://opensea.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link"
+          >
+            OpenSea
+          </a>{" "}
+          or{" "}
+          <a
+            href="https://blur.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link"
+          >
+            Blur
+          </a>{" "}
+          for <span className="text-primary">wETH</span>. If you wish to fund
+          your lending wallet again, you can transfer the{" "}
+          <span className="text-primary">wETH</span> back to it{" "}
+          <Link href={AppRoute.CryptoLendingWallet} className="link">
+            here
+          </Link>
+          .
         </Callout>
       )}
     </>
