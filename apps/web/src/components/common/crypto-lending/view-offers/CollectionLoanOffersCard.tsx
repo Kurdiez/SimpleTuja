@@ -1,4 +1,5 @@
 import { TextMD, TextSM } from "@/components/common/Typography";
+import BlurIcon from "@/components/icons/BlurIcon";
 import OpenseaIcon from "@/components/icons/OpenseaIcon";
 import { CryptoLoanOffer } from "@simpletuja/shared";
 import React from "react";
@@ -59,11 +60,15 @@ const LoanOfferRow: React.FC<{ offer: CryptoLoanOffer }> = ({ offer }) => (
   </div>
 );
 
-const CollectionLoanOffersCard: React.FC<CollectionLoanOffersCardProps> = ({
-  offerGroup,
-}) => {
+export const CollectionLoanOffersCard: React.FC<
+  CollectionLoanOffersCardProps
+> = ({ offerGroup }) => {
   const openSeaUrl = offerGroup.collectionOpenSeaSlug
     ? `https://opensea.io/collection/${offerGroup.collectionOpenSeaSlug}`
+    : null;
+
+  const blurUrl = offerGroup.collectionOpenSeaSlug
+    ? `https://blur.io/eth/collection/${offerGroup.collectionOpenSeaSlug}`
     : null;
 
   return (
@@ -77,8 +82,8 @@ const CollectionLoanOffersCard: React.FC<CollectionLoanOffersCardProps> = ({
               className="size-12 rounded-full object-cover"
             />
           </div>
-          <div className="ml-4 flex items-center gap-4">
-            <TextMD weight="bold" className="text-gray-100">
+          <div className="ml-4 flex items-center gap-2">
+            <TextMD weight="bold" className="text-gray-100 pr-2">
               {offerGroup.collectionName}
             </TextMD>
             {openSeaUrl && (
@@ -89,6 +94,16 @@ const CollectionLoanOffersCard: React.FC<CollectionLoanOffersCardProps> = ({
                 className="inline-block hover:opacity-80 transition-opacity"
               >
                 <OpenseaIcon className="w-5 h-5" />
+              </a>
+            )}
+            {blurUrl && (
+              <a
+                href={blurUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block hover:opacity-80 transition-opacity"
+              >
+                <BlurIcon className="w-5 h-5" />
               </a>
             )}
           </div>
@@ -108,5 +123,3 @@ const CollectionLoanOffersCard: React.FC<CollectionLoanOffersCardProps> = ({
     </div>
   );
 };
-
-export default CollectionLoanOffersCard;

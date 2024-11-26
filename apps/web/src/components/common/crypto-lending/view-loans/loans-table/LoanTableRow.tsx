@@ -1,3 +1,4 @@
+import BlurIcon from "@/components/icons/BlurIcon";
 import OpenseaIcon from "@/components/icons/OpenseaIcon";
 import {
   formatApr,
@@ -29,6 +30,9 @@ export const LoanTableRow: React.FC<LoanTableRowProps> = ({
   const getOpenSeaAssetUrl = (contractAddress: string, tokenId: string) =>
     `https://opensea.io/assets/ethereum/${contractAddress}/${tokenId}`;
 
+  const getBlurAssetUrl = (contractAddress: string, tokenId: string) =>
+    `https://blur.io/eth/asset/${contractAddress}/${tokenId}`;
+
   return (
     <tr>
       <td className="py-4 pl-4 pr-3 text-sm sm:pl-0">
@@ -59,8 +63,8 @@ export const LoanTableRow: React.FC<LoanTableRowProps> = ({
       </td>
 
       <td className="hidden px-3 py-4 text-sm text-gray-200 lg:table-cell">
-        <div className="flex items-center gap-2">
-          #{loan.nftTokenId}
+        <div className="flex items-center gap-1">
+          <span className="pr-1">#{loan.nftTokenId}</span>
           <a
             href={getOpenSeaAssetUrl(
               loan.nftCollection.contractAddress,
@@ -71,6 +75,17 @@ export const LoanTableRow: React.FC<LoanTableRowProps> = ({
             className="inline-block hover:opacity-80 transition-opacity"
           >
             <OpenseaIcon className="w-4 h-4" />
+          </a>
+          <a
+            href={getBlurAssetUrl(
+              loan.nftCollection.contractAddress,
+              loan.nftTokenId
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block hover:opacity-80 transition-opacity"
+          >
+            <BlurIcon className="w-4 h-4" />
           </a>
         </div>
       </td>

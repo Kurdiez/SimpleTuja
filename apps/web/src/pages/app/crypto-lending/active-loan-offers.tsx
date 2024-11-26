@@ -3,7 +3,7 @@ import {
   ActiveLoanOffersProvider,
   useActiveLoanOffers,
 } from "@/components/common/crypto-lending/view-offers/active-loan-offers.context";
-import CollectionLoanOffersCard from "@/components/common/crypto-lending/view-offers/CollectionLoanOffersCard";
+import { CollectionLoanOffersCard } from "@/components/common/crypto-lending/view-offers/CollectionLoanOffersCard";
 import CollectionLoanOffersCardSkeleton from "@/components/common/crypto-lending/view-offers/CollectionLoanOffersCardSkeleton";
 import EmptyState from "@/components/common/EmptyState";
 import SimplePagination from "@/components/common/SimplePagination";

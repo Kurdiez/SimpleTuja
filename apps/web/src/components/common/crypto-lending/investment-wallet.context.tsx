@@ -79,6 +79,19 @@ const ToastMessage = {
   TransferFailed: (message: string) => `Transfer failed: ${message}`,
   WithdrawalFailed: (status: string) =>
     `Withdrawal failed: ${formatCamelCase(status)}`,
+  NetworkOutage: (
+    <span>
+      ETH network provider outage. Check current network status at{" "}
+      <a
+        href="https://status.infura.io"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="link"
+      >
+        status.infura.io
+      </a>
+    </span>
+  ),
 } as const;
 
 const ToastIds = {
@@ -298,7 +311,7 @@ export const InvestmentWalletProvider: React.FC<
         ) {
           toast.error("Insufficient ETH balance for GAS fee");
         } else if (response.status === WithdrawTokenStatus.NetworkOutage) {
-          toast.error("ETH network provider outage. Please try again later.");
+          toast.error(ToastMessage.NetworkOutage);
         } else {
           toast.error(ToastMessage.WithdrawalFailed(response.status));
         }

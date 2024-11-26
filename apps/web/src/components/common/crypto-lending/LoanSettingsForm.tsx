@@ -311,9 +311,26 @@ export default function LoanSettingsForm({
                   This wallet address is where you&apos;ll receive NFTs from
                   defaulted loans. If a borrower can&apos;t repay their loan,
                   their NFT will be sent to this address. You can then sell
-                  these NFTs on marketplaces like OpenSea to recover your funds.
-                  Make sure to enter a wallet address you control and can access
-                  easily.
+                  these NFTs on marketplaces like{" "}
+                  <a
+                    href="https://opensea.io"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link"
+                  >
+                    OpenSea
+                  </a>{" "}
+                  or{" "}
+                  <a
+                    href="https://blur.io"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link"
+                  >
+                    Blur
+                  </a>{" "}
+                  to recover your funds. Make sure to enter a wallet address you
+                  control and can access easily.
                 </p>
               </div>
               <div className="mt-2 sm:col-span-2 sm:mt-0">

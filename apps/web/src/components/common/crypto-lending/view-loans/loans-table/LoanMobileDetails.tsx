@@ -1,3 +1,4 @@
+import BlurIcon from "@/components/icons/BlurIcon";
 import OpenseaIcon from "@/components/icons/OpenseaIcon";
 import {
   formatApr,
@@ -28,6 +29,9 @@ export const LoanMobileDetails: React.FC<LoanMobileDetailsProps> = ({
   const getOpenSeaAssetUrl = (contractAddress: string, tokenId: string) =>
     `https://opensea.io/assets/ethereum/${contractAddress}/${tokenId}`;
 
+  const getBlurAssetUrl = (contractAddress: string, tokenId: string) =>
+    `https://blur.io/eth/asset/${contractAddress}/${tokenId}`;
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:hidden gap-4 py-4 text-sm w-full">
       <div className="space-y-1 min-w-0">
@@ -37,8 +41,8 @@ export const LoanMobileDetails: React.FC<LoanMobileDetailsProps> = ({
 
       <div className="space-y-1 min-w-0">
         <div className="font-medium text-gray-500 h-5">Token ID</div>
-        <div className="text-gray-200 flex items-center gap-2">
-          <span className="truncate">#{loan.nftTokenId}</span>
+        <div className="text-gray-200 flex items-center gap-1">
+          <span className="pr-1 truncate">#{loan.nftTokenId}</span>
           <a
             href={getOpenSeaAssetUrl(
               loan.nftCollection.contractAddress,
@@ -49,6 +53,17 @@ export const LoanMobileDetails: React.FC<LoanMobileDetailsProps> = ({
             className="inline-block hover:opacity-80 transition-opacity flex-shrink-0"
           >
             <OpenseaIcon className="w-4 h-4" />
+          </a>
+          <a
+            href={getBlurAssetUrl(
+              loan.nftCollection.contractAddress,
+              loan.nftTokenId
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block hover:opacity-80 transition-opacity flex-shrink-0"
+          >
+            <BlurIcon className="w-4 h-4" />
           </a>
         </div>
       </div>
