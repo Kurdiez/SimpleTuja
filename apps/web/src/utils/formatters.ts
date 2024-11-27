@@ -53,7 +53,7 @@ export const formatApr = (
     typeof aprBasisPoints === "string"
       ? parseFloat(aprBasisPoints)
       : aprBasisPoints;
-  const percentage = aprValue / 100;
+  const percentage = aprValue;
   return percentage.toFixed(decimals);
 };
 
