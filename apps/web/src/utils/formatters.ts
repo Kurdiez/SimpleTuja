@@ -14,28 +14,40 @@ import { BigNumber, ethers } from "ethers";
  */
 export const formatEther = (
   value: BigNumber | string,
-  decimals: number = 4
+  decimals: number = 6
 ): string => {
   try {
     // If it's already a BigNumber, use it directly
     if (BigNumber.isBigNumber(value)) {
       const formatted = Number(ethers.utils.formatEther(value));
-      return formatted.toFixed(decimals);
+      return formatted.toLocaleString("fullwide", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+        useGrouping: false,
+      });
     }
 
     // If it's a string, check if it's already in decimal format
     if (value.includes(".")) {
       // It's already in decimal format, just format it
-      return Number(value).toFixed(decimals);
+      return Number(value).toLocaleString("fullwide", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+        useGrouping: false,
+      });
     }
 
     // Otherwise, treat it as wei
     const bnValue = BigNumber.from(value);
     const formatted = Number(ethers.utils.formatEther(bnValue));
-    return formatted.toFixed(decimals);
+    return formatted.toLocaleString("fullwide", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+      useGrouping: false,
+    });
   } catch (error) {
     console.error("Error formatting ether value:", error);
-    return "0.0000";
+    return "0".padEnd(decimals + 2, "0"); // Returns "0.0000" for default decimals
   }
 };
 

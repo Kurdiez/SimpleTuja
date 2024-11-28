@@ -95,7 +95,7 @@ export const LoanTableRow: React.FC<LoanTableRowProps> = ({
       </td>
 
       <td className="hidden px-3 py-4 text-sm text-gray-200 lg:table-cell">
-        {formatEther(loan.loanPrincipal)}
+        ~{formatEther(loan.loanPrincipal)}
       </td>
 
       <td className="hidden px-3 py-4 text-sm text-gray-200 lg:table-cell">
@@ -103,7 +103,7 @@ export const LoanTableRow: React.FC<LoanTableRowProps> = ({
       </td>
 
       <td className="hidden px-3 py-4 text-sm text-gray-200 lg:table-cell">
-        {formatEther(loan.loanRepayment)}
+        ~{formatEther(loan.loanRepayment)}
       </td>
 
       <td className="hidden px-3 py-4 text-sm text-gray-200 lg:table-cell">
