@@ -15,6 +15,7 @@ import {
   LoanSettingsUpdateDto,
   loanSettingsUpdateRequestSchema,
   NftFiLoanStatus,
+  PaginatedReq,
   UpdateActiveStatusDto,
   updateActiveStatusDtoSchema,
 } from '@simpletuja/shared';
@@ -23,7 +24,6 @@ import { AuthenticatedRequest } from '~/commons/types/auth';
 import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
 import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
 import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
-import { PaginatedRequest } from '~/database/types';
 import { CoinlayerService } from '../services/coinlayer.service';
 import { CryptoLendingService } from '../services/crypto-lending.service';
 import { OnboardingService } from '../services/onboarding.service';
@@ -104,7 +104,7 @@ export class CryptoLendingController {
   ): Promise<GetLoanOffersResponse> {
     const offers = await this.cryptoLendingService.getLoanOffers(
       user.id,
-      params as unknown as PaginatedRequest<
+      params as unknown as PaginatedReq<
         CryptoLoanOfferEntity,
         { isActive?: boolean }
       >,
@@ -134,7 +134,7 @@ export class CryptoLendingController {
   ): Promise<GetLoansResponse> {
     const loans = await this.cryptoLendingService.getLoans(
       user.id,
-      params as unknown as PaginatedRequest<
+      params as unknown as PaginatedReq<
         CryptoLoanEntity,
         { statuses?: NftFiLoanStatus[] }
       >,

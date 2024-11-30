@@ -5,6 +5,8 @@ import {
   LoanEligibleNftCollectionsDto,
   LoanSettingsUpdateDto,
   NftFiLoanStatus,
+  PaginatedReq,
+  PaginatedRes,
 } from '@simpletuja/shared';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { CustomException } from '~/commons/errors/custom-exception';
@@ -13,7 +15,6 @@ import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending
 import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
 import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
 import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
-import { PaginatedRequest, PaginatedResponse } from '~/database/types';
 import { OnboardingService } from './onboarding.service';
 
 @Injectable()
@@ -117,8 +118,8 @@ export class CryptoLendingService {
 
   async getLoanOffers(
     userId: string,
-    params: PaginatedRequest<CryptoLoanOfferEntity, { isActive?: boolean }>,
-  ): Promise<PaginatedResponse<CryptoLoanOfferEntity>> {
+    params: PaginatedReq<CryptoLoanOfferEntity, { isActive?: boolean }>,
+  ): Promise<PaginatedRes<CryptoLoanOfferEntity>> {
     const { isActive, page = 1, pageSize = 100 } = params;
 
     const where: FindOptionsWhere<CryptoLoanOfferEntity> = {
@@ -152,11 +153,8 @@ export class CryptoLendingService {
 
   async getLoans(
     userId: string,
-    params: PaginatedRequest<
-      CryptoLoanEntity,
-      { statuses?: NftFiLoanStatus[] }
-    >,
-  ): Promise<PaginatedResponse<CryptoLoanEntity>> {
+    params: PaginatedReq<CryptoLoanEntity, { statuses?: NftFiLoanStatus[] }>,
+  ): Promise<PaginatedRes<CryptoLoanEntity>> {
     const { statuses, page = 1, pageSize = 100 } = params;
 
     const query = this.cryptoLoanRepo

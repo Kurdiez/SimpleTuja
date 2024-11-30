@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   createPaginatedRequestSchema,
   createPaginatedResponseSchema,
-} from "./commons";
+} from "./api-req-res";
 import { CryptoToken } from "./const";
 
 // Base schema for LTV fields

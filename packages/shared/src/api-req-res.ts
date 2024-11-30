@@ -32,4 +32,14 @@ export const createPaginatedResponseSchema = <T extends z.ZodType>(
 
 // Types
 export type PaginationParams = z.infer<typeof paginationSchema>;
+export type PaginatedReq<T = any, F = object> = PaginationParams &
+  SortingParams & { sortBy?: keyof T } & Partial<F>;
 export type SortingParams = z.infer<typeof sortingSchema>;
+export type PaginatedRes<T> = {
+  items: T[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+  };
+};

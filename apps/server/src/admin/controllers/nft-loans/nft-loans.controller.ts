@@ -9,6 +9,7 @@ import {
   GetLoansResponse,
   getLoansResponseSchema,
   NftFiLoanStatus,
+  PaginatedReq,
   WithdrawTokenStatus,
 } from '@simpletuja/shared';
 import { z } from 'zod';
@@ -22,7 +23,6 @@ import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
 import { NftFiApiLoanStatus } from '~/crypto-lending/types/nftfi-types';
 import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
 import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
-import { PaginatedRequest } from '~/database/types';
 import {
   AdminWithdrawTokenDto,
   adminWithdrawTokenDtoSchema,
@@ -185,7 +185,7 @@ export class NftLoansController {
   ): Promise<GetLoanOffersResponse> {
     const offers = await this.cryptoLendingService.getLoanOffers(
       params.userId,
-      params as unknown as PaginatedRequest<
+      params as unknown as PaginatedReq<
         CryptoLoanOfferEntity,
         { isActive?: boolean; userId: string }
       >,
@@ -220,7 +220,7 @@ export class NftLoansController {
   ): Promise<GetLoansResponse> {
     const loans = await this.cryptoLendingService.getLoans(
       params.userId,
-      params as unknown as PaginatedRequest<
+      params as unknown as PaginatedReq<
         CryptoLoanEntity,
         { status?: NftFiLoanStatus; userId: string }
       >,
