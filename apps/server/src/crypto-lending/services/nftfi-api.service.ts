@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import NFTfi from '@nftfi/js';
 import { CryptoToken, CryptoTokenAddress } from '@simpletuja/shared';
@@ -23,6 +23,8 @@ interface QueueItem {
 
 @Injectable()
 export class NftFiApiService {
+  private logger = new Logger(NftFiApiService.name);
+
   private requestQueue: QueueItem[] = [];
   private processingQueue = false;
   private requestsThisMinute = 0;
@@ -362,7 +364,11 @@ export class NftFiApiService {
 
     while (true) {
       const result = await fetchPage(currentPage);
-      const pageResults = result.data.results;
+      const pageResults = result.data?.results;
+
+      if (pageResults == null) {
+        this.logger.log('&&& result.data was undefined: ', result);
+      }
 
       if (!pageResults.length) {
         break;

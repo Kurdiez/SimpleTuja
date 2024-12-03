@@ -50,7 +50,7 @@ export interface NftFiLoanOffer {
 
 export interface NftFiPaginatedResponse<T> {
   pagination: { total: number };
-  data: {
+  data?: {
     results: T[];
   };
   error: any | null;
