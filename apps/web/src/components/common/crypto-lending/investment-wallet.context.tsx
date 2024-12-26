@@ -19,6 +19,7 @@ import {
   createConfig,
   getBalance,
   http,
+  readContract,
   sendTransaction,
   writeContract,
 } from "@wagmi/core";
@@ -38,7 +39,7 @@ import { useDisconnect, useWaitForTransactionReceipt } from "wagmi";
 const config = createConfig({
   chains: [mainnet],
   transports: {
-    [mainnet.id]: http(),
+    [mainnet.id]: http(process.env.NEXT_PUBLIC_INFURA_PROVIDER_URL),
   },
 });
 
@@ -229,12 +230,14 @@ export const InvestmentWalletProvider: React.FC<
         const decimals = CryptoTokenDecimals[token];
         const amountInSmallestUnit = parseUnits(amount, decimals);
 
-        const balance = await getBalance(config, {
-          address: address as `0x${string}`,
-          token: tokenAddress as `0x${string}`,
+        const balance = await readContract(config, {
+          address: tokenAddress as `0x${string}`,
+          abi: erc20Abi,
+          functionName: "balanceOf",
+          args: [address as `0x${string}`],
         });
 
-        if (balance.value < amountInSmallestUnit) {
+        if (balance < amountInSmallestUnit) {
           toast.error(ToastMessage.InsufficientBalance(token));
           return;
         }
