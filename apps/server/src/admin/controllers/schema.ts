@@ -16,6 +16,13 @@ export const collectionIdDtoSchema = z.object({
 });
 export type CollectionIdDto = z.infer<typeof collectionIdDtoSchema>;
 
+export const collectionOpenSeaSlugDtoSchema = z.object({
+  openSeaSlug: z.string(),
+});
+export type CollectionOpenSeaSlugDto = z.infer<
+  typeof collectionOpenSeaSlugDtoSchema
+>;
+
 export const getTokenAllowanceDtoSchema = z.object({
   userId: z.string(),
   token: z.nativeEnum(CryptoToken),

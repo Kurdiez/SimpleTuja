@@ -33,6 +33,8 @@ import {
   collectionAddressDtoSchema,
   CollectionIdDto,
   collectionIdDtoSchema,
+  CollectionOpenSeaSlugDto,
+  collectionOpenSeaSlugDtoSchema,
   GetTokenAllowanceDto,
   getTokenAllowanceDtoSchema,
   GetTokenBalanceDto,
@@ -130,6 +132,14 @@ export class NftLoansController {
     { collectionId }: CollectionIdDto,
   ) {
     return await this.openSeaService.getCollectionOffers(collectionId);
+  }
+
+  @Post('get-opensea-top-five-bids')
+  async getOpenseaTopFiveBids(
+    @Body(new ZodValidationPipe(collectionOpenSeaSlugDtoSchema))
+    { openSeaSlug }: CollectionOpenSeaSlugDto,
+  ) {
+    return await this.openSeaService.getTopFiveOffers(openSeaSlug);
   }
 
   @Post('get-opensea-collection-stats')
