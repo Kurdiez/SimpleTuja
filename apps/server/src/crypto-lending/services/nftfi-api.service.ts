@@ -367,10 +367,13 @@ export class NftFiApiService {
       const pageResults = result.data?.results;
 
       if (pageResults == null) {
-        this.logger.log(
-          '&&& result.data was undefined: ',
-          JSON.stringify(result, null, 2),
-        );
+        this.logger.log('Debug NFTfi response:', {
+          resultIsUndefined: result === undefined,
+          resultType: typeof result,
+          dataIsUndefined: result?.data === undefined,
+          stringifiedResult: JSON.stringify(result, null, 2),
+          rawResult: result,
+        });
       }
 
       if (!pageResults.length) {
