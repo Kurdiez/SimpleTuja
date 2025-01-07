@@ -74,17 +74,17 @@ export class NftLoansController {
 
   @Post('sync-nft-collections')
   async syncNftCollections() {
-    await this.loanService.syncNftCollections();
+    this.loanService.syncNftCollections();
   }
 
   @Post('refresh-crypto-exchange-rates')
   async refreshCryptoExchangeRates() {
-    await this.coinlayerService.updateCryptoExchangeRates();
+    this.coinlayerService.updateCryptoExchangeRates();
   }
 
   @Post('sync-and-make-loan-offers')
   async syncAndMakeLoanOffers() {
-    await this.loanService.syncAndMakeLoanOffers();
+    this.loanService.syncAndMakeLoanOffers();
   }
 
   @Post('get-token-balances')

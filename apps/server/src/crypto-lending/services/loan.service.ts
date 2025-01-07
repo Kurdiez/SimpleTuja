@@ -182,17 +182,24 @@ export class LoanService {
         return;
       }
 
-      // Check for any active loan offers
-      const activeOffersCount = await this.loanOfferRepo.count({
+      // Get eligible collections that don't have active loan offers
+      const activeOffers = await this.loanOfferRepo.find({
         where: {
           userStateId: userState.id,
           isActive: true,
         },
+        select: ['nftCollectionId'],
       });
+      const collectionsWithActiveOffers = new Set(
+        activeOffers.map((offer) => offer.nftCollectionId),
+      );
+      const collectionsWithoutActiveLoans = loanEligibleCollections.filter(
+        (collection) => !collectionsWithActiveOffers.has(collection.id),
+      );
 
-      if (activeOffersCount > 0) {
+      if (collectionsWithoutActiveLoans.length === 0) {
         this.logger.log(
-          `[UserState: ${userState.id}] Skipping making new loan offers - ${activeOffersCount} active loan offers exist`,
+          `[UserState: ${userState.id}] Skipping - no eligible collections without active loan offers`,
         );
         return;
       }
@@ -209,7 +216,7 @@ export class LoanService {
         `[UserState: ${userState.id}] Processing ${loanEligibleCollections.length} eligible collections`,
       );
       await Promise.all(
-        loanEligibleCollections.map((collection) =>
+        collectionsWithoutActiveLoans.map((collection) =>
           this.makeLoanOffersForCollection(
             collection,
             userState,
