@@ -9,6 +9,8 @@ export class OpenSeaAPIService {
   private readonly openSeaSDK: OpenSeaSDK;
   private readonly queue: (() => Promise<void>)[] = [];
   private isProcessing = false;
+  private lastTaskTimestamp = 0;
+  private readonly MIN_TIME_BETWEEN_CALLS = 100; // milliseconds
 
   constructor(private readonly configService: ConfigService) {
     // Initialize provider using ethers from OpenSea's dependencies
@@ -50,8 +52,13 @@ export class OpenSeaAPIService {
     while (this.queue.length > 0) {
       const task = this.queue.shift();
       if (task) {
+        const timeSinceLastTask = Date.now() - this.lastTaskTimestamp;
+        if (timeSinceLastTask < this.MIN_TIME_BETWEEN_CALLS) {
+          await this.delay(this.MIN_TIME_BETWEEN_CALLS - timeSinceLastTask);
+        }
+
         await task();
-        await this.delay(200); // Delay to avoid rate limiting
+        this.lastTaskTimestamp = Date.now();
       }
     }
 
