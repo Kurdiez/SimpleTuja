@@ -92,13 +92,11 @@ export class LoanService {
   }
 
   async syncNftCollections() {
-    this.logger.log('Updating bid offers for all collections');
+    this.logger.log('Starting syncing NFT collections');
 
     const numLendingEligibleCollections = this.configService.get(
       'NUM_LENDING_ELIGIBLE_NFT_COLLECTIONS',
     );
-    const numCollectionsToUpdate = numLendingEligibleCollections * 3;
-
     const collections = await this.nftCollectionRepo.find({
       where: {
         blackListed: false,
@@ -107,11 +105,16 @@ export class LoanService {
         loanCount: 'DESC',
         name: 'ASC',
       },
-      take: numCollectionsToUpdate,
+      take: numLendingEligibleCollections * 3,
     });
     this.logger.log(`Found ${collections.length} collections to update`);
 
-    const updatePromises = collections.map(async (collection) => {
+    const collectionIdsToEnable: string[] = [];
+    for (const collection of collections) {
+      if (collectionIdsToEnable.length >= numLendingEligibleCollections) {
+        break;
+      }
+
       try {
         const success =
           await this.openSeaService.updateCollectionBidOffers(collection);
@@ -119,50 +122,43 @@ export class LoanService {
           await this.updateAverageApr(collection);
         }
 
-        collection.enabled = success && collection.averageApr != null;
-        return collection;
+        const shouldEnabled = success && collection.averageApr != null;
+
+        if (shouldEnabled) {
+          collectionIdsToEnable.push(collection.id);
+        }
       } catch (error) {
-        captureException({ error });
-        return null;
+        const exception = new CustomException(
+          'Failed to update collecation enable / disable',
+          {
+            error,
+            collection,
+          },
+        );
+        captureException({ error: exception });
       }
-    });
-
-    const results = await Promise.allSettled(updatePromises);
-
-    const updatedCollections = results
-      .filter(
-        (result): result is PromiseFulfilledResult<NftCollectionEntity> =>
-          result.status === 'fulfilled' && result.value != null,
-      )
-      .map((result) => result.value as NftCollectionEntity);
-
-    if (updatedCollections.length > 0) {
-      await this.nftCollectionRepo.manager.transaction(
-        async (transactionalEntityManager) => {
-          const eligibleCollections = updatedCollections
-            .filter((c) => c.enabled)
-            .slice(0, numLendingEligibleCollections);
-
-          // Set all other collections to disabled
-          await transactionalEntityManager.update(
-            NftCollectionEntity,
-            { id: Not(In(eligibleCollections.map((c) => c.id))) },
-            { enabled: false },
-          );
-
-          // Save the updated collections
-          await transactionalEntityManager.save(
-            NftCollectionEntity,
-            eligibleCollections,
-          );
-
-          this.logger.log(
-            `Updated ${updatedCollections.length} collections with new bid offers. Enabled ${eligibleCollections.length} collections.`,
-          );
-        },
-      );
     }
-    this.logger.log('Updated bid offers for all collections');
+
+    await this.nftCollectionRepo.manager.transaction(
+      async (transactionalEntityManager) => {
+        await transactionalEntityManager.update(
+          NftCollectionEntity,
+          { id: In(collectionIdsToEnable) },
+          { enabled: true },
+        );
+
+        await transactionalEntityManager.update(
+          NftCollectionEntity,
+          { id: Not(In(collectionIdsToEnable)) },
+          { enabled: false },
+        );
+
+        this.logger.log(
+          `Updated ${collectionIdsToEnable.length} collections with new bid offers. Enabled ${collectionIdsToEnable.length} collections.`,
+        );
+      },
+    );
+    this.logger.log('Completed syncing NFT collections');
   }
 
   async makeLoanOffersForUser(

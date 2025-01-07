@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Chain, OpenSeaSDK } from 'opensea-js';
 import { JsonRpcProvider } from '@opensea/seaport-js/node_modules/ethers';
+import { Chain, OpenSeaSDK } from 'opensea-js';
 import { ConfigService } from '~/config';
 
 @Injectable()
@@ -51,7 +51,7 @@ export class OpenSeaAPIService {
       const task = this.queue.shift();
       if (task) {
         await task();
-        await this.delay(200); // Delay for 1 second between task executions
+        await this.delay(200); // Delay to avoid rate limiting
       }
     }
 
