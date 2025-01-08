@@ -88,7 +88,7 @@ export class OpenSeaService {
     try {
       const offers = await this.getTopFiveOffers(collection.openSeaSlug!);
 
-      if (offers.length < 5) {
+      if (!this.areOffersValid(offers)) {
         return false;
       }
 
@@ -109,6 +109,21 @@ export class OpenSeaService {
       );
       throw customException;
     }
+  }
+
+  private areOffersValid(offers: Array<{ price: Big }>): boolean {
+    // Check if we have at least 5 offers
+    if (offers.length < 5) {
+      return false;
+    }
+
+    // Check if price difference between highest and lowest is more than 20%
+    const highestOffer = offers[0].price;
+    const lowestOffer = offers[offers.length - 1].price;
+    const priceDifference = highestOffer.minus(lowestOffer);
+    const maxAllowedDifference = lowestOffer.times(0.1); // 10% of lowest offer
+
+    return !priceDifference.gt(maxAllowedDifference);
   }
 
   async getCollectionOffers(collectionId: string) {
