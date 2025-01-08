@@ -1,6 +1,6 @@
+import { SendSmtpEmail, TransactionalEmailsApi } from '@getbrevo/brevo';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from 'src/config';
-import { SendSmtpEmail, TransactionalEmailsApi } from '@getbrevo/brevo';
 
 @Injectable()
 export class BrevoService {
@@ -31,6 +31,24 @@ export class BrevoService {
     sendSmtpEmail.params = {
       baseUrl: this.configService.get('APP_URL'),
       token,
+    };
+    sendSmtpEmail.to = [{ email: toEmail }];
+
+    await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+  }
+
+  async sendNftLiquidationAlert(
+    toEmail: string,
+    foreclosureWalletAddress: string,
+    nftCollectionName: string,
+    nftTokenId: string,
+  ) {
+    const sendSmtpEmail = new SendSmtpEmail();
+    sendSmtpEmail.templateId = 9;
+    sendSmtpEmail.params = {
+      foreclosureWalletAddress,
+      nftCollectionName,
+      nftTokenId,
     };
     sendSmtpEmail.to = [{ email: toEmail }];
 

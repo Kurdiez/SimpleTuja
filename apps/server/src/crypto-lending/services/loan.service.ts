@@ -20,6 +20,7 @@ import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending
 import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
 import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
 import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
+import { BrevoService } from '~/notifications/services/brevo.service';
 import {
   NftFiApiLoanStatus,
   NftFiLoanSortBy,
@@ -56,6 +57,7 @@ export class LoanService {
     private readonly investmentWalletService: InvestmentWalletService,
     @InjectRepository(CryptoDashboardSnapshotEntity)
     private readonly snapshotRepo: Repository<CryptoDashboardSnapshotEntity>,
+    private readonly brevoService: BrevoService,
   ) {}
 
   @CronWithErrorHandling({
@@ -70,6 +72,9 @@ export class LoanService {
     const activeUsers = await this.userStateRepo.find({
       where: {
         active: true,
+      },
+      relations: {
+        user: true,
       },
     });
     this.logger.log(`Found ${activeUsers.length} active users`);
@@ -848,6 +853,9 @@ export class LoanService {
             LiquidationFailedReason.InsufficientEthForGasFee,
         },
       ],
+      relations: {
+        nftCollection: true,
+      },
     });
 
     this.logger.log(
@@ -923,9 +931,54 @@ export class LoanService {
       },
     );
 
+    await this.handleLiquidationEmailNotifications(userState, liquidatedLoans);
+
     this.logger.log(
       `[UserState: ${userState.id}] Completed loan liquidation process`,
     );
+  }
+
+  private async handleLiquidationEmailNotifications(
+    userState: CryptoLendingUserStateEntity,
+    liquidatedLoans: CryptoLoanEntity[],
+  ) {
+    const emailResults = await Promise.allSettled(
+      liquidatedLoans.map(async (loan) => {
+        try {
+          await this.brevoService.sendNftLiquidationAlert(
+            loan.userState.user.email,
+            loan.userState.foreclosureWalletAddress,
+            loan.nftCollection.name,
+            loan.nftTokenId,
+          );
+          return { success: true, loan };
+        } catch (error) {
+          return { success: false, loan, error };
+        }
+      }),
+    );
+
+    // Process failed email notifications
+    emailResults.forEach((result) => {
+      if (
+        result.status === 'rejected' ||
+        (result.status === 'fulfilled' && !result.value.success)
+      ) {
+        const error =
+          result.status === 'rejected' ? result.reason : result.value.error;
+        const loan = result.status === 'rejected' ? null : result.value.loan;
+
+        const exception = new CustomException(
+          'Failed to send NFT liquidation alert email',
+          {
+            error,
+            userStateId: userState.id,
+            loan,
+          },
+        );
+        captureException({ error: exception });
+      }
+    });
   }
 
   private async transferNftsToForeclosureWallet(

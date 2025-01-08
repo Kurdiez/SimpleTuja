@@ -41,7 +41,7 @@ import {
   getTokenBalanceDtoSchema,
   UserIdDto,
   userIdDtoSchema,
-} from '../schema';
+} from './schema';
 
 @Controller('admin/nft-loans')
 export class NftLoansController {
