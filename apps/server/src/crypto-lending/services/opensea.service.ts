@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import Big from 'big.js';
-import { ListCollectionOffersResponse, OpenSeaSDK } from 'opensea-js';
+import { OpenSeaSDK } from 'opensea-js';
 import { IsNull, Not, Repository } from 'typeorm';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { retry } from '~/commons/error-handlers/retry';
@@ -187,75 +187,60 @@ export class OpenSeaService {
     }
   }
 
-  private extractTopFiveOffers(
-    response: ListCollectionOffersResponse,
-  ): Array<{ price: Big }> {
+  private extractTopFiveOffers(response: any): Array<{ price: Big }> {
     const offers = response.offers;
 
-    const sortedOffers = offers.sort((a: any, b: any) => {
-      try {
-        const nftCollectionAddress =
-          a['criteria']['contract']['address'].toLowerCase();
+    const sortedOffers = offers
+      .filter((offer) => {
+        // Check if the offer is in WETH currency
+        const isWeth = offer.price?.currency === 'WETH';
 
-        let aOfferAmount: Big;
-        try {
-          const aPriceValue = a.price?.value || '0';
-          aOfferAmount = new Big(aPriceValue);
-        } catch {
-          aOfferAmount = new Big(0);
-        }
+        // Find NFT consideration item
+        const nftConsideration =
+          offer.protocol_data.parameters.consideration.find(
+            (item: any) => item.itemType === 4,
+          );
 
-        let bOfferAmount: Big;
-        try {
-          const bPriceValue = b.price?.value || '0';
-          bOfferAmount = new Big(bPriceValue);
-        } catch {
-          bOfferAmount = new Big(0);
-        }
+        // Filter out offers where startAmount and endAmount differ
+        const hasMatchingAmounts =
+          nftConsideration?.startAmount === nftConsideration?.endAmount;
 
-        const aConsiderations =
-          a['protocol_data']['parameters']['consideration'];
-        const aNftConsideration = aConsiderations.find(
-          (c) => c.token.toLowerCase() === nftCollectionAddress,
+        return isWeth && hasMatchingAmounts;
+      })
+      .sort((a, b) => {
+        // Find NFT consideration items (itemType 4) to get quantity of NFTs being offered for
+        const aNftConsideration = a.protocol_data.parameters.consideration.find(
+          (item: any) => item.itemType === 4,
         );
-        const aQuantity = new Big(aNftConsideration['endAmount'] || '1');
-        const aPricePerNft = aOfferAmount.div(aQuantity);
-
-        const bConsiderations =
-          b['protocol_data']['parameters']['consideration'];
-        const bNftConsideration = bConsiderations.find(
-          (c) => c.token.toLowerCase() === nftCollectionAddress,
+        const bNftConsideration = b.protocol_data.parameters.consideration.find(
+          (item: any) => item.itemType === 4,
         );
-        const bQuantity = new Big(bNftConsideration['endAmount'] || '1');
-        const bPricePerNft = bOfferAmount.div(bQuantity);
 
-        return bPricePerNft.minus(aPricePerNft).toNumber();
-      } catch {
-        return 0;
-      }
+        // Get quantities, default to 1 if not found
+        const aQuantity = new Big(aNftConsideration?.startAmount || '1');
+        const bQuantity = new Big(bNftConsideration?.startAmount || '1');
+
+        // Convert wei to ETH and divide by quantity to get price per NFT
+        const aValue = this.weiToEth(a.price?.value || '0').div(aQuantity);
+        const bValue = this.weiToEth(b.price?.value || '0').div(bQuantity);
+
+        // Sort in descending order (highest price first)
+        return bValue.minus(aValue).toNumber();
+      });
+
+    // Take top 5 offers and calculate price per NFT for each
+    const result = sortedOffers.slice(0, 5).map((offer) => {
+      const nftConsideration =
+        offer.protocol_data.parameters.consideration.find(
+          (item: any) => item.itemType === 4,
+        );
+      const nftQuantity = new Big(nftConsideration?.startAmount || '1');
+      return {
+        price: this.weiToEth(offer.price?.value || '0').div(nftQuantity),
+      };
     });
 
-    return sortedOffers.slice(0, 5).map((offer: any) => {
-      try {
-        const nftCollectionAddress =
-          offer['criteria']['contract']['address'].toLowerCase();
-        const offerAmount = new Big(offer.price?.value || '0');
-        const considerations =
-          offer['protocol_data']['parameters']['consideration'];
-        const nftConsideration = considerations.find(
-          (c) => c.token.toLowerCase() === nftCollectionAddress,
-        );
-        const quantity = new Big(nftConsideration['endAmount'] || '1');
-        const pricePerNft = offerAmount.div(quantity);
-        const ethPrice = this.weiToEth(pricePerNft.toString());
-
-        return {
-          price: ethPrice,
-        };
-      } catch {
-        return { price: new Big(0) };
-      }
-    });
+    return result;
   }
 
   private weiToEth(weiValue: string): Big {

@@ -63,7 +63,7 @@
     "big.js": "^6.2.2",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.4",
-    "opensea-js": "^7.1.13",
+    "opensea-js": "^7.1.14",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
