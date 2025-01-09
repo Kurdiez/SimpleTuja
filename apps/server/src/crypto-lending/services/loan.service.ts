@@ -114,9 +114,9 @@ export class LoanService {
     });
     this.logger.log(`Found ${collections.length} collections to update`);
 
-    const collectionIdsToEnable: string[] = [];
+    const collectionsToEnable: NftCollectionEntity[] = [];
     for (const collection of collections) {
-      if (collectionIdsToEnable.length >= numLendingEligibleCollections) {
+      if (collectionsToEnable.length >= numLendingEligibleCollections) {
         break;
       }
 
@@ -130,7 +130,7 @@ export class LoanService {
         const shouldEnabled = success && collection.averageApr != null;
 
         if (shouldEnabled) {
-          collectionIdsToEnable.push(collection.id);
+          collectionsToEnable.push(collection);
         }
       } catch (error) {
         const exception = new CustomException(
@@ -146,20 +146,20 @@ export class LoanService {
 
     await this.nftCollectionRepo.manager.transaction(
       async (transactionalEntityManager) => {
+        // First disable all collections
         await transactionalEntityManager.update(
           NftCollectionEntity,
-          { id: In(collectionIdsToEnable) },
-          { enabled: true },
-        );
-
-        await transactionalEntityManager.update(
-          NftCollectionEntity,
-          { id: Not(In(collectionIdsToEnable)) },
+          {},
           { enabled: false },
         );
 
+        // Then enable the selected collections
+        if (collectionsToEnable.length > 0) {
+          await transactionalEntityManager.save(collectionsToEnable);
+        }
+
         this.logger.log(
-          `Updated ${collectionIdsToEnable.length} collections with new bid offers. Enabled ${collectionIdsToEnable.length} collections.`,
+          `Updated collections. Enabled ${collectionsToEnable.length} collections.`,
         );
       },
     );
