@@ -130,6 +130,7 @@ export class LoanService {
         const shouldEnabled = success && collection.averageApr != null;
 
         if (shouldEnabled) {
+          collection.enabled = true;
           collectionsToEnable.push(collection);
         }
       } catch (error) {

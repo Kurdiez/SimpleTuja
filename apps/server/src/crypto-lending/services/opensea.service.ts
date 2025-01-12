@@ -117,11 +117,11 @@ export class OpenSeaService {
       return false;
     }
 
-    // Check if price difference between highest and lowest is more than 20%
+    // Check if price difference between highest and lowest is not more than threshold
     const highestOffer = offers[0].price;
     const lowestOffer = offers[offers.length - 1].price;
     const priceDifference = highestOffer.minus(lowestOffer);
-    const maxAllowedDifference = lowestOffer.times(0.1); // 10% of lowest offer
+    const maxAllowedDifference = lowestOffer.times(0.5); // 50% of lowest offer
 
     return !priceDifference.gt(maxAllowedDifference);
   }
