@@ -14,10 +14,6 @@
     "start": "nest start",
     "start:prod": "node dist/main",
     "test": "jest",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:watch": "jest --watch",
     "tsn": "ts-node --project ./tsconfig.json --files -r tsconfig-paths/register",
     "type-check": "tsc --noEmit",
     "typeorm": "yarn tsn ./node_modules/typeorm/cli",
@@ -25,23 +21,6 @@
     "typeorm:generate": "wrap () { yarn typeorm -d src/orm.config.ts migration:generate ./src/database/migrations/db/\"$@\" | cat; }; wrap",
     "typeorm:revert": "yarn typeorm -d src/orm.config.ts migration:revert",
     "typeorm:run": "yarn typeorm migration:run -d src/orm.config.ts"
-  },
-  "jest": {
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testEnvironment": "node",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    }
   },
   "dependencies": {
     "@getbrevo/brevo": "^2.2.0",
@@ -78,6 +57,7 @@
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
     "@nftfi/js": "https://github.com/NFTfi-Genesis/nftfi.js/archive/v0.6.0.tar.gz",
+    "@testcontainers/postgresql": "^10.16.0",
     "@types/big.js": "^6.2.2",
     "@types/express": "^4.17.17",
     "@types/jest": "^29.5.2",

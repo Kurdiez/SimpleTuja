@@ -1,23 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { NftCollectionEntity } from './entities/nft-collection.entity';
-import { UserEntity } from './entities/user.entity';
-import { CryptoLendingUserStateEntity } from './entities/crypto-lending-user-state.entity';
-import { CryptoLoanOfferEntity } from './entities/crypto-loan-offer.entity';
-import { CryptoLoanEntity } from './entities/crypto-loan.entity';
-import { CryptoDashboardSnapshotEntity } from './entities/crypto-dashboard-snapshot.entity';
+import { entitiesToReigster } from './entities-registry';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      CryptoDashboardSnapshotEntity,
-      CryptoLoanEntity,
-      CryptoLoanOfferEntity,
-      CryptoLendingUserStateEntity,
-      NftCollectionEntity,
-      UserEntity,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature(entitiesToReigster)],
   exports: [TypeOrmModule],
 })
 export class DatabaseModule {}
