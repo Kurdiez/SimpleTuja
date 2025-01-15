@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { databaseConfigSchema } from './database';
 import { Environment } from '../types';
+import { databaseConfigSchema } from './database';
 
 export const configSchema = z
   .object({
@@ -28,6 +28,10 @@ export const configSchema = z
       .positive()
       .default(30),
     COINLAYER_API_KEY: z.string(),
+    IG_API_KEY: z.string(),
+    IG_API_BASE_URL: z.string(),
+    IG_LOGIN_USERNAME: z.string(),
+    IG_LOGIN_PASSWORD: z.string(),
   })
   .merge(databaseConfigSchema)
   .strip();
