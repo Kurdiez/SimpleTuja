@@ -856,6 +856,9 @@ export class LoanService {
       ],
       relations: {
         nftCollection: true,
+        userState: {
+          user: true,
+        },
       },
     });
 
