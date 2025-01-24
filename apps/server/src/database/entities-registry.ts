@@ -4,6 +4,7 @@ import { CryptoLoanOfferEntity } from './entities/crypto-lending/crypto-loan-off
 import { CryptoLoanEntity } from './entities/crypto-lending/crypto-loan.entity';
 import { NftCollectionBidHistoryEntity } from './entities/crypto-lending/nft-collection-bid-history.entity';
 import { NftCollectionEntity } from './entities/crypto-lending/nft-collection.entity';
+import { IgEpicPriceEntity } from './entities/trading/ig-epic-price.entity';
 import { UserEntity } from './entities/user.entity';
 
 export const entitiesToReigster = [
@@ -16,4 +17,7 @@ export const entitiesToReigster = [
   CryptoLendingUserStateEntity,
   NftCollectionEntity,
   NftCollectionBidHistoryEntity,
+
+  // trading
+  IgEpicPriceEntity,
 ];

@@ -16,7 +16,7 @@ async function bootstrap() {
     environment: configService.get('ENVIRONMENT'),
     integrations: [nodeProfilingIntegration()],
 
-    debug: true,
+    debug: false,
     attachStacktrace: true,
     autoSessionTracking: true,
     release: process.env.npm_package_version,

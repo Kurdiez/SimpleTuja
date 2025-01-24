@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { Observable, from, lastValueFrom, map, mergeMap } from 'rxjs';
 import { IgEpic } from '../utils/const';
 
 // Dual-TimeFrame Mean Reversion with Price Action Confirmation
@@ -12,16 +13,30 @@ export class DTMR_PAC_Strategy {
   }
 
   @Cron(CronExpression.EVERY_HOUR)
-  async evaluateTradeOpportunities() {
-    for (const epic of this.epicsToTrade) {
-      try {
-        // TODO: Implement strategy logic
-        // 1. Get 4H data and analyze for market imbalances
-        // 2. If imbalance found, check 1H data for entry signals
-        // 3. Execute trade if conditions are met
-      } catch (error) {
-        console.error(`Error evaluating ${epic}:`, error);
-      }
-    }
+  async trade() {
+    await lastValueFrom(
+      from(this.epicsToTrade).pipe(
+        mergeMap((epic) => this.executeEpicStrategy(epic)),
+      ),
+    );
+  }
+
+  private executeEpicStrategy(epic: IgEpic): Observable<any> {
+    return from([epic]).pipe(
+      // Fetch 4H data
+      map((epic) => ({ epic, data4h: [] })),
+
+      // Analyze 4H data for imbalances
+      map((context) => ({ ...context, imbalanceDetected: false })),
+
+      // If imbalance detected, fetch 1H data
+      map((context) => ({ ...context, data1h: [] })),
+
+      // Look for price action confirmation
+      map((context) => ({ ...context, priceActionConfirmed: false })),
+
+      // Generate trade signal if conditions met
+      map((context) => ({ ...context, signal: null })),
+    );
   }
 }
