@@ -6,7 +6,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { bigTransformer } from '../utils/big-transformer';
+import { bigTransformer } from '../../utils/big-transformer';
 import { CryptoLoanOfferEntity } from './crypto-loan-offer.entity';
 
 @Entity('nft_collection')

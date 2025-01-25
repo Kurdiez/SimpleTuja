@@ -14,7 +14,7 @@ import {
 } from 'ethers';
 import { Repository } from 'typeorm';
 import { ConfigService } from '~/config';
-import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
+import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending/crypto-lending-user-state.entity';
 
 @Injectable()
 export class InvestmentWalletService {

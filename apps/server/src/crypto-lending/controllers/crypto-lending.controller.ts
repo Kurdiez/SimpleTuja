@@ -22,8 +22,8 @@ import {
 import { Response } from 'express';
 import { AuthenticatedRequest } from '~/commons/types/auth';
 import { zodResTransform, ZodValidationPipe } from '~/commons/validations';
-import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
-import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
+import { CryptoLoanOfferEntity } from '~/database/entities/crypto-lending/crypto-loan-offer.entity';
+import { CryptoLoanEntity } from '~/database/entities/crypto-lending/crypto-loan.entity';
 import { CoinlayerService } from '../services/coinlayer.service';
 import { CryptoLendingService } from '../services/crypto-lending.service';
 import { OnboardingService } from '../services/onboarding.service';

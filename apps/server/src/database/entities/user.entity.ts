@@ -1,11 +1,11 @@
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
+  Entity,
   Index,
   OneToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
-import { CryptoLendingUserStateEntity } from './crypto-lending-user-state.entity';
+import { CryptoLendingUserStateEntity } from './crypto-lending/crypto-lending-user-state.entity';
 
 @Entity('user')
 export class UserEntity {

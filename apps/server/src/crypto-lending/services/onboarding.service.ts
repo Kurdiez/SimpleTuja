@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ethers } from 'ethers';
-import { CustomException } from '~/commons/errors/custom-exception';
-import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
-import { NftFiApiService } from './nftfi-api.service';
 import { CryptoToken } from '@simpletuja/shared';
+import { ethers } from 'ethers';
+import { Repository } from 'typeorm';
+import { CustomException } from '~/commons/errors/custom-exception';
+import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending/crypto-lending-user-state.entity';
 import { LoanService } from './loan.service';
+import { NftFiApiService } from './nftfi-api.service';
 
 @Injectable()
 export class OnboardingService {

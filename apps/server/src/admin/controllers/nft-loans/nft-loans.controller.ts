@@ -21,8 +21,8 @@ import { LoanService } from '~/crypto-lending/services/loan.service';
 import { NftFiApiService } from '~/crypto-lending/services/nftfi-api.service';
 import { OpenSeaService } from '~/crypto-lending/services/opensea.service';
 import { NftFiApiLoanStatus } from '~/crypto-lending/types/nftfi-types';
-import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
-import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
+import { CryptoLoanOfferEntity } from '~/database/entities/crypto-lending/crypto-loan-offer.entity';
+import { CryptoLoanEntity } from '~/database/entities/crypto-lending/crypto-loan.entity';
 import {
   AdminWithdrawTokenDto,
   adminWithdrawTokenDtoSchema,

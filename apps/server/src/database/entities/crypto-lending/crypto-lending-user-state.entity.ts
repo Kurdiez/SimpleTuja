@@ -1,13 +1,13 @@
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
-  OneToOne,
-  JoinColumn,
+  Entity,
   Index,
+  JoinColumn,
   OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
-import { UserEntity } from './user.entity';
+import { UserEntity } from '../user.entity';
 import { CryptoLoanOfferEntity } from './crypto-loan-offer.entity';
 
 @Entity('crypto_lending_user_state')

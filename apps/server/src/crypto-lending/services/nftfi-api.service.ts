@@ -6,7 +6,7 @@ import Big from 'big.js';
 import { Repository } from 'typeorm';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { ConfigService } from '~/config';
-import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
+import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending/crypto-lending-user-state.entity';
 import {
   NftFiActiveLoan,
   NftFiApiLoanStatus,

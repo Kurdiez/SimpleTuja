@@ -1,14 +1,14 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToOne,
-  JoinColumn,
-  Index,
-} from 'typeorm';
-import { bigTransformer } from '../utils/big-transformer';
-import { CryptoLendingUserStateEntity } from './crypto-lending-user-state.entity';
 import Big from 'big.js';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { bigTransformer } from '../../utils/big-transformer';
+import { CryptoLendingUserStateEntity } from './crypto-lending-user-state.entity';
 
 @Entity('crypto_dashboard_snapshot')
 export class CryptoDashboardSnapshotEntity {

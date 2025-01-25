@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import Big from 'big.js';
@@ -8,7 +9,8 @@ import { captureException } from '~/commons/error-handlers/capture-exception';
 import { retry } from '~/commons/error-handlers/retry';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { ConfigService } from '~/config';
-import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
+import { NftCollectionBidHistoryEntity } from '~/database/entities/crypto-lending/nft-collection-bid-history.entity';
+import { NftCollectionEntity } from '~/database/entities/crypto-lending/nft-collection.entity';
 import { OpenSeaAPIService } from './opensea-api.service';
 
 @Injectable()
@@ -18,6 +20,8 @@ export class OpenSeaService {
   constructor(
     @InjectRepository(NftCollectionEntity)
     private readonly nftCollectionRepo: Repository<NftCollectionEntity>,
+    @InjectRepository(NftCollectionBidHistoryEntity)
+    private readonly nftCollectionPriceHistoryRepo: Repository<NftCollectionBidHistoryEntity>,
     private readonly openSeaApi: OpenSeaAPIService,
     private readonly configService: ConfigService,
   ) {}
@@ -87,6 +91,12 @@ export class OpenSeaService {
   ): Promise<boolean> {
     try {
       const offers = await this.getTopFiveOffers(collection.openSeaSlug!);
+      if (offers.length > 0) {
+        await this.saveNftCollectionBidPrice(
+          collection.id,
+          this.calculateAveragePrice(offers),
+        );
+      }
 
       if (!this.areOffersValid(offers)) {
         return false;
@@ -269,5 +279,25 @@ export class OpenSeaService {
       new Big(0),
     );
     return sum.div(offers.length);
+  }
+
+  private async saveNftCollectionBidPrice(collectionId: string, price: Big) {
+    const priceHistory = this.nftCollectionPriceHistoryRepo.create({
+      nftCollectionId: collectionId,
+      avgTopFiveBids: price,
+    });
+    await this.nftCollectionPriceHistoryRepo.save(priceHistory);
+  }
+
+  @Cron(CronExpression.EVERY_3_HOURS)
+  async cleanOldPriceHistory(): Promise<void> {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+
+    await this.nftCollectionPriceHistoryRepo
+      .createQueryBuilder()
+      .delete()
+      .where('createdAt < :date', { date: oneMonthAgo })
+      .execute();
   }
 }

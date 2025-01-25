@@ -10,7 +10,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { bigTransformer } from '../utils/big-transformer';
+import { bigTransformer } from '../../utils/big-transformer';
 import { CryptoLendingUserStateEntity } from './crypto-lending-user-state.entity';
 import { NftCollectionEntity } from './nft-collection.entity';
 

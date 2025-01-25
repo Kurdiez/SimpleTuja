@@ -10,11 +10,11 @@ import {
 } from '@simpletuja/shared';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { CustomException } from '~/commons/errors/custom-exception';
-import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-dashboard-snapshot.entity';
-import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
-import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
-import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
-import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
+import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-lending/crypto-dashboard-snapshot.entity';
+import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending/crypto-lending-user-state.entity';
+import { CryptoLoanOfferEntity } from '~/database/entities/crypto-lending/crypto-loan-offer.entity';
+import { CryptoLoanEntity } from '~/database/entities/crypto-lending/crypto-loan.entity';
+import { NftCollectionEntity } from '~/database/entities/crypto-lending/nft-collection.entity';
 import { OnboardingService } from './onboarding.service';
 
 @Injectable()

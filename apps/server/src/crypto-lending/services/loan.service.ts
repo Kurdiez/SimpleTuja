@@ -15,11 +15,12 @@ import { captureException } from '~/commons/error-handlers/capture-exception';
 import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { ConfigService } from '~/config';
-import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-dashboard-snapshot.entity';
-import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending-user-state.entity';
-import { CryptoLoanOfferEntity } from '~/database/entities/crypto-loan-offer.entity';
-import { CryptoLoanEntity } from '~/database/entities/crypto-loan.entity';
-import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
+import { CryptoDashboardSnapshotEntity } from '~/database/entities/crypto-lending/crypto-dashboard-snapshot.entity';
+import { CryptoLendingUserStateEntity } from '~/database/entities/crypto-lending/crypto-lending-user-state.entity';
+import { CryptoLoanOfferEntity } from '~/database/entities/crypto-lending/crypto-loan-offer.entity';
+import { CryptoLoanEntity } from '~/database/entities/crypto-lending/crypto-loan.entity';
+import { NftCollectionBidHistoryEntity } from '~/database/entities/crypto-lending/nft-collection-bid-history.entity';
+import { NftCollectionEntity } from '~/database/entities/crypto-lending/nft-collection.entity';
 import { BrevoService } from '~/notifications/services/brevo.service';
 import {
   NftFiApiLoanStatus,
@@ -50,6 +51,8 @@ export class LoanService {
     private readonly loanOfferRepo: Repository<CryptoLoanOfferEntity>,
     @InjectRepository(CryptoLoanEntity)
     private readonly loanRepo: Repository<CryptoLoanEntity>,
+    @InjectRepository(NftCollectionBidHistoryEntity)
+    private readonly nftBidHistoryRepo: Repository<NftCollectionBidHistoryEntity>,
     private readonly nftfiApiService: NftFiApiService,
     private readonly configService: ConfigService,
     private readonly openSeaService: OpenSeaService,
@@ -121,15 +124,15 @@ export class LoanService {
       }
 
       try {
-        const success =
-          await this.openSeaService.updateCollectionBidOffers(collection);
-        if (success) {
+        const shouldEnable =
+          (await this.openSeaService.updateCollectionBidOffers(collection)) &&
+          (await this.isCollectionHistoricalBidsStable(collection.id));
+
+        if (shouldEnable) {
           await this.updateAverageApr(collection);
         }
 
-        const shouldEnabled = success && collection.averageApr != null;
-
-        if (shouldEnabled) {
+        if (shouldEnable && collection.averageApr != null) {
           collection.enabled = true;
           collectionsToEnable.push(collection);
         }
@@ -1127,5 +1130,43 @@ export class LoanService {
     this.logger.log(
       `[UserState: ${userState.id}] Completed NFT transfer process`,
     );
+  }
+
+  private async isCollectionHistoricalBidsStable(
+    collectionId: string,
+  ): Promise<boolean> {
+    // Maximum allowed price drop percentage (30% seems reasonable for NFT market)
+    const MAX_PRICE_DROP_PERCENTAGE = 30;
+
+    // Get the oldest and newest price records
+    const [oldestRecord, newestRecord] = await Promise.all([
+      this.nftBidHistoryRepo.findOne({
+        where: { nftCollectionId: collectionId },
+        order: { createdAt: 'ASC' },
+      }),
+      this.nftBidHistoryRepo.findOne({
+        where: { nftCollectionId: collectionId },
+        order: { createdAt: 'DESC' },
+      }),
+    ]);
+
+    // If no records or only one record exists, consider it unstable
+    if (
+      !oldestRecord ||
+      !newestRecord ||
+      oldestRecord.createdAt.getTime() === newestRecord.createdAt.getTime()
+    ) {
+      return false;
+    }
+
+    // Calculate price drop percentage
+    const priceDropPercentage = oldestRecord.avgTopFiveBids
+      .minus(newestRecord.avgTopFiveBids)
+      .div(oldestRecord.avgTopFiveBids)
+      .mul(100)
+      .toNumber();
+
+    // Collection is stable if price hasn't dropped more than MAX_PRICE_DROP_PERCENTAGE
+    return priceDropPercentage <= MAX_PRICE_DROP_PERCENTAGE;
   }
 }

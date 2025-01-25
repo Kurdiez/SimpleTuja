@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OpenSeaAPIService } from '~/crypto-lending/services/opensea-api.service';
-import { NftCollectionEntity } from '~/database/entities/nft-collection.entity';
+import { NftCollectionEntity } from '~/database/entities/crypto-lending/nft-collection.entity';
 import { NftCollectionInfo } from '../utils/nftfi-loan-info-file-parser';
 
 @Injectable()
