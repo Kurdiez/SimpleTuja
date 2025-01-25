@@ -1,13 +1,23 @@
 import Big from 'big.js';
-import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { bigTransformer } from '~/database/utils/big-transformer';
 
 @Entity('nft_collection_bid_history')
 export class NftCollectionBidHistoryEntity {
-  @PrimaryColumn('uuid')
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Index()
+  @Column('uuid')
   nftCollectionId!: string;
 
-  @PrimaryColumn()
+  @Index()
   @CreateDateColumn()
   createdAt!: Date;
 
