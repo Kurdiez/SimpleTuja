@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ConfigModule, ConfigService } from './config';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import { AppModule } from './app.module';
+import { ConfigModule, ConfigService } from './config';
 
 async function bootstrap() {
   const configModuleContext = await NestFactory.createApplicationContext(
@@ -15,7 +15,13 @@ async function bootstrap() {
     dsn: configService.get('SENTRY_DSN'),
     environment: configService.get('ENVIRONMENT'),
     integrations: [nodeProfilingIntegration()],
-    // Tracing
+
+    debug: true,
+    attachStacktrace: true,
+    autoSessionTracking: true,
+    release: process.env.npm_package_version,
+
+    // Existing options
     tracesSampleRate: 1.0, //  Capture 100% of the transactions
 
     // Set sampling rate for profiling - this is relative to tracesSampleRate
