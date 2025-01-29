@@ -89,12 +89,24 @@ export class LoanService {
 
     await Promise.all(
       activeUsers.map(async (userState) => {
-        await this.syncLoanOffers(userState); // sync first to update expired loan offers
-        await this.makeLoanOffersForUser(userState, loanEligibleCollections);
-        await this.syncCurrentlyActiveLoans(userState);
-        await this.liquidateDefaultedLoans(userState);
-        await this.transferNftsToForeclosureWallet(userState);
-        await this.takeDashboardSnapshot(userState);
+        try {
+          await this.syncLoanOffers(userState); // sync first to update expired loan offers
+          await this.makeLoanOffersForUser(userState, loanEligibleCollections);
+          await this.syncCurrentlyActiveLoans(userState);
+          await this.liquidateDefaultedLoans(userState);
+          await this.transferNftsToForeclosureWallet(userState);
+          await this.takeDashboardSnapshot(userState);
+        } catch (error) {
+          const exception = new CustomException(
+            'Failed to sync and make loan offers',
+            {
+              error,
+              userStateId: userState.id,
+              userId: userState.userId,
+            },
+          );
+          captureException({ error: exception });
+        }
       }),
     );
   }

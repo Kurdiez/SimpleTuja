@@ -364,17 +364,16 @@ export class NftFiApiService {
 
     while (true) {
       const result = await fetchPage(currentPage);
-      const pageResults = result.data?.results;
 
-      if (pageResults == null) {
-        this.logger.log('Debug NFTfi response:', {
-          resultIsUndefined: result === undefined,
-          resultType: typeof result,
-          dataIsUndefined: result?.data === undefined,
-          stringifiedResult: JSON.stringify(result, null, 2),
-          rawResult: result,
-        });
+      if (result.error || !result.data?.results) {
+        this.logger.error(
+          'NFTfi returned invalid response while fetching all pages of data',
+        );
+        // there is nothing we can do here, just return what we have
+        return allResults;
       }
+
+      const pageResults = result.data.results;
 
       if (!pageResults.length) {
         break;
