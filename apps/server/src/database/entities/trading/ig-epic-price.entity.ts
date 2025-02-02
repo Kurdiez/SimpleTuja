@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 import { igPriceSnapshotTransformer } from '~/database/utils/ig-price-snapshot-transformer';
 import { IgEpic, TimeResolution } from '~/trading/utils/const';
-import { IGPriceSnapshot } from '~/trading/utils/types';
+import { IgPriceSnapshot } from '~/trading/utils/types';
 
 @Entity('ig_epic_price')
 export class IgEpicPriceEntity {
@@ -15,5 +15,5 @@ export class IgEpicPriceEntity {
   time!: Date;
 
   @Column('jsonb', { transformer: igPriceSnapshotTransformer })
-  snapshot!: IGPriceSnapshot;
+  snapshot!: IgPriceSnapshot;
 }

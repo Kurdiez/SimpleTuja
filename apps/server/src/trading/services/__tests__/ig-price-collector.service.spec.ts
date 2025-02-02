@@ -11,10 +11,10 @@ import {
 import { IgEpicPriceEntity } from '~/database/entities/trading/ig-epic-price.entity';
 import { IgEpic } from '~/trading/utils/const';
 import { IgApiService } from '../ig-api.service';
-import { IgPriceCollectorService } from '../ig-price-collector.service';
+import { PriceCollectorService } from '../price-collector.service';
 
 describe('IgPriceCollectorService', () => {
-  let service: IgPriceCollectorService;
+  let service: PriceCollectorService;
   // let igPriceRepo: Repository<IgEpicPriceEntity>;
   let dataSource: DataSource;
   let dbContext: TestDbContext;
@@ -35,9 +35,9 @@ describe('IgPriceCollectorService', () => {
     testNestModule = await createTestingModule(dataSource, {
       providers: [
         {
-          provide: IgPriceCollectorService,
+          provide: PriceCollectorService,
           useFactory: () => {
-            return new IgPriceCollectorService(
+            return new PriceCollectorService(
               dbContext.manager.getRepository(IgEpicPriceEntity),
               igApiService,
             );
@@ -47,9 +47,7 @@ describe('IgPriceCollectorService', () => {
     });
 
     // Get service and repositories
-    service = testNestModule.get<IgPriceCollectorService>(
-      IgPriceCollectorService,
-    );
+    service = testNestModule.get<PriceCollectorService>(PriceCollectorService);
     // igPriceRepo = dbContext.manager.getRepository(IgEpicPriceEntity);
   });
 

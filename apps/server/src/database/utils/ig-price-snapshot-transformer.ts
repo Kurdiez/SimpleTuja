@@ -1,8 +1,8 @@
 import Big from 'big.js';
-import { IGPriceSnapshot, PriceQuote } from '~/trading/utils/types';
+import { IgPriceSnapshot, PriceQuote } from '~/trading/utils/types';
 
 export const igPriceSnapshotTransformer = {
-  to: (snapshot: IGPriceSnapshot | null) => {
+  to: (snapshot: IgPriceSnapshot | null) => {
     if (!snapshot) return null;
 
     const transformQuote = (quote: PriceQuote) => ({
@@ -26,7 +26,7 @@ export const igPriceSnapshotTransformer = {
           : snapshot.lastTradedVolume,
     };
   },
-  from: (snapshot: IGPriceSnapshot | null) => {
+  from: (snapshot: IgPriceSnapshot | null) => {
     if (!snapshot) return null;
 
     const transformQuote = (quote: PriceQuote) => ({

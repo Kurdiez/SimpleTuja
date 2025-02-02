@@ -45,3 +45,7 @@ export enum OrderType {
   LIMIT = 'LIMIT',
   QUOTE = 'QUOTE',
 }
+
+export enum TradingStrategyType {
+  DTMR_PAC = 'DTMR_PAC',
+}

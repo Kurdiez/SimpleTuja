@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Big } from 'big.js';
 import { isWithinInterval } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { Repository } from 'typeorm';
@@ -12,6 +13,8 @@ import {
   TradingHoursType,
 } from '~/trading/utils/epic-trading-info';
 import { IgEpic, TimeResolution } from '../utils/const';
+import { IgPriceSnapshot, PriceQuote } from '../utils/types';
+import { PriceDataSubscriptionManagerService } from './price-data-subscription-manager.service';
 
 const PriceSnapshotRetryIntervals = {
   OneMinute: 1000 * 60,
@@ -21,29 +24,80 @@ const PriceSnapshotRetryIntervals = {
 };
 
 @Injectable()
-export class IgPriceCollectorService {
+export class PriceCollectorService implements OnModuleInit {
   constructor(
     @InjectRepository(IgEpicPriceEntity)
     private readonly igPriceRepo: Repository<IgEpicPriceEntity>,
     private readonly igApiService: IgApiService,
+    private readonly subscriptionManager: PriceDataSubscriptionManagerService,
   ) {}
 
-  @Cron('0 * * * *')
-  async collectHourlyPriceSnapshot(): Promise<void> {
-    await Promise.all(
-      Object.values(IgEpic).map((epic) =>
-        this.collectPriceSnapshot(epic, TimeResolution.HOUR),
-      ),
-    );
+  onModuleInit() {
+    // Initial setup if needed
   }
 
-  @Cron('*/15 * * * *')
-  async collect15MinPriceSnapshot(): Promise<void> {
-    await Promise.all(
-      Object.values(IgEpic).map((epic) =>
-        this.collectPriceSnapshot(epic, TimeResolution.MINUTE_15),
-      ),
-    );
+  @Cron('* * * * *')
+  async collectPriceSnapshots(): Promise<void> {
+    const now = new Date();
+    const subscriptionsByResolution =
+      this.subscriptionManager.getSubscriptionsByResolution();
+
+    // Check if it's time to collect data for each resolution
+    for (const [resolution, epics] of subscriptionsByResolution) {
+      const shouldCollect = this.shouldCollectForResolution(resolution, now);
+      if (shouldCollect) {
+        await Promise.all(
+          Array.from(epics).map((epic) =>
+            this.collectPriceSnapshot(epic, resolution),
+          ),
+        );
+      }
+    }
+  }
+
+  private shouldCollectForResolution(
+    resolution: TimeResolution,
+    date: Date,
+  ): boolean {
+    const minutes = date.getMinutes();
+    const hours = date.getHours();
+    const dayOfWeek = date.getDay();
+    const dayOfMonth = date.getDate();
+
+    switch (resolution) {
+      case TimeResolution.SECOND:
+        return true;
+      case TimeResolution.MINUTE:
+        return true;
+      case TimeResolution.MINUTE_2:
+        return minutes % 2 === 0;
+      case TimeResolution.MINUTE_3:
+        return minutes % 3 === 0;
+      case TimeResolution.MINUTE_5:
+        return minutes % 5 === 0;
+      case TimeResolution.MINUTE_10:
+        return minutes % 10 === 0;
+      case TimeResolution.MINUTE_15:
+        return minutes % 15 === 0;
+      case TimeResolution.MINUTE_30:
+        return minutes % 30 === 0;
+      case TimeResolution.HOUR:
+        return minutes === 0;
+      case TimeResolution.HOUR_2:
+        return minutes === 0 && hours % 2 === 0;
+      case TimeResolution.HOUR_3:
+        return minutes === 0 && hours % 3 === 0;
+      case TimeResolution.HOUR_4:
+        return minutes === 0 && hours % 4 === 0;
+      case TimeResolution.DAY:
+        return minutes === 0 && hours === 0;
+      case TimeResolution.WEEK:
+        return minutes === 0 && hours === 0 && dayOfWeek === 0;
+      case TimeResolution.MONTH:
+        return minutes === 0 && hours === 0 && dayOfMonth === 1;
+      default:
+        return false;
+    }
   }
 
   isTradingHour(epic: IgEpic, date: Date): boolean {
@@ -203,12 +257,22 @@ export class IgPriceCollectorService {
         );
 
         if (snapshotTime.getTime() === targetDate.getTime()) {
+          const convertedSnapshot = this.convertToBigPriceSnapshot(prices[0]);
           await this.igPriceRepo.save({
             epic,
             timeFrame: resolution,
             time: snapshotTimeUtc,
-            snapshot: prices[0],
+            snapshot: convertedSnapshot,
           });
+
+          // Notify subscribers
+          await this.subscriptionManager.notifySubscribers({
+            epic,
+            timeFrame: resolution,
+            time: snapshotTimeUtc,
+            snapshot: convertedSnapshot,
+          });
+
           return;
         }
       } catch (error) {
@@ -227,5 +291,22 @@ export class IgPriceCollectorService {
       epic,
       targetDate,
     });
+  }
+
+  private convertToBigPriceSnapshot(rawSnapshot: any): IgPriceSnapshot {
+    const convertQuote = (quote: any): PriceQuote => ({
+      bid: new Big(quote.bid),
+      ask: new Big(quote.ask),
+      lastTraded: quote.lastTraded ? new Big(quote.lastTraded) : null,
+    });
+
+    return {
+      snapshotTime: rawSnapshot.snapshotTime,
+      openPrice: convertQuote(rawSnapshot.openPrice),
+      closePrice: convertQuote(rawSnapshot.closePrice),
+      highPrice: convertQuote(rawSnapshot.highPrice),
+      lowPrice: convertQuote(rawSnapshot.lowPrice),
+      lastTradedVolume: new Big(rawSnapshot.lastTradedVolume),
+    };
   }
 }
