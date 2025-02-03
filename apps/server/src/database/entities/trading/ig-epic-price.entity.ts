@@ -11,7 +11,7 @@ export class IgEpicPriceEntity {
   @PrimaryColumn('enum', { enum: TimeResolution })
   timeFrame!: TimeResolution;
 
-  @PrimaryColumn('date')
+  @PrimaryColumn('timestamp')
   time!: Date;
 
   @Column('jsonb', { transformer: igPriceSnapshotTransformer })
