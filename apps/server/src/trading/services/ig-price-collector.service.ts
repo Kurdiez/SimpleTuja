@@ -42,11 +42,11 @@ export class IgPriceCollectorService {
     );
   }
 
-  @Cron('0 */4 * * *')
-  async collect4HourPriceSnapshot(): Promise<void> {
+  @Cron('*/15 * * * *')
+  async collect15MinPriceSnapshot(): Promise<void> {
     await Promise.all(
       Object.values(IgEpic).map((epic) =>
-        this.collectPriceSnapshot(epic, TimeResolution.HOUR_4),
+        this.collectPriceSnapshot(epic, TimeResolution.MINUTE_15),
       ),
     );
   }
