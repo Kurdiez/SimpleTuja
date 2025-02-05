@@ -1,11 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  isWithinInterval,
-  setMilliseconds,
-  setMinutes,
-  setSeconds,
-} from 'date-fns';
+import { isWithinInterval } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { Repository } from 'typeorm';
 import { Cron } from '~/commons/decorators';
@@ -127,10 +122,65 @@ export class IgPriceCollectorService {
       return;
     }
 
-    const targetDate = toZonedTime(
-      setMilliseconds(setSeconds(setMinutes(now, 0), 0), 0),
-      tradingInfo.dataTimezone,
-    );
+    let targetDate = new Date(now);
+    switch (resolution) {
+      case TimeResolution.SECOND:
+        targetDate.setMilliseconds(0);
+        break;
+      case TimeResolution.MINUTE:
+        targetDate.setSeconds(0, 0);
+        break;
+      case TimeResolution.MINUTE_2:
+        targetDate.setMinutes(Math.floor(now.getMinutes() / 2) * 2, 0, 0);
+        break;
+      case TimeResolution.MINUTE_3:
+        targetDate.setMinutes(Math.floor(now.getMinutes() / 3) * 3, 0, 0);
+        break;
+      case TimeResolution.MINUTE_5:
+        targetDate.setMinutes(Math.floor(now.getMinutes() / 5) * 5, 0, 0);
+        break;
+      case TimeResolution.MINUTE_10:
+        targetDate.setMinutes(Math.floor(now.getMinutes() / 10) * 10, 0, 0);
+        break;
+      case TimeResolution.MINUTE_15:
+        targetDate.setMinutes(Math.floor(now.getMinutes() / 15) * 15, 0, 0);
+        break;
+      case TimeResolution.MINUTE_30:
+        targetDate.setMinutes(Math.floor(now.getMinutes() / 30) * 30, 0, 0);
+        break;
+      case TimeResolution.HOUR:
+        targetDate.setMinutes(0, 0, 0);
+        break;
+      case TimeResolution.HOUR_2:
+        targetDate.setHours(Math.floor(now.getHours() / 2) * 2, 0, 0, 0);
+        break;
+      case TimeResolution.HOUR_3:
+        targetDate.setHours(Math.floor(now.getHours() / 3) * 3, 0, 0, 0);
+        break;
+      case TimeResolution.HOUR_4:
+        targetDate.setHours(Math.floor(now.getHours() / 4) * 4, 0, 0, 0);
+        break;
+      case TimeResolution.DAY:
+        targetDate.setHours(0, 0, 0, 0);
+        break;
+      case TimeResolution.WEEK:
+        // Set to start of the week (Sunday)
+        const day = targetDate.getDay();
+        targetDate.setDate(targetDate.getDate() - day);
+        targetDate.setHours(0, 0, 0, 0);
+        break;
+      case TimeResolution.MONTH:
+        // Set to start of the month
+        targetDate.setDate(1);
+        targetDate.setHours(0, 0, 0, 0);
+        break;
+      default:
+        throw new CustomException('Unsupported time resolution', {
+          resolution,
+        });
+    }
+
+    targetDate = toZonedTime(targetDate, tradingInfo.dataTimezone);
 
     for (const interval of Object.values(PriceSnapshotRetryIntervals)) {
       await new Promise((resolve) => setTimeout(resolve, interval));
