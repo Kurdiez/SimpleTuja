@@ -11,10 +11,11 @@ import {
 import { IgEpicPriceEntity } from '~/database/entities/trading/ig-epic-price.entity';
 import { IgEpic } from '~/trading/utils/const';
 import { IgApiService } from '../ig-api.service';
-import { PriceCollectorService } from '../price-collector.service';
+import { PriceDataCollectorService } from '../price-data/collector.service';
+import { PriceDataSubscriptionManagerService } from '../price-data/subscription-manager.service';
 
 describe('IgPriceCollectorService', () => {
-  let service: PriceCollectorService;
+  let service: PriceDataCollectorService;
   // let igPriceRepo: Repository<IgEpicPriceEntity>;
   let dataSource: DataSource;
   let dbContext: TestDbContext;
@@ -27,6 +28,10 @@ describe('IgPriceCollectorService', () => {
     const igApiService = jest.createMockFromModule<IgApiService>(
       '~/trading/services/ig-api.service',
     );
+    const subscriptionManager =
+      jest.createMockFromModule<PriceDataSubscriptionManagerService>(
+        '~/trading/services/price-data/subscription-manager.service',
+      );
 
     // Create test context
     dbContext = await createTestDbContext(dataSource);
@@ -35,11 +40,12 @@ describe('IgPriceCollectorService', () => {
     testNestModule = await createTestingModule(dataSource, {
       providers: [
         {
-          provide: PriceCollectorService,
+          provide: PriceDataCollectorService,
           useFactory: () => {
-            return new PriceCollectorService(
+            return new PriceDataCollectorService(
               dbContext.manager.getRepository(IgEpicPriceEntity),
               igApiService,
+              subscriptionManager,
             );
           },
         },
@@ -47,7 +53,9 @@ describe('IgPriceCollectorService', () => {
     });
 
     // Get service and repositories
-    service = testNestModule.get<PriceCollectorService>(PriceCollectorService);
+    service = testNestModule.get<PriceDataCollectorService>(
+      PriceDataCollectorService,
+    );
     // igPriceRepo = dbContext.manager.getRepository(IgEpicPriceEntity);
   });
 

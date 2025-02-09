@@ -17,17 +17,32 @@ const TradableCurrencies = [TradingCurrency.USD];
 
 @Injectable()
 export class IgApiService {
-  private readonly apiClient: AxiosInstance;
-  private cst: string | null = null;
-  private securityToken: string | null = null;
-  private readonly baseURL: string;
+  private readonly tradingClient: AxiosInstance;
+  private readonly dataClient: AxiosInstance;
+  private tradingCst: string | null = null;
+  private tradingSecurityToken: string | null = null;
+  private dataCst: string | null = null;
+  private dataSecurityToken: string | null = null;
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = configService.get('IG_API_KEY');
-    this.baseURL = configService.get('IG_API_BASE_URL');
+    // Initialize trading client
+    const tradingApiKey = configService.get('IG_DEMO_API_KEY');
+    const tradingBaseURL = configService.get('IG_DEMO_API_BASE_URL');
+    this.tradingClient = this.createApiClient(tradingApiKey, tradingBaseURL);
 
-    this.apiClient = axios.create({
-      baseURL: this.baseURL,
+    // Initialize data client
+    const dataApiKey = configService.get('IG_DEMO_API_KEY');
+    const dataBaseURL = configService.get('IG_DEMO_API_BASE_URL');
+    this.dataClient = this.createApiClient(dataApiKey, dataBaseURL);
+
+    // Set up auth token refresh for both clients
+    setInterval(() => this.loginBoth(), 5 * 60 * 60 * 1000); // 5 hours
+    this.loginBoth();
+  }
+
+  private createApiClient(apiKey: string, baseURL: string): AxiosInstance {
+    const client = axios.create({
+      baseURL,
       headers: {
         'X-IG-API-KEY': apiKey,
         'Content-Type': 'application/json',
@@ -36,77 +51,85 @@ export class IgApiService {
       },
     });
 
-    // Only keep request interceptor to add auth headers when available
-    this.apiClient.interceptors.request.use((config) => {
-      if (this.cst) {
-        config.headers['CST'] = this.cst;
-      }
-      if (this.securityToken) {
-        config.headers['X-SECURITY-TOKEN'] = this.securityToken;
-      }
-      return config;
-    });
+    return client;
+  }
 
-    // IG tokens expire in two ways:
-    // 1. After 6 hour of inactivity
-    // 2. After 24 hours no matter what
-    // Refreshing every 5 hour guarantees we will always be logged in
-    setInterval(
-      () => {
-        this.login();
-      },
-      5 * 60 * 60 * 1000,
-    ); // 5 hours in milliseconds
-    this.login();
+  async loginBoth() {
+    await Promise.all([this.login('trading'), this.login('data')]);
   }
 
   private async makeIgRequest<T>({
+    client,
     method,
     endpoint,
     data,
     headers = {},
   }: {
+    client: 'trading' | 'data';
     method: 'get' | 'post' | 'put';
     endpoint: string;
     data?: any;
     headers?: Record<string, string>;
   }): Promise<{ data: T; headers: Record<string, any> }> {
+    const apiClient =
+      client === 'trading' ? this.tradingClient : this.dataClient;
+    const cst = client === 'trading' ? this.tradingCst : this.dataCst;
+    const securityToken =
+      client === 'trading' ? this.tradingSecurityToken : this.dataSecurityToken;
+
+    const requestHeaders = {
+      ...headers,
+      ...(cst && { CST: cst }),
+      ...(securityToken && { 'X-SECURITY-TOKEN': securityToken }),
+    };
+
     try {
       const response = await retry(async () => {
-        const result = await this.apiClient.request({
+        return await apiClient.request({
           method,
           url: endpoint,
           data,
-          headers,
+          headers: requestHeaders,
         });
-        return result;
       });
       return {
         data: response.data,
         headers: response.headers as Record<string, any>,
       };
     } catch (error) {
-      throw new CustomException(`IG API request failed: ${endpoint}`, {
-        error,
-        endpoint,
-        method,
-        errorDetails: {
-          status: error?.response?.status,
-          statusText: error?.response?.statusText,
-          data: error?.response?.data,
-          message: error?.message,
-          headers: error?.response?.headers,
+      throw new CustomException(
+        `IG ${client} API request failed: ${endpoint}`,
+        {
+          error,
+          endpoint,
+          method,
+          errorDetails: {
+            status: error?.response?.status,
+            statusText: error?.response?.statusText,
+            data: error?.response?.data,
+            message: error?.message,
+            headers: error?.response?.headers,
+          },
         },
-      });
+      );
     }
   }
 
-  async login() {
+  private async login(type: 'trading' | 'data') {
     try {
-      const username = this.configService.get('IG_LOGIN_USERNAME');
-      const password = this.configService.get('IG_LOGIN_PASSWORD');
+      const username = this.configService.get(
+        type === 'trading'
+          ? 'IG_DEMO_LOGIN_USERNAME'
+          : 'IG_DEMO_LOGIN_USERNAME',
+      );
+      const password = this.configService.get(
+        type === 'trading'
+          ? 'IG_DEMO_LOGIN_PASSWORD'
+          : 'IG_DEMO_LOGIN_PASSWORD',
+      );
 
       const response = await this.makeIgRequest({
+        client: type,
         method: 'post',
         endpoint: '/session',
         data: {
@@ -116,14 +139,22 @@ export class IgApiService {
         },
       });
 
-      // Headers are still in the axios response
-      this.cst = response.headers['cst'];
-      this.securityToken = response.headers['x-security-token'];
-
-      if (!this.cst || !this.securityToken) {
-        throw new CustomException(
-          'Authentication failed - tokens not received',
-        );
+      if (type === 'trading') {
+        this.tradingCst = response.headers['cst'];
+        this.tradingSecurityToken = response.headers['x-security-token'];
+        if (!this.tradingCst || !this.tradingSecurityToken) {
+          throw new CustomException(
+            'Trading API authentication failed - tokens not received',
+          );
+        }
+      } else {
+        this.dataCst = response.headers['cst'];
+        this.dataSecurityToken = response.headers['x-security-token'];
+        if (!this.dataCst || !this.dataSecurityToken) {
+          throw new CustomException(
+            'Data API authentication failed - tokens not received',
+          );
+        }
       }
     } catch (error) {
       captureException({ error });
@@ -144,6 +175,7 @@ export class IgApiService {
     headers: Record<string, any>;
   }> {
     return this.makeIgRequest({
+      client: 'trading',
       method: 'get',
       endpoint: `/markets/${epic}`,
     });
@@ -237,6 +269,7 @@ export class IgApiService {
           };
         }>;
       }>({
+        client: 'trading',
         method: 'get',
         endpoint: '/accounts',
         headers: {
@@ -257,9 +290,9 @@ export class IgApiService {
       return await this.placeBracketOrder({
         epic,
         direction,
-        size: positionSize.toNumber(),
-        stopLossLevel: stopLossPrice.toNumber(),
-        takeProfitLevel: takeProfitPrice?.toNumber(),
+        size: positionSize,
+        stopLossPrice,
+        takeProfitPrice,
       });
     } catch (error) {
       captureException({ error });
@@ -276,15 +309,15 @@ export class IgApiService {
     epic,
     direction,
     size,
-    stopLossLevel,
-    takeProfitLevel,
+    stopLossPrice,
+    takeProfitPrice,
   }: {
     epic: IgEpic;
     direction: PositionDirection;
-    size: number;
-    stopLossLevel: number;
-    takeProfitLevel?: number;
-  }) {
+    size: Big;
+    stopLossPrice: Big;
+    takeProfitPrice?: Big;
+  }): Promise<string> {
     const {
       data: {
         instrument: { currencies },
@@ -308,22 +341,26 @@ export class IgApiService {
       });
     }
 
-    return await this.makeIgRequest({
+    const { data } = await this.makeIgRequest({
+      client: 'trading',
       method: 'post',
       endpoint: '/positions/otc',
       data: {
         epic,
         expiry: '-',
         direction,
-        size,
+        size: size.toNumber(),
         orderType: 'MARKET',
         guaranteedStop: false,
-        stopLevel: stopLossLevel,
-        limitLevel: takeProfitLevel,
+        stopLevel: stopLossPrice.toNumber(),
+        limitLevel: takeProfitPrice?.toNumber(),
         forceOpen: true,
         currencyCode,
       },
     });
+
+    // deal reference ID
+    return data as string;
   }
 
   async updatePositionLevels({
@@ -340,6 +377,7 @@ export class IgApiService {
     if (limitLevel !== undefined) payload.limitLevel = limitLevel;
 
     return await this.makeIgRequest({
+      client: 'trading',
       method: 'put',
       endpoint: `/positions/otc/${dealId}`,
       data: payload,
@@ -351,6 +389,7 @@ export class IgApiService {
       ? `/marketnavigation/${nodeId}`
       : '/marketnavigation';
     return await this.makeIgRequest({
+      client: 'trading',
       method: 'get',
       endpoint,
       headers: {
@@ -377,16 +416,8 @@ export class IgApiService {
       lastTradedVolume: number;
     }[]
   > {
-    const { data } = await this.makeIgRequest<{
-      prices: {
-        snapshotTime: string;
-        openPrice: { bid: number; ask: number; lastTraded: number };
-        closePrice: { bid: number; ask: number; lastTraded: number };
-        highPrice: { bid: number; ask: number; lastTraded: number };
-        lowPrice: { bid: number; ask: number; lastTraded: number };
-        lastTradedVolume: number;
-      }[];
-    }>({
+    const { data } = await this.makeIgRequest<{ prices: any[] }>({
+      client: 'data',
       method: 'get',
       endpoint: `/prices/${epic}/${resolution}/${numPoints}`,
     });
@@ -399,6 +430,7 @@ export class IgApiService {
       dealStatus: 'ACCEPTED' | 'REJECTED';
       reason?: string;
     }>({
+      client: 'trading',
       method: 'get',
       endpoint: `/confirms/${dealReference}`,
       headers: {

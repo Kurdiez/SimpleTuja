@@ -13,7 +13,7 @@ export class TestIgController {
 
   @Post('login')
   async login() {
-    await this.igApi.login();
+    await this.igApi.loginBoth();
   }
 
   @Post('get-market-details/:epic')

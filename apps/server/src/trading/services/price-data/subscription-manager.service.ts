@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { IgEpic, TimeResolution } from '../utils/const';
+import { IgEpic, TimeResolution } from '../../utils/const';
 import {
   DataSubscription,
   IDataSubscriber,
   PriceUpdateEvent,
-} from '../utils/types';
+} from '../../utils/types';
 
 @Injectable()
 export class PriceDataSubscriptionManagerService {
@@ -38,7 +38,7 @@ export class PriceDataSubscriptionManagerService {
   }
 
   async notifySubscribers(event: PriceUpdateEvent): Promise<void> {
-    const key = `${event.epic}:${event.timeFrame}`;
+    const key = `${event.epic}:${event.timeResolution}`;
     const subscribers = this.subscriptions.get(key);
 
     if (subscribers) {

@@ -27,11 +27,30 @@ export interface TradingStrategyParams {
 
 export interface PriceUpdateEvent {
   epic: IgEpic;
-  timeFrame: TimeResolution;
+  timeResolution: TimeResolution;
   time: Date;
-  snapshot: IgPriceSnapshot;
+  snapshot?: IgPriceSnapshot;
 }
 
 export interface IDataSubscriber {
   onPriceUpdate(event: PriceUpdateEvent): Promise<void>;
+}
+
+export interface SignalGeneratorContextData {
+  epic: string;
+  prices: {
+    [key in TimeResolution]?: IgPriceSnapshot[];
+  };
+  performanceReport: any | null;
+}
+
+export interface N8nSignalOutput {
+  tradeAction: 'long' | 'short' | 'none';
+  stopLoss?: string;
+  takeProfit?: string;
+  thoughtProcess?: string;
+}
+
+export interface N8nSignalResponse {
+  output: N8nSignalOutput;
 }

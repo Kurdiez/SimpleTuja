@@ -12,9 +12,9 @@ import {
   getTradingInfo,
   TradingHoursType,
 } from '~/trading/utils/epic-trading-info';
-import { IgEpic, TimeResolution } from '../utils/const';
-import { IgPriceSnapshot, PriceQuote } from '../utils/types';
-import { PriceDataSubscriptionManagerService } from './price-data-subscription-manager.service';
+import { IgEpic, TimeResolution } from '../../utils/const';
+import { IgPriceSnapshot, PriceQuote } from '../../utils/types';
+import { PriceDataSubscriptionManagerService } from './subscription-manager.service';
 
 const PriceSnapshotRetryIntervals = {
   OneMinute: 1000 * 60,
@@ -24,7 +24,7 @@ const PriceSnapshotRetryIntervals = {
 };
 
 @Injectable()
-export class PriceCollectorService implements OnModuleInit {
+export class PriceDataCollectorService implements OnModuleInit {
   constructor(
     @InjectRepository(IgEpicPriceEntity)
     private readonly igPriceRepo: Repository<IgEpicPriceEntity>,
@@ -268,7 +268,7 @@ export class PriceCollectorService implements OnModuleInit {
           // Notify subscribers
           await this.subscriptionManager.notifySubscribers({
             epic,
-            timeFrame: resolution,
+            timeResolution: resolution,
             time: snapshotTimeUtc,
             snapshot: convertedSnapshot,
           });

@@ -10,6 +10,7 @@ import { TestBrevoController } from './controllers/tests/test-brevo.controller';
 import { TestIgController } from './controllers/tests/test-ig.controller';
 import { TestNftFiController } from './controllers/tests/test-nftfi.controller';
 import { TestOpenSeaController } from './controllers/tests/test-opensea.controller';
+import { TestStrategyController } from './controllers/tests/test-strategy.controller';
 import { DataSeedService } from './services/data-seed.service';
 
 @Module({
@@ -28,6 +29,7 @@ import { DataSeedService } from './services/data-seed.service';
     MonitorController,
     TestBrevoController,
     TestIgController,
+    TestStrategyController,
   ],
 })
 export class AdminModule {}

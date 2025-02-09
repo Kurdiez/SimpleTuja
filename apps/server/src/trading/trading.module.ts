@@ -1,24 +1,30 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '~/database/database.module';
 import { IgApiService } from './services/ig-api.service';
-import { PriceCollectorService } from './services/price-collector.service';
-import { PriceDataSubscriptionManagerService } from './services/price-data-subscription-manager.service';
-import { DTMR_PAC_Strategy } from './strategies/DTMR-PAC.strategy';
-
+import { N8NService } from './services/n8n.service';
+import { PriceDataCollectorService } from './services/price-data/collector.service';
+import { PriceDataQueryService } from './services/price-data/query.service';
+import { PriceDataSubscriptionManagerService } from './services/price-data/subscription-manager.service';
+import { N8N_AI_Strategy } from './strategies/n8n-ai.strategy';
 @Module({
   imports: [DatabaseModule],
   providers: [
     IgApiService,
-    PriceCollectorService,
+    PriceDataCollectorService,
     PriceDataSubscriptionManagerService,
+    PriceDataQueryService,
+    N8NService,
 
     // strategies
-    DTMR_PAC_Strategy,
+    N8N_AI_Strategy,
   ],
   exports: [
     IgApiService,
-    PriceCollectorService,
+    PriceDataCollectorService,
     PriceDataSubscriptionManagerService,
+
+    // strategies
+    N8N_AI_Strategy,
   ],
 })
 export class TradingModule {}

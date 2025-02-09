@@ -7,6 +7,12 @@ export enum IgEpic {
   US_SHARE_AMBC = 'UA.D.AMBCUS.CASH.IP',
 }
 
+export function getIgEpicKey(value: string): keyof typeof IgEpic | undefined {
+  const entries = Object.entries(IgEpic);
+  const found = entries.find(([_, val]) => val === value);
+  return found ? (found[0] as keyof typeof IgEpic) : undefined;
+}
+
 export enum TimeResolution {
   SECOND = 'SECOND',
   MINUTE = 'MINUTE',
@@ -46,6 +52,6 @@ export enum OrderType {
   QUOTE = 'QUOTE',
 }
 
-export enum TradingStrategyType {
-  DTMR_PAC = 'DTMR_PAC',
+export enum TradingStrategy {
+  N8N_AI = 'N8N_AI',
 }

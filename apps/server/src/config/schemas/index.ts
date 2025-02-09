@@ -28,10 +28,17 @@ export const configSchema = z
       .positive()
       .default(30),
     COINLAYER_API_KEY: z.string(),
-    IG_API_KEY: z.string(),
-    IG_API_BASE_URL: z.string(),
-    IG_LOGIN_USERNAME: z.string(),
-    IG_LOGIN_PASSWORD: z.string(),
+    IG_DEMO_API_KEY: z.string(),
+    IG_DEMO_API_BASE_URL: z.string(),
+    IG_DEMO_LOGIN_USERNAME: z.string(),
+    IG_DEMO_LOGIN_PASSWORD: z.string(),
+    IG_LIVE_API_KEY: z.string(),
+    IG_LIVE_API_BASE_URL: z.string(),
+    IG_LIVE_LOGIN_USERNAME: z.string(),
+    IG_LIVE_LOGIN_PASSWORD: z.string(),
+    N8N_WEBHOOK_SECRET: z.string(),
+    N8N_WEBHOOK_BASE_URL: z.string(),
+    N8N_TRADING_SIGNAL_WEBHOOK_PATH: z.string(),
   })
   .merge(databaseConfigSchema)
   .strip();
