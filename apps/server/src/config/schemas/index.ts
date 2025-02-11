@@ -39,6 +39,7 @@ export const configSchema = z
     N8N_WEBHOOK_SECRET: z.string(),
     N8N_WEBHOOK_BASE_URL: z.string(),
     N8N_TRADING_SIGNAL_WEBHOOK_PATH: z.string(),
+    GEMINI_AI_API_KEY: z.string(),
   })
   .merge(databaseConfigSchema)
   .strip();

@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
 export enum TradeAction {
-  LONG = 'long',
-  SHORT = 'short',
-  NONE = 'none',
+  Long = 'long',
+  Short = 'short',
+  None = 'none',
 }
 export enum NearFuturePricePatterns {
-  TREND_CONTINUATION = 'trend-continuation',
-  TRADING_RANGE = 'trading-range',
-  EXTREME_IMBALANCE_MEAN_REVERSAL = 'extreme-imbalance-mean-reversal',
+  TrendContinuation = 'trend-continuation',
+  TradingRange = 'trading-range',
+  ExtremeImbalanceMeanReversal = 'extreme-imbalance-mean-reversal',
 }
 
 const activeTradeSchema = z.object({
@@ -31,7 +31,3 @@ export const tradeSignalResponseSchema = z.union([
   activeTradeSchema,
   noTradeSchema,
 ]);
-
-export type ActiveTrade = z.infer<typeof activeTradeSchema>;
-export type NoTrade = z.infer<typeof noTradeSchema>;
-export type TradeSignalResponse = z.infer<typeof tradeSignalResponseSchema>;

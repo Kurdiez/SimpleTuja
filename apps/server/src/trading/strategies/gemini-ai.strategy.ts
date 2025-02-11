@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Big } from 'big.js';
 import { Repository } from 'typeorm';
@@ -9,8 +9,8 @@ import {
   TradeAction,
   TradeSignalResponse,
 } from '../ai-response-schema/generate-signal';
+import { GeminiAiService } from '../services/gemini-ai.service';
 import { IgApiService } from '../services/ig-api.service';
-import { N8NService } from '../services/n8n.service';
 import { PriceDataQueryService } from '../services/price-data/query.service';
 import { PriceDataSubscriptionManagerService } from '../services/price-data/subscription-manager.service';
 import {
@@ -27,7 +27,8 @@ import {
 } from '../utils/types';
 
 @Injectable()
-export class N8N_AI_Strategy implements OnModuleInit, IDataSubscriber {
+export class Gemini_AI_Strategy implements OnModuleInit, IDataSubscriber {
+  private readonly logger = new Logger(Gemini_AI_Strategy.name);
   private readonly epicsToTrade: IgEpic[];
   private subscriptions: DataSubscription[];
   private readonly DefaultRiskPercentage = 0.03; // 3% risk per trade
@@ -35,7 +36,7 @@ export class N8N_AI_Strategy implements OnModuleInit, IDataSubscriber {
   constructor(
     private readonly priceDataSubscriptionManager: PriceDataSubscriptionManagerService,
     private readonly priceDataQueryService: PriceDataQueryService,
-    private readonly n8nService: N8NService,
+    private readonly geminiAiService: GeminiAiService,
     private readonly igApiService: IgApiService,
     @InjectRepository(TradingPositionEntity)
     private readonly tradingPositionRepository: Repository<TradingPositionEntity>,
@@ -58,14 +59,19 @@ export class N8N_AI_Strategy implements OnModuleInit, IDataSubscriber {
     }
   }
 
-  private async handle15MinUpdate(event: PriceUpdateEvent) {
+  async handle15MinUpdate(event: PriceUpdateEvent) {
     let signal: TradeSignalResponse;
     try {
       const signalGeneratorContextData =
         await this.prepSignalGeneratorContextData(event);
 
-      const signal = await this.n8nService.generateSignal(
+      signal = await this.geminiAiService.generateSignal(
         signalGeneratorContextData,
+      );
+
+      this.logger.log(
+        'Received Gemini signal result:',
+        JSON.stringify(signal, null, 2),
       );
 
       if (signal.tradeDecision.action === TradeAction.NONE) {
@@ -102,11 +108,14 @@ export class N8N_AI_Strategy implements OnModuleInit, IDataSubscriber {
         },
       });
     } catch (error) {
-      const exception = new CustomException('Failed to place trade', {
-        error,
-        epic: event.epic,
-        signal,
-      });
+      const exception = new CustomException(
+        'Gemini AI Strategy failed to handle 15 min update',
+        {
+          error,
+          epic: event.epic,
+          signal,
+        },
+      );
       captureException({ error: exception });
     }
   }
@@ -117,7 +126,7 @@ export class N8N_AI_Strategy implements OnModuleInit, IDataSubscriber {
         this.priceDataQueryService.getRecentPrices(
           epic,
           sub.timeResolution,
-          50,
+          210,
         ),
       ),
     );

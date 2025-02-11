@@ -1,14 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
-import { N8N_AI_Strategy } from '~/trading/strategies/n8n-ai.strategy';
+import { Gemini_AI_Strategy } from '~/trading/strategies/gemini-ai.strategy';
 import { IgEpic, TimeResolution } from '~/trading/utils/const';
 
 @Controller('admin/test-strategy')
 export class TestStrategyController {
-  constructor(private readonly n8nAiStrategy: N8N_AI_Strategy) {}
+  constructor(private readonly geminiAiStrategy: Gemini_AI_Strategy) {}
 
-  @Get('n8n-ai')
+  @Get('gemini-ai')
   async executeStrategy() {
-    await this.n8nAiStrategy.onPriceUpdate({
+    await this.geminiAiStrategy.onPriceUpdate({
       epic: IgEpic.EURUSD,
       timeResolution: TimeResolution.MINUTE_15,
       time: new Date(),
