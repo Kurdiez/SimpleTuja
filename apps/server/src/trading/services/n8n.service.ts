@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { CustomException } from '~/commons/errors/custom-exception';
 import { ConfigService } from '~/config';
 import {
   TradeSignalResponse,
@@ -35,9 +36,18 @@ export class N8NService {
       N8nSignalResponse
     >(webhookUrl, signalGeneratorContextData);
 
-    const outputData = this.cleanJsonResponse(response.data.output);
-    const parsedResponse = tradeSignalResponseSchema.parse(outputData);
-    return parsedResponse;
+    try {
+      const outputData = this.cleanJsonResponse(response.data.output);
+      const parsedResponse = tradeSignalResponseSchema.parse(outputData);
+      return parsedResponse;
+    } catch (error) {
+      const exception = new CustomException('Failed to parse N8N response', {
+        error,
+        response: response.data,
+        epic: signalGeneratorContextData.epic,
+      });
+      throw exception;
+    }
   }
 
   private cleanJsonResponse(response: string | any): any {
