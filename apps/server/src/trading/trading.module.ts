@@ -6,7 +6,7 @@ import { N8NService } from './services/n8n.service';
 import { PriceDataCollectorService } from './services/price-data/collector.service';
 import { PriceDataQueryService } from './services/price-data/query.service';
 import { PriceDataSubscriptionManagerService } from './services/price-data/subscription-manager.service';
-import { Gemini_AI_Strategy } from './strategies/gemini-ai.strategy';
+import { DTIG_AI_STRATEGY } from './strategies/DTIG_AI.strategy';
 
 @Module({
   imports: [DatabaseModule],
@@ -19,7 +19,7 @@ import { Gemini_AI_Strategy } from './strategies/gemini-ai.strategy';
     GeminiAiService,
 
     // strategies
-    Gemini_AI_Strategy,
+    DTIG_AI_STRATEGY,
   ],
   exports: [
     IgApiService,
@@ -27,7 +27,7 @@ import { Gemini_AI_Strategy } from './strategies/gemini-ai.strategy';
     PriceDataSubscriptionManagerService,
 
     // strategies
-    Gemini_AI_Strategy,
+    DTIG_AI_STRATEGY,
   ],
 })
 export class TradingModule {}

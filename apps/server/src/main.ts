@@ -21,6 +21,11 @@ async function bootstrap() {
     autoSessionTracking: true,
     release: process.env.npm_package_version,
 
+    includeLocalVariables: true,
+    _experiments: {
+      sourceMapValidation: true,
+    },
+
     // Existing options
     tracesSampleRate: 1.0, //  Capture 100% of the transactions
 

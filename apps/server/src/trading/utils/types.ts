@@ -41,6 +41,9 @@ export interface SignalGeneratorContextData {
   prices: {
     [key in TimeResolution]?: IgPriceSnapshot[];
   };
+  indicators: {
+    [key in TimeResolution]?: any;
+  };
   performanceReport: any | null;
 }
 
