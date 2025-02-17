@@ -17,14 +17,20 @@ const activeTradeSchema = z.object({
     stopLoss: z.string().regex(/^\d*\.?\d+$/, 'Must be a valid price string'),
     takeProfit: z.string().regex(/^\d*\.?\d+$/, 'Must be a valid price string'),
   }),
-  stepAnalysis: z.array(z.string()),
+  stepAnalysis: z.record(
+    z.string().regex(/^[1-8]$/, 'Must be a string number between 1 and 8'),
+    z.string(),
+  ),
 });
 
 const noTradeSchema = z.object({
   tradeDecision: z.object({
     action: z.nativeEnum(TradeAction).refine((val) => val === 'none'),
   }),
-  stepAnalysis: z.array(z.string()),
+  stepAnalysis: z.record(
+    z.string().regex(/^[1-8]$/, 'Must be a string number between 1 and 8'),
+    z.string(),
+  ),
 });
 
 export const tradeSignalResponseSchema = z.union([

@@ -2,7 +2,9 @@ import { PromptTemplate } from '@langchain/core/prompts';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Big } from 'big.js';
+import { last } from 'lodash';
 import {
+  ATR,
   BollingerBands,
   EMA,
   MACD,
@@ -32,6 +34,7 @@ import {
 import {
   DataSubscription,
   IDataSubscriber,
+  IgPriceSnapshot,
   PriceUpdateEvent,
 } from '../utils/types';
 
@@ -58,6 +61,9 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
         basePeriod: 26,
         leadingSpanBPeriod: 52,
         laggingSpanPeriod: 26,
+      },
+      atr: {
+        period: 14,
       },
     },
     minute15: {
@@ -97,18 +103,20 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       Here are the analysis steps you should follow.
 
       Analysis Steps:
-      1. The goal of longer term analysis is to find out if there is a setup for a trade. First analyze whether the longer term timeframe is trending. Use the 3 provided indicators to analyze, state your conclusion in the form of confidence score from 0 - 10 with the reasoning.
-      2. Analyze whether the longer term timeframe is trading in a trading range. Use the 3 provided indicators to analyze, state your conclusion in the form of confidence score from 0 - 10 with the reasoning.
-      3. Analyze whether the longer term timeframe is in an extreme imbalance and about to do mean reversion. Use the 3 provided indicators to analyze, state your conclusion in the form of confidence score from 0 - 10 with the reasoning.
+      1. The goal of longer term analysis is to find out if there is a setup for a trade. First analyze whether the longer term timeframe is trending. Use the 4 provided indicators to analyze, state your conclusion in the form of confidence score from 0 - 10 with the reasoning.
+      2. Analyze whether the longer term timeframe is trading in a trading range. Use the 4 provided indicators to analyze, state your conclusion in the form of confidence score from 0 - 10 with the reasoning.
+      3. Analyze whether the longer term timeframe is in an extreme imbalance and about to do mean reversion. Use the 4 provided indicators to analyze, state your conclusion in the form of confidence score from 0 - 10 with the reasoning.
       4. State which of the 3 analysis you are choosing to trade. The confidence score has to be at least 7 and the chosen analysis has to have the highest confidence score. If there is no clear winner, you should return "none" as the trade action to not trade.
-      5. State what are the immediate significant price levels from the current market price in the longer term prices which can act as the stop loss and take profit prices.
+      5. State what are the immediate significant price levels from the current market price by looking at the longer term prices which can act as the stop loss and take profit prices.
       6. The goal of shorter term analysis is to find out whether the entry setup exists and a position should be opened now. Use the overall price prediction from longer timeframe analysis and the 3 indicators provided for the shorter timeframe to confirm an entry setup. State your findings.
-      7. Only if the confidence score from step 6 is at least 7, then you should state the trade decision with the stop loss and take profit prices based on the significant price levels from step 5.
-      8. Based on the entry price, stop loss and take profit prices, calculate the reward / risk ratio.If the reward / risk ratio is greater or equal to 3, then this is a good setup that a trade should be take place. State your findings.
+      7. Only if the confidence score from step 6 is at least 7, then you should state the trade decision with the stop loss and take profit prices based on the provided current price, significant price levels from step 5 and the ATR indicator from longer timeframe indicators. We don't want the stop loss to be too small to be shaken out even without being able to test our directional prediction.
+      8. Based on the entry price, stop loss and take profit prices, calculate the reward / risk ratio. If the reward / risk ratio is greater or equal to 3, then this is a good setup that a trade should be take place. State your findings.
 
       Here are the inputs you should be receiving to perform the analysis:
 
       The trading epic (asset): {epic}
+
+      The current bid and ask prices: {currentPrice}
       
       Two timeframe price data by time resolutions, price data sorted in chronological order:
       {prices}
@@ -117,9 +125,9 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       {indicators}
 
       Performance Report:
-      - Comprehensive historical trading performance report for this epic done by you in the past. It summarizes your past performances for you to consider.
-      - Includes overall summary of past individual trade logs that has all the contextual data like prices, indicator values used, P&L, thought process behind decision making and any other useful information for each time period 1 month, 3months, 6 months, 1 year.
-      - Includes individual trade logs of 20 most recent trades for {epic} that the signal generator, order executioner and risk manager agents have left behind and their thought process per trade.
+      - Comprehensive historical trading performance report for this epic done by you in the past. It summarizes your performance of recent 20 trades.
+      - Includes overall summary of past individual trade logs that has all the contextual data like prices, indicator values used, P&L, thought process behind decision making and any other useful information for trade.
+      - I want you to pay special attention to the reasoning from the past and incorporate what went well and what did not go well in your analysis for the new trade.
       
       Performance Report content:
       {performanceReport}
@@ -128,22 +136,23 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       - The output should be exactly the way described in the zod schema
       - tradeSignalResponseSchema from below is the zod schema in Typescript for you to use for generating output.
       - action should be one of these values: long, short, none
+      - when tradeDecision.action is long or short, then you must provide the stopLoss and takeProfit as per the zod schema below
       - nearFuturePricePatterns should be one of these values: trend-continuation, trading-range, extreme-imbalance-mean-reversal
       - nearFutureDirectionPrediction should be one of these values: up, down, sideways
-      - always include the stepAnalysis as an array of strings in the output, each string is the answer to the questions in the analysis steps above
+      - always include the stepAnalysis where the key is the step number in string and the value is the answer to the questions in the analysis steps above
       
       Expected JSON Output zod Schema:
       import {{ z }} from 'zod';
 
       export enum TradeAction {{
-        Long = 'long',
-        Short = 'short',
-        None = 'none',
+        LONG = 'long',
+        SHORT = 'short',
+        NONE = 'none',
       }}
       export enum NearFuturePricePatterns {{
-        TrendContinuation = 'trend-continuation',
-        TradingRange = 'trading-range',
-        ExtremeImbalanceMeanReversal = 'extreme-imbalance-mean-reversal',
+        TREND_CONTINUATION = 'trend-continuation',
+        TRADING_RANGE = 'trading-range',
+        EXTREME_IMBALANCE_MEAN_REVERSAL = 'extreme-imbalance-mean-reversal',
       }}
 
       const activeTradeSchema = z.object({{
@@ -152,20 +161,30 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
           stopLoss: z.string().regex(/^\\d*\\.?\\d+$/, 'Must be a valid price string'),
           takeProfit: z.string().regex(/^\\d*\\.?\\d+$/, 'Must be a valid price string'),
         }}),
-        stepAnalysis: z.array(z.string()),
+        stepAnalysis: z.record(
+          z.string().regex(/^[1-8]$/, 'Must be a string number between 1 and 8'),
+          z.string(),
+        ),
       }});
 
       const noTradeSchema = z.object({{
         tradeDecision: z.object({{
           action: z.nativeEnum(TradeAction).refine((val) => val === 'none'),
         }}),
-        stepAnalysis: z.array(z.string()),
+        stepAnalysis: z.record(
+          z.string().regex(/^[1-8]$/, 'Must be a string number between 1 and 8'),
+          z.string(),
+        ),
       }});
 
       export const tradeSignalResponseSchema = z.union([
         activeTradeSchema,
         noTradeSchema,
       ]);
+
+      export type ActiveTrade = z.infer<typeof activeTradeSchema>;
+      export type NoTrade = z.infer<typeof noTradeSchema>;
+      export type TradeSignalResponse = z.infer<typeof tradeSignalResponseSchema>;
     `);
   }
 
@@ -205,9 +224,17 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
         [TimeResolution.MINUTE_15]: this.format15MinIndicators(min15Indicators),
       };
 
+      const lastPrice = last<IgPriceSnapshot>(
+        signalGeneratorContextData.prices[TimeResolution.MINUTE_15],
+      ).closePrice;
+
       const formattedPrompt = await this.promptTemplate.format({
         epic: signalGeneratorContextData.epic,
         prices: signalGeneratorContextData.prices,
+        currentPrice: {
+          bid: lastPrice.bid.toNumber(),
+          ask: lastPrice.ask.toNumber(),
+        },
         indicators,
         performanceReport:
           signalGeneratorContextData.performanceReport ||
@@ -217,11 +244,6 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       signal = await this.geminiAiService.generateSignal(
         formattedPrompt,
         tradeSignalResponseSchema,
-      );
-
-      this.logger.log(
-        'Received Gemini signal result:',
-        JSON.stringify(signal, null, 2),
       );
 
       if (signal.tradeDecision.action === TradeAction.NONE) {
@@ -236,6 +258,10 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       const currentPrice = new Big(event.snapshot.closePrice.ask);
       const stopLossPrice = new Big(signal.tradeDecision.stopLoss);
       const takeProfitPrice = new Big(signal.tradeDecision.takeProfit);
+
+      this.logger.log(
+        `Placing ${direction} order for ${event.epic} with stop loss ${stopLossPrice} and take profit ${takeProfitPrice}`,
+      );
 
       const dealReferenceId = await this.igApiService.placeBracketOrderWithRisk(
         {
@@ -350,12 +376,20 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       (val, i) => (val + ichimoku.baseLine[i]) / 2,
     );
 
+    const atr = ATR.calculate({
+      high: prices,
+      low: prices,
+      close: prices,
+      period: this.INDICATOR_PARAMS.hourly.atr.period,
+    });
+
     return {
       emaFast,
       emaMedium,
       emaSlow,
       rsi,
       ichimoku,
+      atr,
     };
   }
 
@@ -396,6 +430,11 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
         name: 'Ichimoku Cloud',
         params: this.INDICATOR_PARAMS.hourly.ichimoku,
         values: hourIndicators.ichimoku,
+      },
+      {
+        name: 'ATR',
+        params: this.INDICATOR_PARAMS.hourly.atr,
+        values: hourIndicators.atr,
       },
     ];
   }
