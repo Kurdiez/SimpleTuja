@@ -29,22 +29,39 @@ export class CoinlayerService implements OnModuleInit {
       return;
     }
 
-    const coinlayerApiKey = this.configService.get('COINLAYER_API_KEY');
-    const url = `http://api.coinlayer.com/live?access_key=${coinlayerApiKey}&symbols=ETH`;
+    const maxRetries = 5;
+    const baseDelay = 1000; // 1 second
 
-    const response = await axios.get(url);
-    const data = response.data;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const coinlayerApiKey = this.configService.get('COINLAYER_API_KEY');
+        const url = `http://api.coinlayer.com/live?access_key=${coinlayerApiKey}&symbols=ETH`;
 
-    if (data.success) {
-      const ETH_USD = data.rates.ETH;
-      this.exchangeRates = {
-        [CryptoToken.ETH]: 1,
-        [CryptoToken.WETH]: 1,
-        [CryptoToken.DAI]: ETH_USD,
-        [CryptoToken.USDC]: ETH_USD,
-      };
-    } else {
-      throw new Error('Failed to fetch exchange rates from Coinlayer');
+        const response = await axios.get(url);
+        const data = response.data;
+
+        if (data.success) {
+          const ETH_USD = data.rates.ETH;
+          this.exchangeRates = {
+            [CryptoToken.ETH]: 1,
+            [CryptoToken.WETH]: 1,
+            [CryptoToken.DAI]: ETH_USD,
+            [CryptoToken.USDC]: ETH_USD,
+          };
+          return; // Success - exit the retry loop
+        }
+        throw new Error('Failed to fetch exchange rates from Coinlayer');
+      } catch (error) {
+        if (attempt === maxRetries - 1) {
+          // If this was the last attempt, rethrow the error
+          throw new Error(
+            `Failed to update exchange rates after ${maxRetries} attempts: ${error.message}`,
+          );
+        }
+        // Wait with exponential backoff before next retry
+        const delay = baseDelay * Math.pow(2, attempt);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
     }
   }
 
