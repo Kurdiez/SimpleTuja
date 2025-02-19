@@ -114,10 +114,10 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       2. Analyze whether the longer term timeframe is trading in a trading range. Use the 4 provided indicators to analyze, state your conclusion in the form of confidence score from 0 - 10 with the reasoning.
       3. Analyze whether the longer term timeframe is in an extreme imbalance and about to do mean reversion. Use the 4 provided indicators to analyze, state your conclusion in the form of confidence score from 0 - 10 with the reasoning.
       4. State which of the 3 analysis you are choosing to trade. The confidence score has to be at least 7 and the chosen analysis has to have the highest confidence score. If there is no clear winner, you should return "none" as the trade action to not trade.
-      5. State what are the immediate significant price levels from the current market price by looking at the longer term prices which can act as the stop loss and take profit prices.
+      5. State what are the immediate significant price levels from the current market price by looking at the longer term prices which can act as the stop loss and take profit prices. Assume the entry price is the current ask or bid depending on the direction of the trade.
       6. The goal of shorter term analysis is to find out whether the entry setup exists and a position should be opened now. Use the overall price prediction from longer timeframe analysis and the 3 indicators provided for the shorter timeframe to confirm an entry setup. State your findings.
-      7. Only if the confidence score from step 6 is at least 7, then you should state the trade decision with the stop loss and take profit prices based on the provided current price, significant price levels from step 5 and the ATR indicator from longer timeframe indicators. We don't want the stop loss to be too small to be shaken out even without being able to test our directional prediction.
-      8. Based on the entry price, stop loss and take profit prices, calculate the reward / risk ratio. If the reward / risk ratio is greater or equal to 3, then this is a good setup that a trade should be take place. State your findings.
+      7. Only if the confidence score from step 6 is at least 7, then you should state the trade decision with the stop loss and take profit prices based on the provided current price, significant price levels from step 5 and the ATR indicator from longer timeframe indicators. Assume the entry price is the current ask or bid depending on the direction of the trade. We don't want the stop loss to be too small to be shaken out even without being able to test our directional prediction.
+      8. Assume the entry price is the current ask or bid depending on the direction of the trade. Based on this entry price, stop loss and take profit prices, calculate the reward / risk ratio. If the reward / risk ratio is greater or equal to 3, then this is a good setup that a trade should be take place. State your findings.
 
       Here are the inputs you should be receiving to perform the analysis:
 
@@ -140,37 +140,16 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       {performanceReport}
 
       Your output JSON:
-      - The output should be exactly the way described in the zod schema
-      - tradeSignalResponseSchema from below is the zod schema in Typescript for you to use for generating output.
+      - The output should be exactly the way described below
       - action should be one of these values: long, short, none
-      - when tradeDecision.action is long or short, then you must provide the stopLoss and takeProfit as per the zod schema below
-      - nearFuturePricePatterns should be one of these values: trend-continuation, trading-range, extreme-imbalance-mean-reversal
-      - nearFutureDirectionPrediction should be one of these values: up, down, sideways
       - always include the stepAnalysis where the key is the step number in string and the value is the answer to the questions in the analysis steps above
 
-      Example Output (Active Trade - LONG):
+      Example Output:
       {{
         "tradeDecision": {{
           "action": "long",
           "stopLoss": "1.0790",
           "takeProfit": "1.0830"
-        }},
-        "stepAnalysis": {{
-          "1": "State the analysis you have done and the outcome.",
-          "2": "State the analysis you have done and the outcome.",
-          "3": "State the analysis you have done and the outcome.",
-          "4": "State the analysis you have done and the outcome.",
-          "5": "State the analysis you have done and the outcome.",
-          "6": "State the analysis you have done and the outcome.",
-          "7": "State the analysis you have done and the outcome.",
-          "8": "State the analysis you have done and the outcome."
-        }}
-      }}
-
-      Example Output (No Trade):
-      {{
-        "tradeDecision": {{
-          "action": "none"
         }},
         "stepAnalysis": {{
           "1": "State the analysis you have done and the outcome.",
@@ -255,7 +234,14 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
 
       rawResponse =
         await this.geminiAiService.generateRawResponse(formattedPrompt);
-      signal = await this.parser.parse(rawResponse);
+
+      try {
+        signal = await this.parser.parse(rawResponse);
+      } catch (e) {
+        console.log('Parse failed, raw response: ', rawResponse);
+        console.log('Error: ', e);
+        throw e;
+      }
 
       if (signal.tradeDecision.action === TradeAction.NONE) {
         return;
