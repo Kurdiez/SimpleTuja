@@ -235,17 +235,18 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       rawResponse =
         await this.geminiAiService.generateRawResponse(formattedPrompt);
 
-      try {
-        signal = await this.parser.parse(rawResponse);
-      } catch (e) {
-        console.log('Parse failed, raw response: ', rawResponse);
-        console.log('Error: ', e);
-        throw e;
-      }
+      signal = await this.parser.parse(rawResponse);
 
       if (signal.tradeDecision.action === TradeAction.NONE) {
+        this.logger.log('No trade signal generated - action is NONE');
         return;
       }
+
+      this.logger.log('Trade signal generated:', {
+        action: signal.tradeDecision.action,
+        stopLoss: signal.tradeDecision.stopLoss,
+        takeProfit: signal.tradeDecision.takeProfit,
+      });
 
       const direction =
         signal.tradeDecision.action === TradeAction.LONG
@@ -255,6 +256,14 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       const currentPrice = new Big(event.snapshot.closePrice.ask);
       const stopLossPrice = new Big(signal.tradeDecision.stopLoss);
       const takeProfitPrice = new Big(signal.tradeDecision.takeProfit);
+
+      this.logger.log('Calculated order parameters:', {
+        direction,
+        currentPrice: currentPrice.toString(),
+        stopLossPrice: stopLossPrice.toString(),
+        takeProfitPrice: takeProfitPrice.toString(),
+        riskPercentage: this.DefaultRiskPercentage,
+      });
 
       this.logger.log(
         `Placing ${direction} order for ${event.epic} with stop loss ${stopLossPrice} and take profit ${takeProfitPrice}`,
@@ -271,6 +280,11 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
         },
       );
 
+      this.logger.log('Order placed successfully:', {
+        dealReferenceId,
+        epic: event.epic,
+      });
+
       await this.tradingPositionRepository.save({
         brokerDealId: dealReferenceId,
         strategy: TradingStrategy.N8N_AI,
@@ -279,6 +293,12 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
         metadata: {
           signal,
         },
+      });
+
+      this.logger.log('Trade position saved to database:', {
+        dealReferenceId,
+        epic: event.epic,
+        strategy: TradingStrategy.N8N_AI,
       });
     } catch (error) {
       console.error('Parsing Error:', error); // Log the full error

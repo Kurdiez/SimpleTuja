@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import Big from 'big.js';
 import { captureException } from '~/commons/error-handlers/capture-exception';
@@ -23,6 +23,7 @@ export class IgApiService {
   private tradingSecurityToken: string | null = null;
   private dataCst: string | null = null;
   private dataSecurityToken: string | null = null;
+  private readonly logger = new Logger(IgApiService.name);
 
   constructor(private readonly configService: ConfigService) {
     // Initialize trading client
@@ -262,6 +263,7 @@ export class IgApiService {
     takeProfitPrice?: Big;
   }) {
     try {
+      this.logger.log('Fetching account info for risk calculation');
       const { data: accountInfo } = await this.makeIgRequest<{
         accounts: Array<{
           balance: {
@@ -277,8 +279,15 @@ export class IgApiService {
         },
       });
       const balance = new Big(accountInfo.accounts[0].balance.balance);
+      this.logger.log('Account balance retrieved:', {
+        balance: balance.toString(),
+      });
 
       const riskAmount = balance.times(riskPercentage);
+      this.logger.log('Risk amount calculated:', {
+        riskAmount: riskAmount.toString(),
+        riskPercentage: riskPercentage.toString(),
+      });
 
       const { positionSize } = await this.calculatePositionSize({
         epic,
@@ -287,14 +296,36 @@ export class IgApiService {
         stopLossPrice,
       });
 
-      return await this.placeBracketOrder({
+      this.logger.log('Position size calculated:', {
+        positionSize: positionSize.toString(),
+        epic,
+        currentPrice: currentPrice.toString(),
+        stopLossPrice: stopLossPrice.toString(),
+      });
+
+      const dealReference = await this.placeBracketOrder({
         epic,
         direction,
         size: positionSize,
         stopLossPrice,
         takeProfitPrice,
       });
+
+      this.logger.log('Bracket order placed successfully:', {
+        dealReference,
+        epic,
+        direction,
+        size: positionSize.toString(),
+      });
+
+      return dealReference;
     } catch (error) {
+      this.logger.error('Failed to place risk-based bracket order:', {
+        error,
+        epic,
+        direction,
+        riskPercentage: riskPercentage.toString(),
+      });
       captureException({ error });
       throw new CustomException('Failed to place risk-based bracket order', {
         error,
@@ -318,6 +349,7 @@ export class IgApiService {
     stopLossPrice: Big;
     takeProfitPrice?: Big;
   }): Promise<string> {
+    this.logger.log('Getting market details:', { epic });
     const {
       data: {
         instrument: { currencies },
@@ -325,7 +357,14 @@ export class IgApiService {
       },
     } = await this.getMarketDetails(epic);
 
+    this.logger.log('Market details retrieved:', {
+      epic,
+      marketStatus,
+      currencies: currencies.map((c) => c.code),
+    });
+
     if (marketStatus !== MarketStatus.TRADEABLE) {
+      this.logger.warn('Market is not tradeable:', { epic, marketStatus });
       throw new CustomException('Market is not currently tradeable', {
         epic,
         marketStatus,
@@ -335,11 +374,21 @@ export class IgApiService {
     const currencyCode = currencies[0].code;
 
     if (!TradableCurrencies.includes(currencyCode)) {
+      this.logger.warn('Currency is not tradable:', { epic, currencyCode });
       throw new CustomException(`Currency is not tradable`, {
         epic,
         currencyCode,
       });
     }
+
+    this.logger.log('Placing order with parameters:', {
+      epic,
+      direction,
+      size: size.toString(),
+      stopLossPrice: stopLossPrice.toString(),
+      takeProfitPrice: takeProfitPrice?.toString(),
+      currencyCode,
+    });
 
     const { data } = await this.makeIgRequest({
       client: 'trading',
@@ -359,7 +408,7 @@ export class IgApiService {
       },
     });
 
-    // deal reference ID
+    this.logger.log('Order placed successfully:', { dealReference: data });
     return data as string;
   }
 
