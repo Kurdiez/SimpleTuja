@@ -14,60 +14,15 @@ export class GeminiAiService {
     });
   }
 
-  async generateSignal(prompt: string, schema: any): Promise<any> {
-    const structuredPrompt = `${prompt}
-
-IMPORTANT: Your response must be valid JSON matching this exact structure:
-For trades (when action is "long" or "short"):
-{
-  "tradeDecision": {
-    "action": "long" or "short",
-    "stopLoss": "numeric_price",
-    "takeProfit": "numeric_price"
-  },
-  "stepAnalysis": {
-    "1": "analysis_text",
-    ...
-    "8": "analysis_text"
-  }
-}
-
-For no-trade:
-{
-  "tradeDecision": {
-    "action": "none"
-  },
-  "stepAnalysis": {
-    "1": "analysis_text",
-    ...
-    "8": "analysis_text"
-  }
-}`;
-
-    const response = await this.model.invoke(structuredPrompt);
-    const responseText = response.content.toString();
-    const cleanedResponse = this.cleanJsonResponse(responseText);
-
-    this.logger.log(
-      'Received Gemini signal result:',
-      JSON.stringify(cleanedResponse, null, 2),
-    );
-
-    return schema.parse(cleanedResponse);
-  }
-
-  private cleanJsonResponse(response: string): any {
-    // Remove markdown code block if present
-    const cleanedString = response
-      .replace(/```json\n/, '')
-      .replace(/```\n?$/, '')
-      .trim();
-
+  async generateRawResponse(prompt: string): Promise<string> {
     try {
-      const parsed = JSON.parse(cleanedString);
-      return parsed;
+      const result = await this.model.invoke(prompt);
+      const responseText = result.content.toString();
+      this.logger.log(`Raw Gemini Response: ${responseText}`);
+      return responseText;
     } catch (error) {
-      throw new Error(`Failed to parse Gemini AI response: ${error.message}`);
+      this.logger.error('Error generating raw response from Gemini:', error);
+      throw error;
     }
   }
 }

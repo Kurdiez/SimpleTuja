@@ -1,3 +1,4 @@
+import { StructuredOutputParser } from '@langchain/core/output_parsers';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -46,6 +47,10 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
   private subscriptions: DataSubscription[];
   private readonly DefaultRiskPercentage = 0.03; // 3% risk per trade
   private readonly promptTemplate: PromptTemplate;
+
+  private readonly parser: StructuredOutputParser<any> =
+    StructuredOutputParser.fromZodSchema(tradeSignalResponseSchema as any);
+
   private readonly INDICATOR_PARAMS = {
     hourly: {
       ema: {
@@ -95,7 +100,9 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
     private readonly tradingPositionRepository: Repository<TradingPositionEntity>,
   ) {
     this.epicsToTrade = [IgEpic.EURUSD];
-    this.promptTemplate = PromptTemplate.fromTemplate(`
+
+    this.promptTemplate = new PromptTemplate({
+      template: `
       Who you are:
       - You are a swing trader who should hold position on average 1-2 days.
       - You analyze two timeframes, one longer and one shorter, with multiple indicators for multiple confirmations.
@@ -140,52 +147,56 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       - nearFuturePricePatterns should be one of these values: trend-continuation, trading-range, extreme-imbalance-mean-reversal
       - nearFutureDirectionPrediction should be one of these values: up, down, sideways
       - always include the stepAnalysis where the key is the step number in string and the value is the answer to the questions in the analysis steps above
-      
-      Expected JSON Output zod Schema:
-      import {{ z }} from 'zod';
 
-      export enum TradeAction {{
-        LONG = 'long',
-        SHORT = 'short',
-        NONE = 'none',
+      Example Output (Active Trade - LONG):
+      {{
+        "tradeDecision": {{
+          "action": "long",
+          "stopLoss": "1.0790",
+          "takeProfit": "1.0830"
+        }},
+        "stepAnalysis": {{
+          "1": "State the analysis you have done and the outcome.",
+          "2": "State the analysis you have done and the outcome.",
+          "3": "State the analysis you have done and the outcome.",
+          "4": "State the analysis you have done and the outcome.",
+          "5": "State the analysis you have done and the outcome.",
+          "6": "State the analysis you have done and the outcome.",
+          "7": "State the analysis you have done and the outcome.",
+          "8": "State the analysis you have done and the outcome."
+        }}
       }}
-      export enum NearFuturePricePatterns {{
-        TREND_CONTINUATION = 'trend-continuation',
-        TRADING_RANGE = 'trading-range',
-        EXTREME_IMBALANCE_MEAN_REVERSAL = 'extreme-imbalance-mean-reversal',
+
+      Example Output (No Trade):
+      {{
+        "tradeDecision": {{
+          "action": "none"
+        }},
+        "stepAnalysis": {{
+          "1": "State the analysis you have done and the outcome.",
+          "2": "State the analysis you have done and the outcome.",
+          "3": "State the analysis you have done and the outcome.",
+          "4": "State the analysis you have done and the outcome.",
+          "5": "State the analysis you have done and the outcome.",
+          "6": "State the analysis you have done and the outcome.",
+          "7": "State the analysis you have done and the outcome.",
+          "8": "State the analysis you have done and the outcome."
+        }}
       }}
 
-      const activeTradeSchema = z.object({{
-        tradeDecision: z.object({{
-          action: z.nativeEnum(TradeAction).refine((val) => val !== 'none'),
-          stopLoss: z.string().regex(/^\\d*\\.?\\d+$/, 'Must be a valid price string'),
-          takeProfit: z.string().regex(/^\\d*\\.?\\d+$/, 'Must be a valid price string'),
-        }}),
-        stepAnalysis: z.record(
-          z.string().regex(/^[1-8]$/, 'Must be a string number between 1 and 8'),
-          z.string(),
-        ),
-      }});
-
-      const noTradeSchema = z.object({{
-        tradeDecision: z.object({{
-          action: z.nativeEnum(TradeAction).refine((val) => val === 'none'),
-        }}),
-        stepAnalysis: z.record(
-          z.string().regex(/^[1-8]$/, 'Must be a string number between 1 and 8'),
-          z.string(),
-        ),
-      }});
-
-      export const tradeSignalResponseSchema = z.union([
-        activeTradeSchema,
-        noTradeSchema,
-      ]);
-
-      export type ActiveTrade = z.infer<typeof activeTradeSchema>;
-      export type NoTrade = z.infer<typeof noTradeSchema>;
-      export type TradeSignalResponse = z.infer<typeof tradeSignalResponseSchema>;
-    `);
+      {format_instructions}
+      `,
+      inputVariables: [
+        'epic',
+        'currentPrice',
+        'prices',
+        'indicators',
+        'performanceReport',
+      ],
+      partialVariables: {
+        format_instructions: this.parser.getFormatInstructions(),
+      },
+    });
   }
 
   onModuleInit() {
@@ -205,6 +216,7 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
 
   async handle15MinUpdate(event: PriceUpdateEvent) {
     let signal: TradeSignalResponse;
+    let rawResponse: string; // Store raw response for debugging
     try {
       const signalGeneratorContextData =
         await this.prepSignalGeneratorContextData(event);
@@ -241,10 +253,9 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
           'No performance report available',
       });
 
-      signal = await this.geminiAiService.generateSignal(
-        formattedPrompt,
-        tradeSignalResponseSchema,
-      );
+      rawResponse =
+        await this.geminiAiService.generateRawResponse(formattedPrompt);
+      signal = await this.parser.parse(rawResponse);
 
       if (signal.tradeDecision.action === TradeAction.NONE) {
         return;
@@ -284,15 +295,17 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
         },
       });
     } catch (error) {
+      console.error('Parsing Error:', error); // Log the full error
       const exception = new CustomException(
-        'Gemini AI Strategy failed to handle 15 min update',
+        'Gemini AI Strategy failed to handle 15 min update - PARSING ERROR',
         {
           error,
           epic: event.epic,
-          signal,
+          rawResponse: rawResponse, // Include raw response in the exception
         },
       );
       captureException({ error: exception });
+      // Consider adding a retry mechanism here
     }
   }
 
