@@ -390,7 +390,9 @@ export class IgApiService {
       currencyCode,
     });
 
-    const { data } = await this.makeIgRequest({
+    const {
+      data: { dealReference },
+    } = await this.makeIgRequest<{ dealReference: string }>({
       client: 'trading',
       method: 'post',
       endpoint: '/positions/otc',
@@ -408,8 +410,8 @@ export class IgApiService {
       },
     });
 
-    this.logger.log('Order placed successfully:', { dealReference: data });
-    return data as string;
+    this.logger.log('Order placed successfully:', dealReference);
+    return dealReference as string;
   }
 
   async updatePositionLevels({

@@ -53,5 +53,5 @@ export enum OrderType {
 }
 
 export enum TradingStrategy {
-  N8N_AI = 'N8N_AI',
+  DTIG_AI = 'DTIG_AI',
 }
