@@ -168,6 +168,9 @@ export class IgApiService {
         valueOfOnePip: string;
         lotSize: number;
         currencies: { code: TradingCurrency }[];
+        contractSize: string;
+        onePipMeans: string;
+        type: string;
       };
       snapshot: {
         marketStatus: string;
@@ -196,41 +199,82 @@ export class IgApiService {
     try {
       const { data: marketDetails } = await this.getMarketDetails(epic);
 
-      const valueOfOnePip = Number(marketDetails.instrument.valueOfOnePip);
       const lotSize = Number(marketDetails.instrument.lotSize);
+      const instrumentType = marketDetails.instrument.type;
 
-      if (isNaN(valueOfOnePip) || isNaN(lotSize)) {
-        throw new CustomException('Invalid number conversion', {
-          valueOfOnePip,
+      if (isNaN(lotSize)) {
+        throw new CustomException('Invalid lot size', {
           lotSize,
           marketDetails: marketDetails.instrument,
         });
       }
 
-      const valueOfOnePipBig = new Big(valueOfOnePip);
-      const lotSizeBig = new Big(lotSize);
-
-      // Calculate price difference between entry and stop loss
+      // Calculate absolute price difference
       const priceDifference = currentPrice.minus(stopLossPrice).abs();
 
-      // Calculate position size based on risk amount
-      const positionSize = riskAmount.div(
-        priceDifference.times(valueOfOnePipBig),
-      );
+      let positionSize: Big;
 
-      // Round down to the nearest lot size
-      const roundedSize = positionSize
-        .div(lotSizeBig)
+      if (instrumentType === 'CURRENCIES') {
+        // FX-specific calculation using pips
+        const valueOfOnePip = Number(marketDetails.instrument.valueOfOnePip);
+        const contractSize = Number(marketDetails.instrument.contractSize);
+        const pipSize = new Big(
+          marketDetails.instrument.onePipMeans.split(' ')[0],
+        );
+
+        if (isNaN(valueOfOnePip) || isNaN(contractSize)) {
+          throw new CustomException('Invalid FX parameters', {
+            valueOfOnePip,
+            contractSize,
+            marketDetails: marketDetails.instrument,
+          });
+        }
+
+        const pipDifference = priceDifference.div(pipSize);
+        const standardLot = new Big(contractSize);
+        positionSize = riskAmount
+          .div(pipDifference.times(valueOfOnePip))
+          .times(standardLot);
+      } else {
+        // TODO: Add support for other instrument types
+        throw new CustomException('Unsupported instrument type', {
+          instrumentType,
+          marketDetails: marketDetails.instrument,
+        });
+      }
+
+      // Round to valid lot size
+      const numberOfLots = positionSize.div(lotSize);
+      const roundedLots = numberOfLots
+        .div(lotSize)
         .round(0, Big.roundDown)
-        .times(lotSizeBig);
+        .times(lotSize);
+      const finalLots = roundedLots.gt(lotSize)
+        ? roundedLots
+        : new Big(lotSize);
+      const finalSize = finalLots.times(lotSize);
 
-      // Ensure the position size is not smaller than the lot size
-      const finalSize = roundedSize.gt(lotSizeBig) ? roundedSize : lotSizeBig;
+      // Calculate potential loss based on instrument type
+      let potentialLoss: Big;
+      if (instrumentType === 'CURRENCIES') {
+        const valueOfOnePip = Number(marketDetails.instrument.valueOfOnePip);
+        const contractSize = Number(marketDetails.instrument.contractSize);
+        const pipSize = new Big(
+          marketDetails.instrument.onePipMeans.split(' ')[0],
+        );
+        const pipDifference = priceDifference.div(pipSize);
 
-      // Calculate potential loss
-      const potentialLoss = finalSize
-        .times(priceDifference)
-        .times(valueOfOnePipBig);
+        potentialLoss = finalSize
+          .div(contractSize)
+          .times(pipDifference)
+          .times(valueOfOnePip);
+      } else {
+        // TODO: Add support for other instrument types
+        throw new CustomException('Unsupported instrument type', {
+          instrumentType,
+          marketDetails: marketDetails.instrument,
+        });
+      }
 
       return {
         positionSize: finalSize,
@@ -488,6 +532,8 @@ export class IgApiService {
         Version: '1',
       },
     });
+
+    console.log('Deal status:', data);
 
     if (data.dealStatus === 'REJECTED') {
       throw new CustomException('Deal was rejected', {
