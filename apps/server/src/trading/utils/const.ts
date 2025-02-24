@@ -55,3 +55,9 @@ export enum OrderType {
 export enum TradingStrategy {
   DTIG_AI = 'DTIG_AI',
 }
+
+export enum TradingPositionStatus {
+  PENDING = 'PENDING',
+  OPENED = 'OPENED',
+  CLOSED = 'CLOSED',
+}

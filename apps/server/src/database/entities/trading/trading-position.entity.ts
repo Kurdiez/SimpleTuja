@@ -9,6 +9,7 @@ import {
 import {
   IgEpic,
   PositionDirection,
+  TradingPositionStatus,
   TradingStrategy,
 } from '~/trading/utils/const';
 import { bigTransformer } from '../../utils/big-transformer';
@@ -17,6 +18,13 @@ import { bigTransformer } from '../../utils/big-transformer';
 export class TradingPositionEntity {
   @PrimaryGeneratedColumn()
   id!: number;
+
+  @Index()
+  @Column('enum', {
+    enum: TradingPositionStatus,
+    default: TradingPositionStatus.PENDING,
+  })
+  status!: TradingPositionStatus;
 
   @Index()
   @Column('varchar')

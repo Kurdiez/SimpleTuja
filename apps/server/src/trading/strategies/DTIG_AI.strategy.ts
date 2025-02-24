@@ -269,16 +269,15 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
         `Placing ${direction} order for ${event.epic} with stop loss ${stopLossPrice} and take profit ${takeProfitPrice}`,
       );
 
-      const dealReferenceId = await this.igApiService.placeBracketOrderWithRisk(
-        {
+      const dealReferenceId: string | null =
+        await this.igApiService.placeBracketOrderWithRisk({
           epic: event.epic,
           direction,
           riskPercentage: new Big(this.DefaultRiskPercentage),
           currentPrice,
           stopLossPrice,
           takeProfitPrice,
-        },
-      );
+        });
 
       this.logger.log('Order placed successfully:', {
         dealReferenceId,

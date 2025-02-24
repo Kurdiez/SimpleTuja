@@ -1,16 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import axios, { AxiosInstance } from 'axios';
 import Big from 'big.js';
+import { Not, Repository } from 'typeorm';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { retry } from '~/commons/utils/retry';
 import { ConfigService } from '~/config';
+import { TradingPositionEntity } from '~/database/entities/trading/trading-position.entity';
 import {
   IgEpic,
   MarketStatus,
   PositionDirection,
   TimeResolution,
   TradingCurrency,
+  TradingPositionStatus,
 } from '../utils/const';
 
 const TradableCurrencies = [TradingCurrency.USD];
@@ -25,7 +29,11 @@ export class IgApiService {
   private dataSecurityToken: string | null = null;
   private readonly logger = new Logger(IgApiService.name);
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(TradingPositionEntity)
+    private readonly tradingPositionRepo: Repository<TradingPositionEntity>,
+  ) {
     // Initialize trading client
     const tradingApiKey = configService.get('IG_DEMO_API_KEY');
     const tradingBaseURL = configService.get('IG_DEMO_API_BASE_URL');
@@ -381,7 +389,7 @@ export class IgApiService {
     currentPrice: Big;
     stopLossPrice: Big;
     takeProfitPrice?: Big;
-  }) {
+  }): Promise<string | null> {
     try {
       this.logger.log('Fetching account info for risk calculation');
       const { data: accountInfo } = await this.makeIgRequest<{
@@ -453,27 +461,24 @@ export class IgApiService {
 
       return dealReference;
     } catch (error) {
-      if (error instanceof CustomException) {
-        this.logger.log('Failed to place risk-based bracket order:', {
-          error,
-          epic,
-          direction,
-          riskPercentage: riskPercentage.toString(),
-        });
-        return null;
-      }
-
-      captureException({ error });
-      throw new CustomException(
-        'Unexpected error while placing risk-based bracket order',
-        {
-          error,
-          epic,
-          direction,
-          riskPercentage: riskPercentage.toString(),
-        },
-      );
+      throw new CustomException('Failed to place risk-based bracket order:', {
+        error,
+        epic,
+        direction,
+        riskPercentage: riskPercentage.toString(),
+      });
     }
+  }
+
+  private async hasOpenPosition(epic: IgEpic): Promise<boolean> {
+    const openPosition = await this.tradingPositionRepo.findOne({
+      where: {
+        epic,
+        status: Not(TradingPositionStatus.CLOSED),
+      },
+    });
+
+    return !!openPosition;
   }
 
   async placeBracketOrder({
@@ -494,6 +499,15 @@ export class IgApiService {
     this.logger.log('Getting market details:', { epic });
 
     try {
+      // Check for existing open position
+      const hasOpen = await this.hasOpenPosition(epic);
+      if (hasOpen) {
+        this.logger.log('Skipping order - position already open for epic:', {
+          epic,
+        });
+        return null;
+      }
+
       // Get account information first
       const { data: accountInfo } = await this.makeIgRequest<{
         accounts: Array<{
@@ -588,26 +602,12 @@ export class IgApiService {
       this.logger.log('Order placed successfully:', dealReference);
       return dealReference as string;
     } catch (error) {
-      if (error instanceof CustomException) {
-        this.logger.log('Failed to place bracket order:', {
-          error,
-          epic,
-          direction,
-          size: size.toString(),
-        });
-        return null;
-      }
-
-      captureException({ error });
-      throw new CustomException(
-        'Unexpected error while placing bracket order',
-        {
-          error,
-          epic,
-          direction,
-          size: size.toString(),
-        },
-      );
+      throw new CustomException('Failed to place bracket order:', {
+        error,
+        epic,
+        direction,
+        size: size.toString(),
+      });
     }
   }
 
