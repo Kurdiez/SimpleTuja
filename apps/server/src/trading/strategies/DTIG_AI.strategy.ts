@@ -285,21 +285,23 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
         epic: event.epic,
       });
 
-      await this.tradingPositionRepository.save({
-        brokerDealId: dealReferenceId,
-        strategy: TradingStrategy.DTIG_AI,
-        epic: event.epic,
-        direction,
-        metadata: {
-          signal,
-        },
-      });
+      if (dealReferenceId) {
+        await this.tradingPositionRepository.save({
+          brokerDealId: dealReferenceId,
+          strategy: TradingStrategy.DTIG_AI,
+          epic: event.epic,
+          direction,
+          metadata: {
+            signal,
+          },
+        });
 
-      this.logger.log('Trade position saved to database:', {
-        dealReferenceId,
-        epic: event.epic,
-        strategy: TradingStrategy.DTIG_AI,
-      });
+        this.logger.log('Trade position saved to database:', {
+          dealReferenceId,
+          epic: event.epic,
+          strategy: TradingStrategy.DTIG_AI,
+        });
+      }
     } catch (error) {
       console.error('Parsing Error:', error); // Log the full error
       const exception = new CustomException(

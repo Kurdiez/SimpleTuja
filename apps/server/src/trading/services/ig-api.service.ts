@@ -171,6 +171,11 @@ export class IgApiService {
         contractSize: string;
         onePipMeans: string;
         type: string;
+        marginDepositBands: Array<{
+          min: number;
+          max: number | null;
+          margin: number;
+        }>;
       };
       snapshot: {
         marketStatus: string;
@@ -185,6 +190,46 @@ export class IgApiService {
     });
   }
 
+  private calculateMarginRequirement({
+    size,
+    currentPrice,
+    marketDetails,
+  }: {
+    size: Big;
+    currentPrice: Big;
+    marketDetails: {
+      instrument: {
+        contractSize: string;
+        lotSize: number;
+        marginDepositBands: Array<{
+          min: number;
+          max: number | null;
+          margin: number;
+        }>;
+      };
+    };
+  }): { marginRequirement: Big; positionValue: Big } {
+    const lotSize = Number(marketDetails.instrument.lotSize);
+    const positionValue = size
+      .times(Number(marketDetails.instrument.contractSize))
+      .times(currentPrice);
+
+    const marginBand = marketDetails.instrument.marginDepositBands.find(
+      (band) => {
+        const positionSizeInLots = size.div(lotSize).toNumber();
+        return (
+          positionSizeInLots >= band.min &&
+          (band.max === null || positionSizeInLots <= band.max)
+        );
+      },
+    );
+
+    const marginPercentage = new Big(marginBand.margin).div(100);
+    const marginRequirement = positionValue.times(marginPercentage);
+
+    return { marginRequirement, positionValue };
+  }
+
   async calculatePositionSize({
     epic,
     riskAmount,
@@ -197,12 +242,30 @@ export class IgApiService {
     stopLossPrice: Big;
   }) {
     try {
+      this.logger.log('Starting position size calculation:', {
+        epic,
+        riskAmount: riskAmount.toString(),
+        currentPrice: currentPrice.toString(),
+        stopLossPrice: stopLossPrice.toString(),
+      });
+
       const { data: marketDetails } = await this.getMarketDetails(epic);
+      this.logger.log('Market details retrieved:', {
+        lotSize: marketDetails.instrument.lotSize,
+        instrumentType: marketDetails.instrument.type,
+        valueOfOnePip: marketDetails.instrument.valueOfOnePip,
+        contractSize: marketDetails.instrument.contractSize,
+        onePipMeans: marketDetails.instrument.onePipMeans,
+      });
 
       const lotSize = Number(marketDetails.instrument.lotSize);
       const instrumentType = marketDetails.instrument.type;
 
       if (isNaN(lotSize)) {
+        this.logger.error('Invalid lot size detected:', {
+          lotSize,
+          marketDetails: marketDetails.instrument,
+        });
         throw new CustomException('Invalid lot size', {
           lotSize,
           marketDetails: marketDetails.instrument,
@@ -211,76 +274,89 @@ export class IgApiService {
 
       // Calculate absolute price difference
       const priceDifference = currentPrice.minus(stopLossPrice).abs();
+      this.logger.log('Price difference calculated:', {
+        priceDifference: priceDifference.toString(),
+      });
 
       let positionSize: Big;
-
-      if (instrumentType === 'CURRENCIES') {
-        // FX-specific calculation using pips
-        const valueOfOnePip = Number(marketDetails.instrument.valueOfOnePip);
-        const contractSize = Number(marketDetails.instrument.contractSize);
-        const pipSize = new Big(
-          marketDetails.instrument.onePipMeans.split(' ')[0],
-        );
-
-        if (isNaN(valueOfOnePip) || isNaN(contractSize)) {
-          throw new CustomException('Invalid FX parameters', {
-            valueOfOnePip,
-            contractSize,
-            marketDetails: marketDetails.instrument,
-          });
-        }
-
-        const pipDifference = priceDifference.div(pipSize);
-        const standardLot = new Big(contractSize);
-        positionSize = riskAmount
-          .div(pipDifference.times(valueOfOnePip))
-          .times(standardLot);
-      } else {
-        // TODO: Add support for other instrument types
-        throw new CustomException('Unsupported instrument type', {
-          instrumentType,
-          marketDetails: marketDetails.instrument,
-        });
-      }
-
-      // Round to valid lot size
-      const numberOfLots = positionSize.div(lotSize);
-      const roundedLots = numberOfLots
-        .div(lotSize)
-        .round(0, Big.roundDown)
-        .times(lotSize);
-      const finalLots = roundedLots.gt(lotSize)
-        ? roundedLots
-        : new Big(lotSize);
-      const finalSize = finalLots.times(lotSize);
-
-      // Calculate potential loss based on instrument type
       let potentialLoss: Big;
-      if (instrumentType === 'CURRENCIES') {
-        const valueOfOnePip = Number(marketDetails.instrument.valueOfOnePip);
-        const contractSize = Number(marketDetails.instrument.contractSize);
-        const pipSize = new Big(
-          marketDetails.instrument.onePipMeans.split(' ')[0],
-        );
-        const pipDifference = priceDifference.div(pipSize);
 
-        potentialLoss = finalSize
-          .div(contractSize)
-          .times(pipDifference)
-          .times(valueOfOnePip);
+      if (instrumentType === 'CURRENCIES') {
+        this.logger.log('Calculating position size for CURRENCIES');
+        const contractSize = Number(marketDetails.instrument.contractSize);
+
+        // Calculate required position size to achieve desired risk amount
+        positionSize = riskAmount.div(
+          new Big(contractSize).times(priceDifference).times(currentPrice),
+        );
+
+        this.logger.log('Initial position size calculated:', {
+          positionSize: positionSize.toString(),
+          contractSize,
+          priceDifference: priceDifference.toString(),
+          expectedLoss: positionSize
+            .times(contractSize)
+            .times(priceDifference)
+            .times(currentPrice)
+            .toString(),
+        });
+
+        // Round to whole number
+        positionSize = positionSize.round(0, Big.roundDown);
+
+        // Ensure minimum size of 1
+        positionSize = positionSize.lt(1) ? new Big(1) : positionSize;
+
+        // Calculate actual potential loss
+        potentialLoss = positionSize
+          .times(contractSize)
+          .times(priceDifference)
+          .times(currentPrice);
+
+        this.logger.log('Final position size calculated:', {
+          finalSize: positionSize.toString(),
+          expectedLoss: potentialLoss.toString(),
+          targetRisk: riskAmount.toString(),
+          difference: potentialLoss.minus(riskAmount).toString(),
+        });
       } else {
-        // TODO: Add support for other instrument types
+        this.logger.warn('Unsupported instrument type:', { instrumentType });
         throw new CustomException('Unsupported instrument type', {
           instrumentType,
           marketDetails: marketDetails.instrument,
         });
       }
+
+      // Replace margin calculation with shared method
+      const { marginRequirement } = this.calculateMarginRequirement({
+        size: positionSize,
+        currentPrice,
+        marketDetails,
+      });
+
+      this.logger.log('Margin requirement calculated:', {
+        marginRequirement: marginRequirement.toString(),
+      });
+
+      this.logger.log('Position size calculation completed:', {
+        positionSize: positionSize.toString(),
+        potentialLoss: potentialLoss.toString(),
+        marginRequirement: marginRequirement.toString(),
+      });
 
       return {
-        positionSize: finalSize,
+        positionSize,
         potentialLoss,
+        marginRequirement,
       };
     } catch (error) {
+      this.logger.error('Failed to calculate position size:', {
+        error,
+        epic,
+        riskAmount: riskAmount.toString(),
+        currentPrice: currentPrice.toString(),
+        stopLossPrice: stopLossPrice.toString(),
+      });
       throw new CustomException('Failed to calculate position size', {
         error,
         epic,
@@ -333,27 +409,40 @@ export class IgApiService {
         riskPercentage: riskPercentage.toString(),
       });
 
-      const { positionSize } = await this.calculatePositionSize({
-        epic,
-        riskAmount,
-        currentPrice,
-        stopLossPrice,
-      });
+      const { positionSize, potentialLoss, marginRequirement } =
+        await this.calculatePositionSize({
+          epic,
+          riskAmount,
+          currentPrice,
+          stopLossPrice,
+        });
 
       this.logger.log('Position size calculated:', {
         positionSize: positionSize.toString(),
         epic,
         currentPrice: currentPrice.toString(),
         stopLossPrice: stopLossPrice.toString(),
+        potentialLoss: potentialLoss.toString(),
+        marginRequirement: marginRequirement.toString(),
       });
 
-      const dealReference = await this.placeBracketOrder({
+      const dealReference: string | null = await this.placeBracketOrder({
         epic,
         direction,
         size: positionSize,
         stopLossPrice,
         takeProfitPrice,
+        currentPrice,
       });
+
+      if (!dealReference) {
+        this.logger.log('Failed to place risk-based bracket order', {
+          epic,
+          direction,
+          riskPercentage: riskPercentage.toString(),
+        });
+        return null;
+      }
 
       this.logger.log('Bracket order placed successfully:', {
         dealReference,
@@ -364,19 +453,26 @@ export class IgApiService {
 
       return dealReference;
     } catch (error) {
-      this.logger.error('Failed to place risk-based bracket order:', {
-        error,
-        epic,
-        direction,
-        riskPercentage: riskPercentage.toString(),
-      });
+      if (error instanceof CustomException) {
+        this.logger.log('Failed to place risk-based bracket order:', {
+          error,
+          epic,
+          direction,
+          riskPercentage: riskPercentage.toString(),
+        });
+        return null;
+      }
+
       captureException({ error });
-      throw new CustomException('Failed to place risk-based bracket order', {
-        error,
-        epic,
-        direction,
-        riskPercentage: riskPercentage.toString(),
-      });
+      throw new CustomException(
+        'Unexpected error while placing risk-based bracket order',
+        {
+          error,
+          epic,
+          direction,
+          riskPercentage: riskPercentage.toString(),
+        },
+      );
     }
   }
 
@@ -386,76 +482,133 @@ export class IgApiService {
     size,
     stopLossPrice,
     takeProfitPrice,
+    currentPrice,
   }: {
     epic: IgEpic;
     direction: PositionDirection;
     size: Big;
     stopLossPrice: Big;
     takeProfitPrice?: Big;
-  }): Promise<string> {
+    currentPrice: Big;
+  }): Promise<string | null> {
     this.logger.log('Getting market details:', { epic });
-    const {
-      data: {
-        instrument: { currencies },
-        snapshot: { marketStatus },
-      },
-    } = await this.getMarketDetails(epic);
 
-    this.logger.log('Market details retrieved:', {
-      epic,
-      marketStatus,
-      currencies: currencies.map((c) => c.code),
-    });
-
-    if (marketStatus !== MarketStatus.TRADEABLE) {
-      this.logger.warn('Market is not tradeable:', { epic, marketStatus });
-      throw new CustomException('Market is not currently tradeable', {
-        epic,
-        marketStatus,
+    try {
+      // Get account information first
+      const { data: accountInfo } = await this.makeIgRequest<{
+        accounts: Array<{
+          balance: {
+            balance: number;
+            available: number;
+          };
+        }>;
+      }>({
+        client: 'trading',
+        method: 'get',
+        endpoint: '/accounts',
+        headers: {
+          Version: '1',
+        },
       });
-    }
 
-    const currencyCode = currencies[0].code;
+      const balance = new Big(accountInfo.accounts[0].balance.balance);
+      const availableFunds = new Big(accountInfo.accounts[0].balance.available);
 
-    if (!TradableCurrencies.includes(currencyCode)) {
-      this.logger.warn('Currency is not tradable:', { epic, currencyCode });
-      throw new CustomException(`Currency is not tradable`, {
-        epic,
-        currencyCode,
+      if (availableFunds.lt(balance.times(0.2))) {
+        this.logger.log(
+          'Insufficient available funds - must be > 20% of balance',
+          {
+            availableFunds: availableFunds.toString(),
+            minimumRequired: balance.times(0.2).toString(),
+            balance: balance.toString(),
+          },
+        );
+        return null;
+      }
+
+      const { data: marketDetails } = await this.getMarketDetails(epic);
+
+      if (marketDetails.snapshot.marketStatus !== MarketStatus.TRADEABLE) {
+        this.logger.log('Market is not tradeable:', {
+          epic,
+          marketStatus: marketDetails.snapshot.marketStatus,
+        });
+        return null;
+      }
+
+      const currencyCode = marketDetails.instrument.currencies[0].code;
+      if (!TradableCurrencies.includes(currencyCode)) {
+        this.logger.log('Currency is not tradable:', { epic, currencyCode });
+        return null;
+      }
+
+      const { marginRequirement } = this.calculateMarginRequirement({
+        size,
+        currentPrice,
+        marketDetails,
       });
-    }
 
-    this.logger.log('Placing order with parameters:', {
-      epic,
-      direction,
-      size: size.toString(),
-      stopLossPrice: stopLossPrice.toString(),
-      takeProfitPrice: takeProfitPrice?.toString(),
-      currencyCode,
-    });
+      if (availableFunds.lt(marginRequirement)) {
+        this.logger.log('Insufficient available funds for margin requirement', {
+          availableFunds: availableFunds.toString(),
+          marginRequirement: marginRequirement.toString(),
+        });
+        return null;
+      }
 
-    const {
-      data: { dealReference },
-    } = await this.makeIgRequest<{ dealReference: string }>({
-      client: 'trading',
-      method: 'post',
-      endpoint: '/positions/otc',
-      data: {
+      this.logger.log('Placing order with parameters:', {
         epic,
-        expiry: '-',
         direction,
-        size: size.toNumber(),
-        orderType: 'MARKET',
-        guaranteedStop: false,
-        stopLevel: stopLossPrice.toNumber(),
-        limitLevel: takeProfitPrice?.toNumber(),
-        forceOpen: true,
+        size: size.toString(),
+        stopLossPrice: stopLossPrice.toString(),
+        takeProfitPrice: takeProfitPrice?.toString(),
         currencyCode,
-      },
-    });
+      });
 
-    this.logger.log('Order placed successfully:', dealReference);
-    return dealReference as string;
+      const {
+        data: { dealReference },
+      } = await this.makeIgRequest<{ dealReference: string }>({
+        client: 'trading',
+        method: 'post',
+        endpoint: '/positions/otc',
+        data: {
+          epic,
+          expiry: '-',
+          direction,
+          size: size.toNumber(),
+          orderType: 'MARKET',
+          guaranteedStop: false,
+          stopLevel: stopLossPrice.toNumber(),
+          limitLevel: takeProfitPrice?.toNumber(),
+          forceOpen: true,
+          currencyCode,
+        },
+      });
+
+      this.logger.log('Order placed successfully:', dealReference);
+      return dealReference as string;
+    } catch (error) {
+      if (error instanceof CustomException) {
+        this.logger.log('Failed to place bracket order:', {
+          error,
+          epic,
+          direction,
+          size: size.toString(),
+        });
+        return null;
+      }
+
+      captureException({ error });
+      throw new CustomException(
+        'Unexpected error while placing bracket order',
+        {
+          error,
+          epic,
+          direction,
+          size: size.toString(),
+        },
+      );
+    }
   }
 
   async updatePositionLevels({
