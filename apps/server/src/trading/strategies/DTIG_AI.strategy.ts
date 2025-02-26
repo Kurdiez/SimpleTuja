@@ -45,7 +45,7 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
   private readonly logger = new Logger(DTIG_AI_STRATEGY.name);
   private readonly epicsToTrade: IgEpic[];
   private subscriptions: DataSubscription[];
-  private readonly DefaultRiskPercentage = 0.03; // 3% risk per trade
+  private readonly DefaultRiskPercentage = 0.01; // 1% risk per trade
   private readonly promptTemplate: PromptTemplate;
 
   private readonly parser: StructuredOutputParser<any> =
@@ -279,12 +279,12 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
           takeProfitPrice,
         });
 
-      this.logger.log('Order placed successfully:', {
-        dealReferenceId,
-        epic: event.epic,
-      });
-
       if (dealReferenceId) {
+        this.logger.log('Order placed successfully:', {
+          dealReferenceId,
+          epic: event.epic,
+        });
+
         await this.tradingPositionRepository.save({
           brokerDealId: dealReferenceId,
           strategy: TradingStrategy.DTIG_AI,
@@ -300,6 +300,17 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
           epic: event.epic,
           strategy: TradingStrategy.DTIG_AI,
         });
+      } else {
+        this.logger.error(
+          'Failed to place order - no deal reference ID received',
+          {
+            epic: event.epic,
+            direction,
+            currentPrice: currentPrice.toString(),
+            stopLossPrice: stopLossPrice.toString(),
+            takeProfitPrice: takeProfitPrice.toString(),
+          },
+        );
       }
     } catch (error) {
       console.error('Parsing Error:', error); // Log the full error

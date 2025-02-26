@@ -16,8 +16,8 @@ import { bigTransformer } from '../../utils/big-transformer';
 
 @Entity('trading_position')
 export class TradingPositionEntity {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
   @Index()
   @Column('enum', {
