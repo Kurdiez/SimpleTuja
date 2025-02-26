@@ -11,6 +11,7 @@ import { TestIgController } from './controllers/tests/test-ig.controller';
 import { TestNftFiController } from './controllers/tests/test-nftfi.controller';
 import { TestOpenSeaController } from './controllers/tests/test-opensea.controller';
 import { TestStrategyController } from './controllers/tests/test-strategy.controller';
+import { TestTradingPositionController } from './controllers/tests/test-trading-position.controller';
 import { DataSeedService } from './services/data-seed.service';
 
 @Module({
@@ -30,6 +31,7 @@ import { DataSeedService } from './services/data-seed.service';
     TestBrevoController,
     TestIgController,
     TestStrategyController,
+    TestTradingPositionController,
   ],
 })
 export class AdminModule {}

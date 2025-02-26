@@ -28,11 +28,11 @@ export class TradingPositionEntity {
 
   @Index()
   @Column('varchar')
-  brokerDealId!: string;
+  igOrderDealId!: string;
 
   @Index()
   @Column('varchar', { nullable: true })
-  brokerPositionId!: string | null;
+  igPositionOpenDealId!: string | null;
 
   @Index()
   @Column('enum', { enum: TradingStrategy })
@@ -45,6 +45,15 @@ export class TradingPositionEntity {
   @Index()
   @Column('enum', { enum: PositionDirection })
   direction!: PositionDirection;
+
+  @Column({
+    type: 'decimal',
+    precision: 36,
+    scale: 18,
+    transformer: bigTransformer,
+    nullable: true,
+  })
+  size!: Big | null;
 
   @Column({
     type: 'decimal',

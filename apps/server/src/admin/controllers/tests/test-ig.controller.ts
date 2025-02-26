@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import Big from 'big.js';
 import { IgApiService } from '~/trading/services/ig-api.service';
 import {
@@ -80,8 +80,83 @@ export class TestIgController {
     });
   }
 
+  @Post('place-bracket-order')
+  async placeBracketOrder(
+    @Body()
+    body: {
+      epic: IgEpic;
+      direction: PositionDirection;
+      size: string;
+      currentPrice: string;
+      stopLossPrice: string;
+      takeProfitPrice?: string;
+    },
+  ) {
+    return await this.igApi.placeBracketOrder({
+      epic: body.epic,
+      direction: body.direction,
+      size: new Big(body.size),
+      currentPrice: new Big(body.currentPrice),
+      stopLossPrice: new Big(body.stopLossPrice),
+      takeProfitPrice: body.takeProfitPrice
+        ? new Big(body.takeProfitPrice)
+        : undefined,
+    });
+  }
+
   @Post('confirm-deal/:dealReference')
   async confirmDealStatus(@Param('dealReference') dealReference: string) {
     return await this.igApi.confirmDealStatus(dealReference);
+  }
+
+  @Post('get-all-open-positions')
+  async getAllOpenPositions() {
+    return await this.igApi.getAllOpenPositions();
+  }
+
+  @Get('get-live-position-details/:dealId')
+  async getLivePositionDetails(@Param('dealId') dealId: string) {
+    return await this.igApi.getLivePositionDetails(dealId);
+  }
+
+  @Post('get-closed-positions-activity')
+  async getClosedPositionsActivity(
+    @Body()
+    body: {
+      from?: string;
+      positionOpenDealIds: string[];
+    },
+  ) {
+    return await this.igApi.getClosedPositionsActivity(body);
+  }
+
+  @Post('get-closed-positions-with-details')
+  async getClosedPositionsWithDetails(
+    @Body()
+    body: {
+      from?: string;
+      positionOpenDealIds: string[];
+    },
+  ) {
+    const activities = await this.igApi.getClosedPositionsActivity(body);
+    return Object.fromEntries(
+      Object.entries(activities).map(([dealId, activity]) => [
+        dealId,
+        {
+          ...activity,
+          details: {
+            ...activity.details,
+            actions: activity.details.actions.map((action) => ({
+              ...action,
+            })),
+          },
+        },
+      ]),
+    );
+  }
+
+  @Get('get-closed-position/:dealId')
+  async getClosedPosition(@Param('dealId') openDealId: string) {
+    return await this.igApi.getClosedPositionByOpenDealId(openDealId);
   }
 }

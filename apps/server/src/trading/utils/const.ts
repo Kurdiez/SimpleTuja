@@ -4,6 +4,7 @@ export enum TradingCurrency {
 
 export enum IgEpic {
   EURUSD = 'CS.D.EURUSD.CFD.IP',
+  EURUSD_MINI = 'CS.D.EURUSD.MINI.IP',
   US_SHARE_AMBC = 'UA.D.AMBCUS.CASH.IP',
 }
 

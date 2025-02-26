@@ -4,7 +4,7 @@ import { Big } from 'big.js';
 import { isWithinInterval } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { Repository } from 'typeorm';
-import { Cron } from '~/commons/decorators';
+import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { IgEpicPriceEntity } from '~/database/entities/trading/ig-epic-price.entity';
 import { IgApiService } from '~/trading/services/ig-api.service';
@@ -36,7 +36,10 @@ export class PriceDataCollectorService implements OnModuleInit {
     // Initial setup if needed
   }
 
-  @Cron('* * * * *')
+  @CronWithErrorHandling({
+    cronTime: '* * * * *',
+    taskName: 'CollectPriceSnapshots',
+  })
   async collectPriceSnapshots(): Promise<void> {
     const now = new Date();
     const subscriptionsByResolution =

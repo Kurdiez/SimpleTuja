@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import Big from 'big.js';
@@ -7,6 +7,7 @@ import { OpenSeaSDK } from 'opensea-js';
 import { IsNull, Not, Repository } from 'typeorm';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { retry } from '~/commons/error-handlers/retry';
+import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { ConfigService } from '~/config';
 import { NftCollectionBidHistoryEntity } from '~/database/entities/crypto-lending/nft-collection-bid-history.entity';
@@ -289,7 +290,10 @@ export class OpenSeaService {
     await this.nftCollectionPriceHistoryRepo.save(priceHistory);
   }
 
-  @Cron(CronExpression.EVERY_3_HOURS)
+  @CronWithErrorHandling({
+    cronTime: CronExpression.EVERY_3_HOURS,
+    taskName: 'CleanOldPriceHistory',
+  })
   async cleanOldPriceHistory(): Promise<void> {
     const oneMonthAgo = new Date();
     oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
