@@ -1,10 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Big from 'big.js';
+import { parseISO, subMinutes } from 'date-fns';
+import { getTimezoneOffset } from 'date-fns-tz';
 import { Not, Repository } from 'typeorm';
+import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { TradingPositionEntity } from '~/database/entities/trading/trading-position.entity';
 import { TradingPositionStatus } from '../utils/const';
+import { getTradingInfo } from '../utils/epic-trading-info';
+import { IgClosedPositionActivity } from '../utils/ig-api.types';
 import { IgApiService } from './ig-api.service';
 
 @Injectable()
@@ -17,23 +22,37 @@ export class TradingPositionService {
     private readonly igApiService: IgApiService,
   ) {}
 
-  // @CronWithErrorHandling({
-  //   cronTime: '*/15 * * * *',
-  //   taskName: 'updatePositions',
-  // })
+  @CronWithErrorHandling({
+    cronTime: '*/15 * * * *',
+    taskName: 'updatePositions',
+  })
   async updatePositions() {
     this.logger.log('Starting position status update check');
 
     try {
+      this.logger.log('Fetching positions data from IG API and database...');
       const { igPositions, pendingPositions, openedPositions } =
         await this.fetchPositionsData();
 
+      this.logger.log('Fetched positions data', {
+        igPositionsCount: igPositions.positions.length,
+        pendingPositionsCount: pendingPositions.size,
+        openedPositionsCount: openedPositions.size,
+      });
+
       // Process current IG positions
-      await this.processIgPositions(igPositions, pendingPositions);
+      this.logger.log('Starting to update pending positions...');
+      await this.updatePendingPositions(igPositions, pendingPositions);
+      this.logger.log('Completed updating pending positions');
 
       // Handle positions no longer in IG API
+      this.logger.log('Starting to handle removed pending positions...');
       await this.handleRemovedPendingPositions(pendingPositions);
-      await this.closeRemovedOpenPositions(igPositions, openedPositions);
+      this.logger.log('Completed handling removed pending positions');
+
+      this.logger.log('Starting to update closed positions...');
+      await this.updateClosedPositions(igPositions, openedPositions);
+      this.logger.log('Completed updating closed positions');
 
       this.logger.log('Completed position status update check', {
         totalIgPositions: igPositions.positions.length,
@@ -48,6 +67,8 @@ export class TradingPositionService {
       this.logger.error('Error updating positions', {
         error: error.message,
         stack: error.stack,
+        errorName: error.name,
+        errorCode: error.code,
       });
       throw new CustomException('Error updating positions', { error });
     }
@@ -68,7 +89,7 @@ export class TradingPositionService {
     const pendingPositions = new Map(
       dbPositions
         .filter((pos) => pos.status === TradingPositionStatus.PENDING)
-        .map((pos) => [pos.igOrderDealId, pos]),
+        .map((pos) => [pos.igPositionOpenDealReference, pos]),
     );
 
     const openedPositions = new Map(
@@ -80,7 +101,7 @@ export class TradingPositionService {
     return { igPositions, pendingPositions, openedPositions };
   }
 
-  private async processIgPositions(
+  private async updatePendingPositions(
     igPositions: any,
     pendingPositions: Map<string, TradingPositionEntity>,
   ) {
@@ -112,7 +133,7 @@ export class TradingPositionService {
     for (const position of pendingPositions.values()) {
       try {
         const dealStatus = await this.igApiService.confirmDealStatus(
-          position.igOrderDealId,
+          position.igPositionOpenDealReference,
         );
         if (dealStatus.dealStatus === 'REJECTED') {
           await this.updateRejectedPosition(position, dealStatus.reason);
@@ -138,12 +159,12 @@ export class TradingPositionService {
 
     this.logger.log('Marked pending position as closed due to rejection', {
       positionId: position.id,
-      brokerDealId: position.igOrderDealId,
+      igPositionOpenDealReference: position.igPositionOpenDealReference,
       reason: rejectionReason,
     });
   }
 
-  private async closeRemovedOpenPositions(
+  private async updateClosedPositions(
     igPositions: any,
     openedPositions: Map<string, TradingPositionEntity>,
   ) {
@@ -156,16 +177,62 @@ export class TradingPositionService {
     );
 
     if (positionsToClose.length > 0) {
+      // Get all position open deal IDs
+      const positionOpenDealIds = positionsToClose.map(
+        (position) => position.igPositionOpenDealId,
+      );
+
+      // Get closed position activity from IG API
+      const closedPositionsActivity: Record<string, IgClosedPositionActivity> =
+        await this.igApiService.getClosedPositionsActivity({
+          positionOpenDealIds,
+        });
+
       await Promise.all(
         positionsToClose.map(async (position) => {
+          const activity =
+            closedPositionsActivity[position.igPositionOpenDealId];
+
+          let exitPrice: Big | null = null;
+          if (
+            activity?.details?.level != null &&
+            !isNaN(activity.details.level)
+          ) {
+            try {
+              exitPrice = new Big(activity.details.level);
+            } catch (error) {
+              this.logger.error('Failed to parse exit price', {
+                level: activity.details.level,
+                positionId: position.id,
+                error,
+              });
+            }
+          }
+
+          const exitedAt = activity
+            ? (() => {
+                const tradingInfo = getTradingInfo(position.epic);
+                const dubaiDate = parseISO(activity.date);
+                const offsetMinutes =
+                  getTimezoneOffset(tradingInfo.dataTimezone, dubaiDate) /
+                  1000 /
+                  60;
+                return subMinutes(dubaiDate, offsetMinutes);
+              })()
+            : new Date();
+
           await this.tradingPositionRepo.update(position.id, {
             status: TradingPositionStatus.CLOSED,
-            exitedAt: new Date(),
+            exitPrice,
+            exitedAt,
           });
 
           this.logger.log('Closed position', {
             positionId: position.id,
             brokerPositionId: position.igPositionOpenDealId,
+            exitPrice: exitPrice?.toString() ?? null,
+            exitedAt: activity?.date,
+            timezone: getTradingInfo(position.epic).dataTimezone,
           });
         }),
       );

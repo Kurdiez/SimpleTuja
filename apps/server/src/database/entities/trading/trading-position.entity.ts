@@ -28,7 +28,7 @@ export class TradingPositionEntity {
 
   @Index()
   @Column('varchar')
-  igOrderDealId!: string;
+  igPositionOpenDealReference!: string;
 
   @Index()
   @Column('varchar', { nullable: true })

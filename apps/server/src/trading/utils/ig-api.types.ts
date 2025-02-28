@@ -58,3 +58,21 @@ export interface IgPositionDetailsResponse {
     limitLevel: number | null;
   };
 }
+
+export interface IgClosedPositionActivity {
+  date: string;
+  epic: string;
+  dealId: string;
+  details: {
+    actions: Array<{
+      actionType: string;
+      level: number;
+      size: number;
+      direction: 'BUY' | 'SELL';
+      dealReference: string;
+      marketName: string;
+      affectedDealId?: string;
+    }>;
+    level?: number;
+  };
+}

@@ -286,7 +286,7 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
         });
 
         await this.tradingPositionRepository.save({
-          brokerDealId: dealReferenceId,
+          igPositionOpenDealReference: dealReferenceId,
           strategy: TradingStrategy.DTIG_AI,
           epic: event.epic,
           direction,
