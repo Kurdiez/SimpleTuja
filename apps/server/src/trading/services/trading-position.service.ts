@@ -4,12 +4,15 @@ import Big from 'big.js';
 import { parseISO, subMinutes } from 'date-fns';
 import { getTimezoneOffset } from 'date-fns-tz';
 import { Not, Repository } from 'typeorm';
+import { captureException } from '~/commons/error-handlers/capture-exception';
 import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-errors';
 import { CustomException } from '~/commons/errors/custom-exception';
+import { TradingPerformanceReportEntity } from '~/database/entities/trading/trading-performance-report.entity';
 import { TradingPositionEntity } from '~/database/entities/trading/trading-position.entity';
-import { TradingPositionStatus } from '../utils/const';
+import { PositionDirection, TradingPositionStatus } from '../utils/const';
 import { getTradingInfo } from '../utils/epic-trading-info';
 import { IgClosedPositionActivity } from '../utils/ig-api.types';
+import { GeminiAiService } from './gemini-ai.service';
 import { IgApiService } from './ig-api.service';
 
 @Injectable()
@@ -19,7 +22,10 @@ export class TradingPositionService {
   constructor(
     @InjectRepository(TradingPositionEntity)
     private readonly tradingPositionRepo: Repository<TradingPositionEntity>,
+    @InjectRepository(TradingPerformanceReportEntity)
+    private readonly performanceReportRepo: Repository<TradingPerformanceReportEntity>,
     private readonly igApiService: IgApiService,
+    private readonly geminiAiService: GeminiAiService,
   ) {}
 
   @CronWithErrorHandling({
@@ -31,35 +37,38 @@ export class TradingPositionService {
 
     try {
       this.logger.log('Fetching positions data from IG API and database...');
-      const { igPositions, pendingPositions, openedPositions } =
+      const { openPositions, pendingPositions, openedPositions } =
         await this.fetchPositionsData();
 
       this.logger.log('Fetched positions data', {
-        igPositionsCount: igPositions.positions.length,
+        igPositionsCount: openPositions.positions.length,
         pendingPositionsCount: pendingPositions.size,
         openedPositionsCount: openedPositions.size,
       });
 
       // Process current IG positions
-      this.logger.log('Starting to update pending positions...');
-      await this.updatePendingPositions(igPositions, pendingPositions);
+      await this.updatePendingPositions(openPositions, pendingPositions);
       this.logger.log('Completed updating pending positions');
 
       // Handle positions no longer in IG API
-      this.logger.log('Starting to handle removed pending positions...');
       await this.handleRemovedPendingPositions(pendingPositions);
       this.logger.log('Completed handling removed pending positions');
 
-      this.logger.log('Starting to update closed positions...');
-      await this.updateClosedPositions(igPositions, openedPositions);
+      const closedPositions = await this.updateClosedPositions(
+        openPositions,
+        openedPositions,
+      );
       this.logger.log('Completed updating closed positions');
 
+      await this.updatePerformanceReport(closedPositions);
+      this.logger.log('Completed updating performance reports');
+
       this.logger.log('Completed position status update check', {
-        totalIgPositions: igPositions.positions.length,
+        totalIgPositions: openPositions.positions.length,
         closedPositions: Array.from(openedPositions.values()).filter(
           (position) =>
             !new Set(
-              igPositions.positions.map(({ position }) => position.dealId),
+              openPositions.positions.map(({ position }) => position.dealId),
             ).has(position.igPositionOpenDealId),
         ).length,
       });
@@ -76,7 +85,7 @@ export class TradingPositionService {
 
   private async fetchPositionsData() {
     // Get all positions from IG API
-    const igPositions = await this.igApiService.getAllOpenPositions();
+    const openPositions = await this.igApiService.getAllOpenPositions();
 
     // Get all non-closed positions from DB
     const dbPositions = await this.tradingPositionRepo.find({
@@ -98,14 +107,14 @@ export class TradingPositionService {
         .map((pos) => [pos.igPositionOpenDealId, pos]),
     );
 
-    return { igPositions, pendingPositions, openedPositions };
+    return { openPositions, pendingPositions, openedPositions };
   }
 
   private async updatePendingPositions(
-    igPositions: any,
+    openPositions: any,
     pendingPositions: Map<string, TradingPositionEntity>,
   ) {
-    for (const { position: igPosition } of igPositions.positions) {
+    for (const { position: igPosition } of openPositions.positions) {
       // First check if this matches any pending position by dealReference
       const pendingPosition = pendingPositions.get(igPosition.dealReference);
       if (pendingPosition) {
@@ -165,15 +174,15 @@ export class TradingPositionService {
   }
 
   private async updateClosedPositions(
-    igPositions: any,
-    openedPositions: Map<string, TradingPositionEntity>,
-  ) {
-    const igPositionIds = new Set(
-      igPositions.positions.map(({ position }) => position.dealId),
+    openPositionsInBroker: any,
+    openedPositionsInDb: Map<string, TradingPositionEntity>,
+  ): Promise<TradingPositionEntity[]> {
+    const brokerOpenPositionIds = new Set(
+      openPositionsInBroker.positions.map(({ position }) => position.dealId),
     );
 
-    const positionsToClose = Array.from(openedPositions.values()).filter(
-      (position) => !igPositionIds.has(position.igPositionOpenDealId),
+    const positionsToClose = Array.from(openedPositionsInDb.values()).filter(
+      (position) => !brokerOpenPositionIds.has(position.igPositionOpenDealId),
     );
 
     if (positionsToClose.length > 0) {
@@ -188,7 +197,7 @@ export class TradingPositionService {
           positionOpenDealIds,
         });
 
-      await Promise.all(
+      const updatedPositions = await Promise.all(
         positionsToClose.map(async (position) => {
           const activity =
             closedPositionsActivity[position.igPositionOpenDealId];
@@ -221,11 +230,11 @@ export class TradingPositionService {
               })()
             : new Date();
 
-          await this.tradingPositionRepo.update(position.id, {
-            status: TradingPositionStatus.CLOSED,
-            exitPrice,
-            exitedAt,
-          });
+          position.status = TradingPositionStatus.CLOSED;
+          position.exitPrice = exitPrice;
+          position.exitedAt = exitedAt;
+
+          const savedPosition = await this.tradingPositionRepo.save(position);
 
           this.logger.log('Closed position', {
             positionId: position.id,
@@ -234,8 +243,173 @@ export class TradingPositionService {
             exitedAt: activity?.date,
             timezone: getTradingInfo(position.epic).dataTimezone,
           });
+
+          return savedPosition;
         }),
       );
+
+      return updatedPositions;
     }
+
+    return [];
+  }
+
+  async updatePerformanceReport(closedPositions: TradingPositionEntity[]) {
+    if (closedPositions.length === 0) {
+      return;
+    }
+
+    const uniqueEpics = [
+      ...new Set(closedPositions.map((position) => position.epic)),
+    ];
+
+    const recentPositionsByEpic = (
+      await Promise.all(
+        uniqueEpics.map(async (epic) => {
+          // Get 20 most recent closed positions for the epic
+          const recentPositions = await this.tradingPositionRepo.find({
+            where: {
+              epic,
+              status: TradingPositionStatus.CLOSED,
+            },
+            order: {
+              exitedAt: 'DESC',
+            },
+            take: 20,
+          });
+
+          const positionSummaries = recentPositions
+            .map((position) => {
+              // Calculate profit/loss based on direction, entry price, and exit price
+              const entryPrice = position.entryPrice;
+              const exitPrice = position.exitPrice;
+
+              if (!entryPrice || !exitPrice) {
+                this.logger.warn('Position missing entry or exit price', {
+                  positionId: position.id,
+                  epic: position.epic,
+                  entryPrice: entryPrice?.toString(),
+                  exitPrice: exitPrice?.toString(),
+                });
+                return null;
+              }
+
+              let isProfit = false;
+              let isLoss = false;
+
+              if (position.direction === PositionDirection.BUY) {
+                isProfit = exitPrice.gt(entryPrice);
+                isLoss = exitPrice.lt(entryPrice);
+              } else {
+                isProfit = exitPrice.lt(entryPrice);
+                isLoss = exitPrice.gt(entryPrice);
+              }
+
+              return {
+                epic: position.epic,
+                isProfit,
+                isLoss,
+                signal: position.metadata?.signal || null,
+              };
+            })
+            .filter(
+              (summary): summary is NonNullable<typeof summary> =>
+                summary !== null,
+            );
+
+          // Skip epics with no valid position summaries
+          if (positionSummaries.length === 0) {
+            this.logger.warn('No valid position summaries found for epic', {
+              epic,
+              totalPositionsQueried: recentPositions.length,
+            });
+            return null;
+          }
+
+          return {
+            epic,
+            positions: positionSummaries,
+            summary: {
+              totalPositions: positionSummaries.length,
+              profitablePositions: positionSummaries.filter((p) => p.isProfit)
+                .length,
+              lossPositions: positionSummaries.filter((p) => p.isLoss).length,
+            },
+          };
+        }),
+      )
+    ).filter((result): result is NonNullable<typeof result> => result !== null);
+
+    // Process each epic's performance report in parallel
+    await Promise.all(
+      recentPositionsByEpic.map(async (epicData) => {
+        try {
+          const promptTemplate = `
+        You are an expert trading performance analyst. Your task is to analyze the recent trading history for ${epicData.epic} and generate a comprehensive performance report.
+
+        Trading Data Summary:
+        - Total Positions: ${epicData.summary.totalPositions}
+        - Profitable Positions: ${epicData.summary.profitablePositions}
+        - Loss Positions: ${epicData.summary.lossPositions}
+        - Win Rate: ${(
+          (epicData.summary.profitablePositions /
+            epicData.summary.totalPositions) *
+          100
+        ).toFixed(2)}%
+
+        Detailed Position Data:
+        ${JSON.stringify(epicData.positions, null, 2)}
+
+        Please analyze this data and provide:
+
+        1. Performance Overview:
+           - Overall trading effectiveness
+           - Win rate analysis
+           - Pattern in profitable vs losing trades
+
+        2. Signal Analysis:
+           - Effectiveness of different trading signals
+           - Which signals led to more profitable trades
+           - Which signals resulted in losses
+
+        3. Trading Patterns:
+           - Common characteristics of winning trades
+           - Common characteristics of losing trades
+           - Any identifiable market conditions that affected performance
+
+        4. Risk Management Assessment:
+           - Analysis of position management
+           - Suggestions for risk management improvements
+
+        5. Recommendations:
+           - Specific actionable improvements
+           - What to continue doing (strengths)
+           - What to stop doing (weaknesses)
+           - What to start doing (opportunities)
+
+        Format your response as a structured report with clear sections and bullet points.
+        Focus on actionable insights that can improve future trading performance.
+        `;
+
+          const performanceReport =
+            await this.geminiAiService.generateRawResponse(promptTemplate);
+
+          await this.performanceReportRepo.save({
+            epic: epicData.epic,
+            report: performanceReport,
+          });
+        } catch (error) {
+          captureException({
+            error: new CustomException(
+              'Failed to generate performance report',
+              {
+                error,
+                epic: epicData.epic,
+              },
+            ),
+          });
+        }
+      }),
+    );
   }
 }

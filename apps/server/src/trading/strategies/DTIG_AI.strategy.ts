@@ -15,6 +15,7 @@ import {
 import { Repository } from 'typeorm';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { CustomException } from '~/commons/errors/custom-exception';
+import { TradingPerformanceReportEntity } from '~/database/entities/trading/trading-performance-report.entity';
 import { TradingPositionEntity } from '~/database/entities/trading/trading-position.entity';
 import {
   TradeAction,
@@ -97,7 +98,9 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
     private readonly geminiAiService: GeminiAiService,
     private readonly igApiService: IgApiService,
     @InjectRepository(TradingPositionEntity)
-    private readonly tradingPositionRepository: Repository<TradingPositionEntity>,
+    private readonly tradingPositionRepo: Repository<TradingPositionEntity>,
+    @InjectRepository(TradingPerformanceReportEntity)
+    private readonly tradingPerformanceReportRepo: Repository<TradingPerformanceReportEntity>,
   ) {
     this.epicsToTrade = [IgEpic.EURUSD];
 
@@ -117,7 +120,7 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       5. State what are the immediate significant price levels from the current market price by looking at the longer term prices which can act as the stop loss and take profit prices. Assume the entry price is the current ask or bid depending on the direction of the trade.
       6. The goal of shorter term analysis is to find out whether the entry setup exists and a position should be opened now. Use the overall price prediction from longer timeframe analysis and the 3 indicators provided for the shorter timeframe to confirm an entry setup. State your findings.
       7. Only if the confidence score from step 6 is at least 7, then you should state the trade decision with the stop loss and take profit prices based on the provided current price, significant price levels from step 5 and the ATR indicator from longer timeframe indicators. Assume the entry price is the current ask or bid depending on the direction of the trade. We don't want the stop loss to be too small to be shaken out even without being able to test our directional prediction.
-      8. Assume the entry price is the current ask or bid depending on the direction of the trade. Based on this entry price, stop loss and take profit prices, calculate the reward / risk ratio. If the reward / risk ratio is greater or equal to 3, then this is a good setup that a trade should be take place. State your findings.
+      8. Assume the entry price is the current ask or bid depending on the direction of the trade. Based on this entry price, stop loss and take profit prices, calculate the reward / risk ratio. If the reward / risk ratio is greater or equal to 3, then this is a good setup for you to tell me to trade "long" or "short" in tradeDecision.action. If it's not a good setup, return "none" in tradeDecision.action. State your findings.
 
       Here are the inputs you should be receiving to perform the analysis:
 
@@ -128,7 +131,7 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       Two timeframe price data by time resolutions, price data sorted in chronological order:
       {prices}
 
-      Shorter term indicators, their parameter values and their computed values in chronological order:
+      Indicator values for both long and short timeframes, their parameter values and their computed values in chronological order:
       {indicators}
 
       Performance Report:
@@ -191,6 +194,17 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
     if (event.timeResolution === TimeResolution.MINUTE_15) {
       await this.handle15MinUpdate(event);
     }
+  }
+
+  private validateRewardRiskRatio(
+    currentPrice: Big,
+    stopLossPrice: Big,
+    takeProfitPrice: Big,
+  ): boolean {
+    const riskAmount = currentPrice.minus(stopLossPrice).abs();
+    const rewardAmount = currentPrice.minus(takeProfitPrice).abs();
+    const rewardRiskRatio = rewardAmount.div(riskAmount);
+    return rewardRiskRatio.gte(2);
   }
 
   async handle15MinUpdate(event: PriceUpdateEvent) {
@@ -257,6 +271,20 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       const stopLossPrice = new Big(signal.tradeDecision.stopLoss);
       const takeProfitPrice = new Big(signal.tradeDecision.takeProfit);
 
+      // Validate reward/risk ratio before placing order
+      if (
+        !this.validateRewardRiskRatio(
+          currentPrice,
+          stopLossPrice,
+          takeProfitPrice,
+        )
+      ) {
+        this.logger.log(
+          'Trade validation failed - Insufficient reward/risk ratio',
+        );
+        return;
+      }
+
       this.logger.log('Calculated order parameters:', {
         direction,
         currentPrice: currentPrice.toString(),
@@ -285,7 +313,7 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
           epic: event.epic,
         });
 
-        await this.tradingPositionRepository.save({
+        await this.tradingPositionRepo.save({
           igPositionOpenDealReference: dealReferenceId,
           strategy: TradingStrategy.DTIG_AI,
           epic: event.epic,
@@ -350,11 +378,17 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       {},
     );
 
+    const performanceReport = await this.tradingPerformanceReportRepo.findOne({
+      where: {
+        epic: event.epic,
+      },
+    });
+
     return {
       epic: getIgEpicKey(event.epic),
       prices: pricesByResolution,
       indicators: {},
-      performanceReport: null,
+      performanceReport: performanceReport?.report || null,
     };
   }
 
