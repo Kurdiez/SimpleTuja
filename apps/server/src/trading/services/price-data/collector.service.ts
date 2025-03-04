@@ -239,11 +239,15 @@ export class PriceDataCollectorService implements OnModuleInit {
 
     targetDate = toZonedTime(targetDate, tradingInfo.dataTimezone);
 
+    let lastError = null;
+    let lastPrices = null;
+
     for (const interval of Object.values(PriceSnapshotRetryIntervals)) {
       await new Promise((resolve) => setTimeout(resolve, interval));
 
+      let prices;
       try {
-        const prices = await this.igApiService.getHistoricalPrices({
+        prices = await this.igApiService.getHistoricalPrices({
           epic,
           resolution,
           numPoints: 1,
@@ -279,15 +283,24 @@ export class PriceDataCollectorService implements OnModuleInit {
           return;
         }
       } catch (error) {
-        const exception = new CustomException(
-          'Failed to fetch price for epic',
-          {
-            error,
-            epic,
-          },
-        );
-        throw exception;
+        // Store the error and prices for later use
+        lastError = error;
+        lastPrices = prices;
+        // Continue to next retry interval instead of throwing immediately
+        continue;
       }
+    }
+
+    // If we've exhausted all retries and still haven't succeeded
+    if (lastError) {
+      throw new CustomException(
+        'Failed to fetch price for epic after all retries',
+        {
+          error: lastError,
+          epic,
+          prices: lastPrices || null,
+        },
+      );
     }
 
     throw new CustomException(`Failed to obtain price snapshot for epic`, {
