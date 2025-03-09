@@ -7,6 +7,7 @@ import { TradingPositionEntity } from '~/database/entities/trading/trading-posit
 import { TradingPositionService } from '~/trading/services/trading-position.service';
 import {
   IgEpic,
+  MIN_POSITIONS_FOR_REPORT,
   PositionDirection,
   TradingPositionStatus,
   TradingStrategy,
@@ -27,11 +28,11 @@ export class TestTradingPositionController {
 
   @Post('update-performance-report')
   async updatePerformanceReport() {
-    // Create 20 mock positions with even distribution of profits and losses
+    // Create mock positions with even distribution of profits and losses
     const mockPositions: Partial<TradingPositionEntity>[] = [];
     const basePrice = new Big('1.03735');
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < MIN_POSITIONS_FOR_REPORT; i++) {
       const direction =
         i % 2 === 0 ? PositionDirection.SELL : PositionDirection.BUY;
       const isProfit = i < 10; // First 10 positions are profitable

@@ -62,3 +62,5 @@ export enum TradingPositionStatus {
   OPENED = 'OPENED',
   CLOSED = 'CLOSED',
 }
+
+export const MIN_POSITIONS_FOR_REPORT = 20;

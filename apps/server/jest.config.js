@@ -1,5 +1,5 @@
 module.exports = {
-  maxWorkers: 20,
+  maxWorkers: 8,
 
   // Keep existing config from package.json
   collectCoverageFrom: ['**/*.(t|j)s'],

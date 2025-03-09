@@ -9,7 +9,11 @@ import { CronWithErrorHandling } from '~/commons/error-handlers/scheduled-tasks-
 import { CustomException } from '~/commons/errors/custom-exception';
 import { TradingPerformanceReportEntity } from '~/database/entities/trading/trading-performance-report.entity';
 import { TradingPositionEntity } from '~/database/entities/trading/trading-position.entity';
-import { PositionDirection, TradingPositionStatus } from '../utils/const';
+import {
+  MIN_POSITIONS_FOR_REPORT,
+  PositionDirection,
+  TradingPositionStatus,
+} from '../utils/const';
 import { getTradingInfo } from '../utils/epic-trading-info';
 import { IgClosedPositionActivity } from '../utils/ig-api.types';
 import { GeminiAiService } from './gemini-ai.service';
@@ -255,7 +259,7 @@ export class TradingPositionService {
   }
 
   async updatePerformanceReport(closedPositions: TradingPositionEntity[]) {
-    if (closedPositions.length === 0) {
+    if (closedPositions.length < MIN_POSITIONS_FOR_REPORT) {
       return;
     }
 
@@ -266,7 +270,7 @@ export class TradingPositionService {
     const recentPositionsByEpic = (
       await Promise.all(
         uniqueEpics.map(async (epic) => {
-          // Get 20 most recent closed positions for the epic
+          // Get most recent closed positions for the epic
           const recentPositions = await this.tradingPositionRepo.find({
             where: {
               epic,
@@ -275,7 +279,7 @@ export class TradingPositionService {
             order: {
               exitedAt: 'DESC',
             },
-            take: 20,
+            take: MIN_POSITIONS_FOR_REPORT,
           });
 
           const positionSummaries = recentPositions
@@ -389,6 +393,7 @@ export class TradingPositionService {
 
         Format your response as a structured report with clear sections and bullet points.
         Focus on actionable insights that can improve future trading performance.
+        Do not include the date of the report in your response.
         `;
 
           const performanceReport =

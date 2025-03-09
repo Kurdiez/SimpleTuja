@@ -29,6 +29,7 @@ import { PriceDataSubscriptionManagerService } from '../services/price-data/subs
 import {
   getIgEpicKey,
   IgEpic,
+  MIN_POSITIONS_FOR_REPORT,
   PositionDirection,
   TimeResolution,
   TradingStrategy,
@@ -135,7 +136,7 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       {indicators}
 
       Performance Report:
-      - Comprehensive historical trading performance report for this epic done by you in the past. It summarizes your performance of recent 20 trades.
+      - Comprehensive historical trading performance report for this epic done by you in the past. It summarizes your performance of recent {numPositionsForPerformanceReport} trades.
       - Includes overall summary of past individual trade logs that has all the contextual data like prices, indicator values used, P&L, thought process behind decision making and any other useful information for trade.
       - I want you to pay special attention to the reasoning from the past and incorporate what went well and what did not go well in your analysis for the new trade.
       
@@ -173,6 +174,7 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
         'currentPrice',
         'prices',
         'indicators',
+        'numPositionsForPerformanceReport',
         'performanceReport',
       ],
       partialVariables: {
@@ -241,6 +243,7 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
           ask: lastPrice.ask.toNumber(),
         },
         indicators,
+        numPositionsForPerformanceReport: MIN_POSITIONS_FOR_REPORT,
         performanceReport:
           signalGeneratorContextData.performanceReport ||
           'No performance report available',
