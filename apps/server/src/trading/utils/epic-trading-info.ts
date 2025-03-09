@@ -31,7 +31,7 @@ interface TradingInfo {
 }
 
 const categories = {
-  fx: new Set([IgEpic.EURUSD]),
+  fx: new Set([IgEpic.EURUSD, IgEpic.AUDJPY, IgEpic.GBPCHF]),
   usShares: new Set([IgEpic.US_SHARE_AMBC]),
 };
 

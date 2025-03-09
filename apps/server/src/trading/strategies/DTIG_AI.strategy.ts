@@ -103,7 +103,7 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
     @InjectRepository(TradingPerformanceReportEntity)
     private readonly tradingPerformanceReportRepo: Repository<TradingPerformanceReportEntity>,
   ) {
-    this.epicsToTrade = [IgEpic.EURUSD];
+    this.epicsToTrade = [IgEpic.EURUSD, IgEpic.AUDJPY, IgEpic.GBPCHF];
 
     this.promptTemplate = new PromptTemplate({
       template: `
