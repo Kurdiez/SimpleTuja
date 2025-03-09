@@ -252,18 +252,20 @@ export class DTIG_AI_STRATEGY implements OnModuleInit, IDataSubscriber {
       rawResponse =
         await this.geminiAiService.generateRawResponse(formattedPrompt);
 
+      this.logger.log(
+        'Trade signal generated:',
+        JSON.stringify({
+          epic: signalGeneratorContextData.epic,
+          aiResponse: rawResponse,
+        }),
+      );
+
       signal = await this.parser.parse(rawResponse);
 
       if (signal.tradeDecision.action === TradeAction.NONE) {
         this.logger.log('No trade signal generated - action is NONE');
         return;
       }
-
-      this.logger.log('Trade signal generated:', {
-        action: signal.tradeDecision.action,
-        stopLoss: signal.tradeDecision.stopLoss,
-        takeProfit: signal.tradeDecision.takeProfit,
-      });
 
       const direction =
         signal.tradeDecision.action === TradeAction.LONG

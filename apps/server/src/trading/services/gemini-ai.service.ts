@@ -15,14 +15,8 @@ export class GeminiAiService {
   }
 
   async generateRawResponse(prompt: string): Promise<string> {
-    try {
-      const result = await this.model.invoke(prompt);
-      const responseText = result.content.toString();
-      this.logger.log(`Raw Gemini Response: ${responseText}`);
-      return responseText;
-    } catch (error) {
-      this.logger.error('Error generating raw response from Gemini:', error);
-      throw error;
-    }
+    const result = await this.model.invoke(prompt);
+    const responseText = result.content.toString();
+    return responseText;
   }
 }

@@ -49,7 +49,7 @@ const SignInForm: React.FC = () => {
           Sign in to your account
         </h2>
         <p className="mt-2 text-sm leading-6 text-gray-400">
-          Not a member?{" "}
+          {/* Not a member?{" "}
           <a
             href="#"
             onClick={(e) => {
@@ -59,7 +59,8 @@ const SignInForm: React.FC = () => {
             className="font-semibold text-primary hover:text-primary-light"
           >
             Register
-          </a>
+          </a> */}
+          Welcome back! Please sign in to access your account.
         </p>
       </div>
 
