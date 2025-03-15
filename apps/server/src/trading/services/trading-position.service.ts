@@ -148,8 +148,45 @@ export class TradingPositionService {
         const dealStatus = await this.igApiService.confirmDealStatus(
           position.igPositionOpenDealReference,
         );
+
         if (dealStatus.dealStatus === 'REJECTED') {
           await this.updateRejectedPosition(position, dealStatus.reason);
+          continue;
+        }
+
+        try {
+          // Try to get the position details from history - this will have both open and close details
+          const closedPosition =
+            await this.igApiService.getClosedPositionByOpenDealId(
+              dealStatus.dealId,
+            );
+
+          const tradingInfo = getTradingInfo(position.epic);
+          const dubaiDate = parseISO(closedPosition.date);
+          const offsetMinutes =
+            getTimezoneOffset(tradingInfo.dataTimezone, dubaiDate) / 1000 / 60;
+          const exitedAt = subMinutes(dubaiDate, offsetMinutes);
+
+          // Update with both open and close details
+          await this.tradingPositionRepo.update(position.id, {
+            status: TradingPositionStatus.CLOSED,
+            igPositionOpenDealId: dealStatus.dealId,
+            size: new Big(closedPosition.details.size),
+            entryPrice: new Big(closedPosition.details.level),
+            exitPrice: new Big(closedPosition.details.actions[0].level),
+            stopLossPrice: closedPosition.details.stopLevel
+              ? new Big(closedPosition.details.stopLevel)
+              : null,
+            takeProfitPrice: closedPosition.details.limitLevel
+              ? new Big(closedPosition.details.limitLevel)
+              : null,
+            exitedAt,
+          });
+        } catch {
+          // Just update the dealId and let the next update cycle handle the status
+          await this.tradingPositionRepo.update(position.id, {
+            igPositionOpenDealId: dealStatus.dealId,
+          });
         }
       } catch (error) {
         await this.updateRejectedPosition(position, error.message);
