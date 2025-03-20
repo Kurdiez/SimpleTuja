@@ -13,7 +13,6 @@ import { DatabaseModule } from '~/database/database.module';
 import { NotificationsModule } from '~/notifications/notifications.module';
 import { AuthService } from './auth/service/auth.service';
 import { CryptoLendingModule } from './crypto-lending/crypto-lending.module';
-import { TradingModule } from './trading/trading.module';
 
 @Module({
   imports: [
@@ -29,7 +28,7 @@ import { TradingModule } from './trading/trading.module';
     CryptoLendingModule,
     AuthModule,
     NotificationsModule,
-    TradingModule,
+    // TradingModule,
   ],
   controllers: [],
   providers: [
