@@ -94,7 +94,7 @@ export class LoanService {
           await this.makeLoanOffersForUser(userState, loanEligibleCollections);
           await this.syncCurrentlyActiveLoans(userState);
           await this.liquidateDefaultedLoans(userState);
-          await this.transferNftsToForeclosureWallet(userState);
+          // await this.transferNftsToForeclosureWallet(userState);
           await this.takeDashboardSnapshot(userState);
         } catch (error) {
           const exception = new CustomException(
