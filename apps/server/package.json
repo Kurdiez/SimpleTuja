@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "author": "",
   "scripts": {
-    "build": "nest build && SENTRY_AUTH_TOKEN=c3a751aa82456634935d9dd22b1c9d60a2d870363e6c302ab3ac9395a26be7ed yarn sentry:sourcemaps",
+    "build": "nest build",
     "debug": "nest start --debug --watch",
     "dev": "nest start --watch",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
